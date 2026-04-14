@@ -16,7 +16,11 @@ import {
   duplicateCampaignImpl,
   skipCampaignStepImpl,
   triggerCampaignStepNowImpl,
+  listPostActivityImpl,
+  type PostActivityRow,
 } from './posts.server'
+
+export type { PostActivityRow }
 
 export type {
   PostsTab,
@@ -132,3 +136,7 @@ export const skipCampaignStep = createServerFn({ method: 'POST' })
 export const triggerCampaignStepNow = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => stepActionSchema.parse(d))
   .handler(async ({ data }) => triggerCampaignStepNowImpl(data.workspaceSlug, data.stepId))
+
+export const listPostActivity = createServerFn({ method: 'GET' })
+  .inputValidator((d: unknown) => singleSchema.parse(d))
+  .handler(async ({ data }) => listPostActivityImpl(data.workspaceSlug, data.postId))

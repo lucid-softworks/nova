@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
-import { useState } from 'react'
-import { Check, Copy, ExternalLink, MoreHorizontal, Pencil, RotateCw, Target, Trash2, CalendarClock, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Check, Copy, ExternalLink, History, MoreHorizontal, Pencil, RotateCw, Target, Trash2, CalendarClock, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -8,7 +8,14 @@ import { Spinner } from '~/components/ui/spinner'
 import { PostStatusBadge, PostTypeBadge } from './badges'
 import { cn } from '~/lib/utils'
 import { approvePost, requestChanges, schedulePost } from '~/server/scheduling'
-import { duplicatePost, retryPost, deletePosts, type PostRow as Row } from '~/server/posts'
+import {
+  duplicatePost,
+  retryPost,
+  deletePosts,
+  listPostActivity,
+  type PostActivityRow,
+  type PostRow as Row,
+} from '~/server/posts'
 import type { WorkspaceRole } from '~/server/types'
 
 export function PostRow({
@@ -94,11 +101,11 @@ export function PostRow({
   const liveUrl = post.platforms.find((p) => p.publishedUrl)?.publishedUrl ?? null
 
   return (
+    <div className={cn('border-b border-neutral-100', selected && 'bg-indigo-50/40')}>
     <div
       className={cn(
-        'flex items-start gap-3 border-b border-neutral-100 px-3 py-3',
+        'flex items-start gap-3 px-3 py-3',
         indent && 'pl-12 bg-neutral-50/50',
-        selected && 'bg-indigo-50/40',
       )}
     >
       <input
@@ -339,6 +346,65 @@ export function PostRow({
               </Button>
             </div>
           </div>
+        </div>
+      ) : null}
+    </div>
+    {isPending ? (
+      <PostActivityTimeline workspaceSlug={workspaceSlug} postId={post.id} indent={indent} />
+    ) : null}
+    </div>
+  )
+}
+
+function PostActivityTimeline({
+  workspaceSlug,
+  postId,
+  indent,
+}: {
+  workspaceSlug: string
+  postId: string
+  indent: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const [rows, setRows] = useState<PostActivityRow[] | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!open || rows !== null) return
+    setLoading(true)
+    listPostActivity({ data: { workspaceSlug, postId } })
+      .then(setRows)
+      .finally(() => setLoading(false))
+  }, [open, rows, workspaceSlug, postId])
+
+  return (
+    <div className={cn('border-t border-dashed border-neutral-200 bg-neutral-50/60 px-3 py-2 text-xs', indent && 'pl-12')}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex items-center gap-1 text-neutral-500 hover:text-neutral-800"
+      >
+        <History className="h-3 w-3" />
+        {open ? 'Hide' : 'Show'} approval timeline
+      </button>
+      {open ? (
+        <div className="mt-2 space-y-1">
+          {loading ? (
+            <div className="text-neutral-500">Loading…</div>
+          ) : rows && rows.length > 0 ? (
+            rows.map((r) => (
+              <div key={r.id} className="flex items-start gap-2">
+                <span className="font-semibold text-neutral-700 capitalize">{r.action.replace('_', ' ')}</span>
+                <span className="text-neutral-500">
+                  {r.userName ? `by ${r.userName} ` : ''}
+                  · {new Date(r.createdAt).toLocaleString()}
+                </span>
+                {r.note ? <span className="text-neutral-700">— {r.note}</span> : null}
+              </div>
+            ))
+          ) : (
+            <div className="text-neutral-500">No activity yet.</div>
+          )}
         </div>
       ) : null}
     </div>

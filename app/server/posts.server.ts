@@ -637,6 +637,47 @@ export async function changeToDraftImpl(slug: string, postIds: string[]) {
   return { ok: true }
 }
 
+// Activity timeline
+
+export type PostActivityRow = {
+  id: string
+  action: (typeof schema.postActivityEnum.enumValues)[number]
+  note: string | null
+  createdAt: string
+  userName: string | null
+}
+
+export async function listPostActivityImpl(
+  slug: string,
+  postId: string,
+): Promise<PostActivityRow[]> {
+  const { workspace } = await ensureWs(slug)
+  const post = await db.query.posts.findFirst({
+    where: and(eq(schema.posts.id, postId), eq(schema.posts.workspaceId, workspace.id)),
+    columns: { id: true },
+  })
+  if (!post) return []
+  const rows = await db
+    .select({
+      id: schema.postActivity.id,
+      action: schema.postActivity.action,
+      note: schema.postActivity.note,
+      createdAt: schema.postActivity.createdAt,
+      userName: schema.user.name,
+    })
+    .from(schema.postActivity)
+    .leftJoin(schema.user, eq(schema.user.id, schema.postActivity.userId))
+    .where(eq(schema.postActivity.postId, postId))
+    .orderBy(asc(schema.postActivity.createdAt))
+  return rows.map((r) => ({
+    id: r.id,
+    action: r.action,
+    note: r.note,
+    createdAt: r.createdAt.toISOString(),
+    userName: r.userName,
+  }))
+}
+
 // Campaign actions
 
 async function setActiveStepsTo(
