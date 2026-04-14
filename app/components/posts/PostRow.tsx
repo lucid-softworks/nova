@@ -1,14 +1,15 @@
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Check, Copy, ExternalLink, MoreHorizontal, RotateCw, Target, Trash2, CalendarClock } from 'lucide-react'
+import { Check, Copy, ExternalLink, MoreHorizontal, RotateCw, Target, Trash2, CalendarClock, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import { PostStatusBadge, PostTypeBadge } from './badges'
 import { cn } from '~/lib/utils'
-import { schedulePost } from '~/server/scheduling'
+import { approvePost, requestChanges, schedulePost } from '~/server/scheduling'
 import { duplicatePost, retryPost, deletePosts, type PostRow as Row } from '~/server/posts'
+import type { WorkspaceRole } from '~/server/types'
 
 export function PostRow({
   post,
@@ -17,6 +18,7 @@ export function PostRow({
   onToggleSelect,
   onChanged,
   indent = false,
+  userRole,
 }: {
   post: Row
   workspaceSlug: string
@@ -24,10 +26,15 @@ export function PostRow({
   onToggleSelect: (id: string) => void
   onChanged: () => Promise<void>
   indent?: boolean
+  userRole?: WorkspaceRole
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [rescheduling, setRescheduling] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [requestChangesOpen, setRequestChangesOpen] = useState(false)
+  const [note, setNote] = useState('')
+  const canApprove = userRole === 'admin' || userRole === 'manager'
+  const isPending = post.status === 'pending_approval'
 
   const [scheduleAt, setScheduleAt] = useState<string>(() => {
     const d = post.scheduledAt ? new Date(post.scheduledAt) : new Date(Date.now() + 60 * 60 * 1000)
@@ -163,6 +170,38 @@ export function PostRow({
         </div>
         <div>{post.authorName ?? ''}</div>
       </div>
+      {isPending && canApprove ? (
+        <div className="flex flex-col gap-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-green-700"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true)
+              try {
+                await approvePost({
+                  data: { workspaceSlug, postId: post.id, scheduledAt: null },
+                })
+                await onChanged()
+              } finally {
+                setBusy(false)
+              }
+            }}
+          >
+            <ThumbsUp className="h-3 w-3" /> Approve
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-red-600"
+            onClick={() => setRequestChangesOpen(true)}
+            disabled={busy}
+          >
+            <ThumbsDown className="h-3 w-3" /> Request Changes
+          </Button>
+        </div>
+      ) : null}
       <div className="relative">
         <button
           type="button"
@@ -243,6 +282,54 @@ export function PostRow({
           </div>
         ) : null}
       </div>
+      {requestChangesOpen ? (
+        <div className="fixed inset-0 z-50" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="absolute inset-0 bg-black/30"
+            onClick={() => setRequestChangesOpen(false)}
+          />
+          <div className="absolute left-1/2 top-1/2 w-[min(420px,95%)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-neutral-200 bg-white p-4 shadow-xl">
+            <div className="mb-2 text-sm font-semibold">Request changes</div>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="What should change?"
+              className="min-h-[100px] w-full resize-y rounded border border-neutral-200 p-2 text-sm"
+            />
+            <div className="mt-3 flex justify-end gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setRequestChangesOpen(false)
+                  setNote('')
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  setBusy(true)
+                  try {
+                    await requestChanges({
+                      data: { workspaceSlug, postId: post.id, note },
+                    })
+                    setRequestChangesOpen(false)
+                    setNote('')
+                    await onChanged()
+                  } finally {
+                    setBusy(false)
+                  }
+                }}
+                disabled={busy}
+              >
+                {busy ? <Spinner /> : null} Send
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

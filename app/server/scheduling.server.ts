@@ -1,6 +1,7 @@
 import { and, asc, eq, gte } from 'drizzle-orm'
 import { db, schema } from './db'
 import { requireWorkspaceAccess } from './session.server'
+import { notifyUser, notifyWorkspaceApprovers } from './notifications.server'
 
 async function ensureWs(slug: string) {
   const r = await requireWorkspaceAccess(slug)
@@ -46,7 +47,67 @@ export async function submitForApprovalImpl(slug: string, postId: string) {
   await db
     .insert(schema.postActivity)
     .values({ postId, userId: user.id, action: 'edited', note: 'submitted for approval' })
+  await notifyWorkspaceApprovers({
+    workspaceId: workspace.id,
+    type: 'approval_requested',
+    title: 'A post needs your approval',
+    body: `${user.name} submitted a post for approval.`,
+    data: { postId },
+  })
   return { postId }
+}
+
+export async function approvePostImpl(slug: string, postId: string, scheduledAtIso: string | null) {
+  const { workspace, user } = await ensureWs(slug)
+  if (workspace.role !== 'admin' && workspace.role !== 'manager') {
+    throw new Error('Insufficient permission')
+  }
+  const post = await ensurePostInWorkspace(workspace.id, postId)
+  const when = scheduledAtIso ? new Date(scheduledAtIso) : new Date(Date.now() + 5_000)
+  await db
+    .update(schema.posts)
+    .set({ status: 'scheduled', scheduledAt: when, failedAt: null, failureReason: null })
+    .where(eq(schema.posts.id, postId))
+  await db
+    .insert(schema.postActivity)
+    .values({ postId, userId: user.id, action: 'approved' })
+  if (post.authorId) {
+    await notifyUser({
+      userId: post.authorId,
+      workspaceId: workspace.id,
+      type: 'post_approved',
+      title: 'Your post was approved',
+      body: `${user.name} approved your post.`,
+      data: { postId },
+    })
+  }
+  return { postId, scheduledAt: when.toISOString() }
+}
+
+export async function requestChangesImpl(slug: string, postId: string, note: string) {
+  const { workspace, user } = await ensureWs(slug)
+  if (workspace.role !== 'admin' && workspace.role !== 'manager') {
+    throw new Error('Insufficient permission')
+  }
+  const post = await ensurePostInWorkspace(workspace.id, postId)
+  await db
+    .update(schema.posts)
+    .set({ status: 'draft' })
+    .where(eq(schema.posts.id, postId))
+  await db
+    .insert(schema.postActivity)
+    .values({ postId, userId: user.id, action: 'rejected', note })
+  if (post.authorId) {
+    await notifyUser({
+      userId: post.authorId,
+      workspaceId: workspace.id,
+      type: 'post_rejected',
+      title: 'Changes requested on your post',
+      body: note || `${user.name} requested changes.`,
+      data: { postId },
+    })
+  }
+  return { ok: true }
 }
 
 export type QueueResult =

@@ -56,6 +56,8 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/posts/')({
 
 function PostsPage() {
   const { workspaceSlug } = Route.useParams()
+  const { workspace } = Route.useRouteContext()
+  const userRole = workspace.role
   const initial = Route.useLoaderData()
   const [rows, setRows] = useState<Row[]>(initial.rows)
   const [counts, setCounts] = useState<CountsByStatus>(initial.counts)
@@ -267,6 +269,7 @@ function PostsPage() {
                 selected={selectedIds.has(r.id)}
                 onToggleSelect={toggleSelect}
                 onChanged={reload}
+                userRole={userRole}
               />
             ))
           )}
@@ -281,6 +284,7 @@ function PostsPage() {
               selectedIds={selectedIds}
               onToggleSelect={toggleSelect}
               onChanged={reload}
+              userRole={userRole}
             />
           ))}
           {standalonePosts.length > 0 ? (
@@ -312,12 +316,14 @@ function CampaignGroupRow({
   selectedIds,
   onToggleSelect,
   onChanged,
+  userRole,
 }: {
   campaign: CampaignSummary
   workspaceSlug: string
   selectedIds: Set<string>
   onToggleSelect: (id: string) => void
   onChanged: () => Promise<void>
+  userRole: import('~/server/types').WorkspaceRole
 }) {
   const [expanded, setExpanded] = useState(false)
   const published = campaign.steps.filter((s) => s.status === 'published').length
@@ -382,6 +388,7 @@ function CampaignGroupRow({
                   onToggleSelect={onToggleSelect}
                   onChanged={onChanged}
                   indent
+                  userRole={userRole}
                 />
               </div>
             ) : null,

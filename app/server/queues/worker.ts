@@ -19,6 +19,7 @@ import type { PostJobData } from './postQueue'
 import { onStepComplete } from './campaignWorker'
 import { buildVariableMap, substitute } from '~/server/publishing/variables'
 import { isPublishError } from '~/server/publishing/errors'
+import { notifyUser } from '~/server/notifications.server'
 
 let worker: Worker<PostJobData> | null = null
 
@@ -218,12 +219,32 @@ async function processJob(job: { data: PostJobData }) {
       .set({ status: 'failed', failedAt: new Date(), failureReason: firstError })
       .where(eq(schema.posts.id, postId))
     await db.insert(schema.postActivity).values({ postId, action: 'failed', note: firstError })
+    if (post.authorId) {
+      await notifyUser({
+        userId: post.authorId,
+        workspaceId: post.workspaceId,
+        type: 'post_failed',
+        title: 'Your post failed to publish',
+        body: firstError ?? 'Publish failed',
+        data: { postId },
+      })
+    }
   } else {
     await db
       .update(schema.posts)
       .set({ status: 'published', publishedAt: new Date() })
       .where(eq(schema.posts.id, postId))
     await db.insert(schema.postActivity).values({ postId, action: 'published' })
+    if (post.authorId) {
+      await notifyUser({
+        userId: post.authorId,
+        workspaceId: post.workspaceId,
+        type: 'post_published',
+        title: 'Your post published',
+        body: platformTargets.map((t) => t.account.platform).join(', ') || 'Published',
+        data: { postId },
+      })
+    }
   }
 
   if (post.campaignStepId) {

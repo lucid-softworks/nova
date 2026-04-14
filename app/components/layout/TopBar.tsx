@@ -57,7 +57,7 @@ export function TopBar({
       </div>
 
       <div className="flex items-center gap-2">
-        <NotificationBell unreadCount={0} />
+        <NotificationBell />
 
         <div className="relative flex">
           <Button asChild className="rounded-r-none">

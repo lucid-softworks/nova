@@ -1,6 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import { db, schema } from './db'
 import { requireWorkspaceAccess } from './session.server'
+import { notifyWorkspaceAdmins } from './notifications.server'
 import type { WorkspaceRole } from './types'
 
 export type MemberRow = {
@@ -167,6 +168,15 @@ export async function addMemberByEmailImpl(
     })
     .returning({ id: schema.workspaceMembers.id })
   if (!row) throw new Error('Failed to add member')
+
+  await notifyWorkspaceAdmins({
+    workspaceId: workspace.id,
+    type: 'member_joined',
+    title: 'New workspace member',
+    body: `${target.name} joined as ${role}.`,
+    data: { userId: target.id },
+  })
+
   return { kind: 'ok', memberId: row.id }
 }
 
