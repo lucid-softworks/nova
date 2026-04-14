@@ -12,6 +12,7 @@ import {
   captcha,
 } from 'better-auth/plugins'
 import { db, schema } from '~/server/db'
+import { sendEmail } from '~/server/mailer.server'
 
 const requireEnv = (key: string): string => {
   const v = process.env[key]
@@ -21,11 +22,10 @@ const requireEnv = (key: string): string => {
 
 const optionalEnv = (key: string): string | undefined => process.env[key] || undefined
 
-// Dev-safe mailer: logs magic-link + OTP payloads to the console until a
-// real mailer lands in Stage 22. Swap this out for server/mailer when it
-// arrives.
-function devLog(label: string, payload: Record<string, unknown>) {
-  console.log(`[auth:${label}]`, JSON.stringify(payload))
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) =>
+    c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '"' ? '&quot;' : '&#39;',
+  )
 }
 
 const captchaSiteKey = optionalEnv('CAPTCHA_SITE_KEY')
@@ -48,12 +48,40 @@ const plugins = [
   passkey({ rpName: 'SocialHub' }),
   magicLink({
     sendMagicLink: async ({ email, url }) => {
-      devLog('magicLink', { email, url })
+      await sendEmail({
+        to: email,
+        subject: 'Your SocialHub sign-in link',
+        text: `Sign in to SocialHub:\n\n${url}\n\nThis link expires in 5 minutes.`,
+        html: `
+          <div style="font-family:system-ui;max-width:480px;margin:24px auto;color:#111">
+            <h2 style="margin:0 0 12px">Sign in to SocialHub</h2>
+            <p>Click the button below to sign in. This link expires in 5 minutes.</p>
+            <p style="margin:20px 0">
+              <a href="${escapeHtml(url)}" style="display:inline-block;background:#6366f1;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Sign in</a>
+            </p>
+            <p style="color:#666;font-size:12px">
+              Or paste this link: <br><code>${escapeHtml(url)}</code>
+            </p>
+          </div>
+        `,
+      })
     },
   }),
   emailOTP({
     sendVerificationOTP: async ({ email, otp, type }) => {
-      devLog('emailOTP', { email, otp, type })
+      await sendEmail({
+        to: email,
+        subject: `Your SocialHub code: ${otp}`,
+        text: `Your verification code is ${otp} (${type}).`,
+        html: `
+          <div style="font-family:system-ui;max-width:480px;margin:24px auto;color:#111">
+            <h2 style="margin:0 0 12px">Verification code</h2>
+            <p>Enter this code to ${escapeHtml(type)}:</p>
+            <div style="font-size:32px;font-weight:700;letter-spacing:6px;margin:12px 0">${escapeHtml(otp)}</div>
+            <p style="color:#666;font-size:12px">This code expires in 5 minutes.</p>
+          </div>
+        `,
+      })
     },
   }),
   haveIBeenPwned({

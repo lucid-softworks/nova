@@ -126,6 +126,8 @@ export const user = pgTable('user', {
   image: text('image'),
   avatarUrl: text('avatar_url'),
   twoFactorEnabled: boolean('two_factor_enabled').default(false).notNull(),
+  notificationPreferences: jsonb('notification_preferences').default({}).notNull(),
+  brrrWebhookSecret: text('brrr_webhook_secret'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
