@@ -26,6 +26,7 @@ import { initialState, type ConnectedAccount, type Version } from './types'
 import { MediaZone } from './MediaZone'
 import { detectMismatches, MediaMismatchBanner } from './MediaMismatchBanner'
 import { PostPreview } from './PostPreview'
+import { AIAssistPanel } from './AIAssistPanel'
 import { saveDraft } from '~/server/composer'
 import { addToQueue, publishNow, schedulePost } from '~/server/scheduling'
 
@@ -42,6 +43,7 @@ export function StandardComposer({
   const [toast, setToast] = useState<string | null>(null)
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [scheduleAt, setScheduleAt] = useState<string>(defaultScheduleLocal())
+  const [aiOpen, setAiOpen] = useState(false)
   const navigate = useNavigate()
 
   const selectedPlatforms = useMemo<PlatformKey[]>(() => {
@@ -206,6 +208,7 @@ export function StandardComposer({
               supportsFirstComment={!!supportsFirstComment}
               supportsThread={!!supportsThread}
               dispatch={dispatch}
+              onOpenAI={() => setAiOpen(true)}
             />
             <MediaZone
               workspaceSlug={workspaceSlug}
@@ -333,6 +336,19 @@ export function StandardComposer({
           </Card>
         )}
       </div>
+
+      <AIAssistPanel
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        workspaceSlug={workspaceSlug}
+        platforms={activeVersion?.platforms ?? selectedPlatforms}
+        existingContent={activeVersion?.content ?? ''}
+        onUseText={(text) => {
+          if (activeVersion) {
+            dispatch({ type: 'UPDATE_CONTENT', versionId: activeVersion.id, content: text })
+          }
+        }}
+      />
     </div>
   )
 }
@@ -595,11 +611,13 @@ function Editor({
   supportsFirstComment,
   supportsThread,
   dispatch,
+  onOpenAI,
 }: {
   version: Version
   supportsFirstComment: boolean
   supportsThread: boolean
   dispatch: React.Dispatch<import('./state').Action>
+  onOpenAI: () => void
 }) {
   const minLimit = version.platforms.length
     ? Math.min(...version.platforms.map((p) => PLATFORMS[p].textLimit))
@@ -725,7 +743,7 @@ function Editor({
               </div>
             ) : null}
           </div>
-          <ToolbarBtn title="AI Assist" onClick={() => alert('AI Assist lands in Stage 8')}>
+          <ToolbarBtn title="AI Assist" onClick={onOpenAI}>
             <Sparkles className="h-4 w-4" />
           </ToolbarBtn>
           <div className="ml-auto flex items-center gap-3 text-xs">
