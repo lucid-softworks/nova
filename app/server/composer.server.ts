@@ -51,6 +51,9 @@ export async function uploadMediaImpl(slug: string, file: File, folderId: string
       mimeType: existing.mimeType,
       size: existing.size,
       url: existing.url,
+      thumbnailUrl: existing.thumbnailUrl,
+      width: existing.width,
+      height: existing.height,
     }
   }
 
@@ -61,6 +64,30 @@ export async function uploadMediaImpl(slug: string, file: File, folderId: string
   const abs = path.join(dir, filename)
   await writeFile(abs, buf)
 
+  // Images: probe dimensions + generate a 320px max-edge webp thumbnail.
+  // Videos: deferred (ffmpeg first-frame) — plan item calls it out.
+  let width: number | null = null
+  let height: number | null = null
+  let thumbnailUrl: string | null = null
+  const mime = file.type || 'application/octet-stream'
+  if (mime.startsWith('image/')) {
+    try {
+      const { default: sharp } = await import('sharp')
+      const meta = await sharp(buf).metadata()
+      width = meta.width ?? null
+      height = meta.height ?? null
+      const thumbName = `${path.parse(filename).name}.thumb.webp`
+      const thumbAbs = path.join(dir, thumbName)
+      await sharp(buf)
+        .resize({ width: 320, height: 320, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 80 })
+        .toFile(thumbAbs)
+      thumbnailUrl = publicUrlFor(thumbName)
+    } catch (e) {
+      console.warn('[media] thumbnail generation failed', e)
+    }
+  }
+
   const [row] = await db
     .insert(schema.mediaAssets)
     .values({
@@ -68,9 +95,12 @@ export async function uploadMediaImpl(slug: string, file: File, folderId: string
       uploadedById: user.id,
       filename,
       originalName: file.name,
-      mimeType: file.type || 'application/octet-stream',
+      mimeType: mime,
       size: buf.length,
       url: publicUrlFor(filename),
+      width,
+      height,
+      thumbnailUrl,
       folderId,
       contentHash,
     })
@@ -83,6 +113,9 @@ export async function uploadMediaImpl(slug: string, file: File, folderId: string
     mimeType: row.mimeType,
     size: row.size,
     url: row.url,
+    thumbnailUrl: row.thumbnailUrl,
+    width: row.width,
+    height: row.height,
   }
 }
 

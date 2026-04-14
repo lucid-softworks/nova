@@ -43,7 +43,12 @@ export function MediaAssetCard({
             </div>
           </>
         ) : (
-          <img src={asset.url} alt={asset.originalName} className="h-full w-full object-cover" />
+          <img
+            src={asset.thumbnailUrl ?? asset.url}
+            alt={asset.originalName}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
         )}
         <span className="absolute left-1.5 top-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-white">
           {asset.kind === 'other' ? 'File' : asset.kind}
