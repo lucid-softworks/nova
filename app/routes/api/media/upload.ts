@@ -7,6 +7,7 @@ export const Route = createFileRoute('/api/media/upload')({
       POST: async ({ request }) => {
         const url = new URL(request.url)
         const workspaceSlug = url.searchParams.get('workspaceSlug')
+        const folderId = url.searchParams.get('folderId')
         if (!workspaceSlug) return Response.json({ error: 'workspaceSlug required' }, { status: 400 })
 
         const form = await request.formData()
@@ -14,7 +15,7 @@ export const Route = createFileRoute('/api/media/upload')({
         if (!(file instanceof File)) return Response.json({ error: 'file required' }, { status: 400 })
 
         try {
-          const asset = await uploadMediaImpl(workspaceSlug, file)
+          const asset = await uploadMediaImpl(workspaceSlug, file, folderId || null)
           return Response.json(asset)
         } catch (e) {
           const message = e instanceof Error ? e.message : 'Upload failed'

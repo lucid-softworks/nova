@@ -20,7 +20,7 @@ async function ensureWs(slug: string) {
   return r
 }
 
-export async function uploadMediaImpl(slug: string, file: File) {
+export async function uploadMediaImpl(slug: string, file: File, folderId: string | null = null) {
   const { workspace, user } = await ensureWs(slug)
   const ext = path.extname(file.name) || ''
   const filename = `${randomUUID()}${ext}`
@@ -29,6 +29,16 @@ export async function uploadMediaImpl(slug: string, file: File) {
   const abs = path.join(dir, filename)
   const buf = Buffer.from(await file.arrayBuffer())
   await writeFile(abs, buf)
+
+  if (folderId) {
+    const parent = await db.query.mediaFolders.findFirst({
+      where: and(
+        eq(schema.mediaFolders.id, folderId),
+        eq(schema.mediaFolders.workspaceId, workspace.id),
+      ),
+    })
+    if (!parent) throw new Error('Destination folder not found')
+  }
 
   const [row] = await db
     .insert(schema.mediaAssets)
@@ -40,6 +50,7 @@ export async function uploadMediaImpl(slug: string, file: File) {
       mimeType: file.type || 'application/octet-stream',
       size: buf.length,
       url: publicUrlFor(filename),
+      folderId,
     })
     .returning()
   if (!row) throw new Error('Failed to record media')

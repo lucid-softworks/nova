@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Upload, X, FolderOpen } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Spinner } from '~/components/ui/spinner'
+import { MediaLibraryPicker } from '~/components/media/MediaLibraryPicker'
 import type { MediaAsset } from './types'
 
 export function MediaZone({
@@ -21,6 +22,7 @@ export function MediaZone({
   const [uploading, setUploading] = useState<string[]>([])
   const [dragActive, setDragActive] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   const uploadFiles = async (files: File[]) => {
     if (files.length === 0) return
@@ -81,7 +83,7 @@ export function MediaZone({
           >
             Upload files
           </Button>
-          <Button type="button" variant="ghost" size="sm" disabled>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setPickerOpen(true)}>
             <FolderOpen className="h-4 w-4" /> Open Media Library
           </Button>
         </div>
@@ -136,6 +138,23 @@ export function MediaZone({
           ))}
         </div>
       ) : null}
+      <MediaLibraryPicker
+        open={pickerOpen}
+        workspaceSlug={workspaceSlug}
+        excludeIds={mediaIds}
+        onClose={() => setPickerOpen(false)}
+        onInsert={(assets) =>
+          onUploaded(
+            assets.map((a) => ({
+              id: a.id,
+              url: a.url,
+              originalName: a.originalName,
+              mimeType: a.mimeType,
+              size: a.size,
+            })),
+          )
+        }
+      />
     </div>
   )
 }
