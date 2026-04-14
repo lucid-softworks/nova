@@ -3,13 +3,18 @@ import { cn } from '~/lib/utils'
 import { StandardComposer } from './StandardComposer'
 import { CampaignComposer } from './CampaignComposer'
 import type { ConnectedAccount } from './types'
+import type { WorkspaceRole } from '~/server/types'
 
 export function ComposerPage({
   workspaceSlug,
   accounts,
+  userRole,
+  requireApproval,
 }: {
   workspaceSlug: string
   accounts: ConnectedAccount[]
+  userRole: WorkspaceRole
+  requireApproval: boolean
 }) {
   const [mode, setMode] = useState<'standard' | 'campaign'>('standard')
   return (
@@ -37,7 +42,12 @@ export function ComposerPage({
         </button>
       </div>
       {mode === 'standard' ? (
-        <StandardComposer workspaceSlug={workspaceSlug} accounts={accounts} />
+        <StandardComposer
+          workspaceSlug={workspaceSlug}
+          accounts={accounts}
+          userRole={userRole}
+          requireApproval={requireApproval}
+        />
       ) : (
         <CampaignComposer workspaceSlug={workspaceSlug} accounts={accounts} />
       )}

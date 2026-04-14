@@ -36,6 +36,19 @@ export async function publishNowImpl(slug: string, postId: string) {
   return scheduleAtImpl(slug, postId, new Date(Date.now() + 5_000))
 }
 
+export async function submitForApprovalImpl(slug: string, postId: string) {
+  const { workspace, user } = await ensureWs(slug)
+  await ensurePostInWorkspace(workspace.id, postId)
+  await db
+    .update(schema.posts)
+    .set({ status: 'pending_approval', failedAt: null, failureReason: null })
+    .where(eq(schema.posts.id, postId))
+  await db
+    .insert(schema.postActivity)
+    .values({ postId, userId: user.id, action: 'edited', note: 'submitted for approval' })
+  return { postId }
+}
+
 export type QueueResult =
   | { ok: true; postId: string; scheduledAt: string }
   | { ok: false; reason: 'no_schedule' }

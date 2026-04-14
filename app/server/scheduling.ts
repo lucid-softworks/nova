@@ -4,6 +4,7 @@ import {
   scheduleAtImpl,
   addToQueueImpl,
   publishNowImpl,
+  submitForApprovalImpl,
 } from './scheduling.server'
 
 const scheduleSchema = z.object({
@@ -35,3 +36,12 @@ const publishNowSchema = z.object({
 export const publishNow = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => publishNowSchema.parse(d))
   .handler(async ({ data }) => publishNowImpl(data.workspaceSlug, data.postId))
+
+const submitSchema = z.object({
+  workspaceSlug: z.string().min(1),
+  postId: z.string().uuid(),
+})
+
+export const submitForApproval = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => submitSchema.parse(d))
+  .handler(async ({ data }) => submitForApprovalImpl(data.workspaceSlug, data.postId))

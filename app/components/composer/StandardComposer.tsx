@@ -28,17 +28,23 @@ import { PostPreview } from './PostPreview'
 import { AIAssistPanel } from './AIAssistPanel'
 import { HashtagPickerButton } from './HashtagPickerButton'
 import { saveDraft } from '~/server/composer'
-import { addToQueue, publishNow, schedulePost } from '~/server/scheduling'
+import { addToQueue, publishNow, schedulePost, submitForApproval } from '~/server/scheduling'
+import type { WorkspaceRole } from '~/server/types'
 
 export function StandardComposer({
   workspaceSlug,
   accounts,
+  userRole,
+  requireApproval,
 }: {
   workspaceSlug: string
   accounts: ConnectedAccount[]
+  userRole: WorkspaceRole
+  requireApproval: boolean
 }) {
+  const needsApproval = requireApproval && userRole === 'editor'
   const [state, dispatch] = useReducer(composerReducer, undefined, initialState)
-  const [saving, setSaving] = useState<null | 'draft' | 'schedule' | 'queue' | 'now'>(null)
+  const [saving, setSaving] = useState<null | 'draft' | 'schedule' | 'queue' | 'now' | 'approval'>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [scheduleOpen, setScheduleOpen] = useState(false)
@@ -201,6 +207,20 @@ export function StandardComposer({
     }
   }
 
+  const onSubmitForApproval = async () => {
+    setSaveError(null)
+    setSaving('approval')
+    try {
+      const postId = await persist()
+      await submitForApproval({ data: { workspaceSlug, postId } })
+      navigate({ to: '/$workspaceSlug/posts', params: { workspaceSlug } })
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Could not submit')
+    } finally {
+      setSaving(null)
+    }
+  }
+
   const onDiscard = () => {
     const hasContent =
       state.versions.some((v) => v.content || v.firstComment || v.mediaIds.length > 0) ||
@@ -277,31 +297,44 @@ export function StandardComposer({
               {saving === 'draft' ? <Spinner /> : null}
               Save Draft
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onAddToQueue}
-              disabled={saving !== null || hasMismatch || state.selectedAccountIds.length === 0}
-            >
-              {saving === 'queue' ? <Spinner /> : null}
-              Add to Queue
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onPublishNow}
-              disabled={saving !== null || hasMismatch || state.selectedAccountIds.length === 0}
-            >
-              {saving === 'now' ? <Spinner /> : null}
-              Publish Now
-            </Button>
-            <Button
-              type="button"
-              onClick={() => setScheduleOpen((o) => !o)}
-              disabled={saving !== null || hasMismatch || state.selectedAccountIds.length === 0}
-            >
-              Schedule
-            </Button>
+            {needsApproval ? (
+              <Button
+                type="button"
+                onClick={onSubmitForApproval}
+                disabled={saving !== null || hasMismatch || state.selectedAccountIds.length === 0}
+              >
+                {saving === 'approval' ? <Spinner /> : null}
+                Submit for Approval
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onAddToQueue}
+                  disabled={saving !== null || hasMismatch || state.selectedAccountIds.length === 0}
+                >
+                  {saving === 'queue' ? <Spinner /> : null}
+                  Add to Queue
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onPublishNow}
+                  disabled={saving !== null || hasMismatch || state.selectedAccountIds.length === 0}
+                >
+                  {saving === 'now' ? <Spinner /> : null}
+                  Publish Now
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setScheduleOpen((o) => !o)}
+                  disabled={saving !== null || hasMismatch || state.selectedAccountIds.length === 0}
+                >
+                  Schedule
+                </Button>
+              </>
+            )}
             {scheduleOpen ? (
               <div className="absolute bottom-full right-0 z-20 mb-2 w-80 rounded-md border border-neutral-200 bg-white p-4 shadow-lg">
                 <div className="space-y-3">
