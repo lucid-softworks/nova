@@ -637,6 +637,112 @@ export async function changeToDraftImpl(slug: string, postIds: string[]) {
   return { ok: true }
 }
 
+// Campaign analytics rollup
+
+export type CampaignAnalytics = {
+  totals: {
+    reach: number
+    impressions: number
+    engagements: number
+    likes: number
+    comments: number
+    shares: number
+    clicks: number
+    publishedSteps: number
+    totalSteps: number
+  }
+  byPlatform: Array<{
+    platform: PlatformKey
+    reach: number
+    impressions: number
+    engagements: number
+    engagementRate: number
+    posts: number
+  }>
+}
+
+export async function getCampaignAnalyticsImpl(
+  slug: string,
+  campaignId: string,
+): Promise<CampaignAnalytics | null> {
+  const { workspace } = await ensureWs(slug)
+  const campaign = await db.query.campaigns.findFirst({
+    where: and(
+      eq(schema.campaigns.id, campaignId),
+      eq(schema.campaigns.workspaceId, workspace.id),
+    ),
+  })
+  if (!campaign) return null
+
+  const steps = await db
+    .select({ status: schema.campaignSteps.status })
+    .from(schema.campaignSteps)
+    .where(eq(schema.campaignSteps.campaignId, campaignId))
+
+  const snaps = await db
+    .select({
+      platform: schema.socialAccounts.platform,
+      reach: schema.analyticsSnapshots.reach,
+      impressions: schema.analyticsSnapshots.impressions,
+      engagements: schema.analyticsSnapshots.engagements,
+      likes: schema.analyticsSnapshots.likes,
+      comments: schema.analyticsSnapshots.comments,
+      shares: schema.analyticsSnapshots.shares,
+      clicks: schema.analyticsSnapshots.clicks,
+      posts: schema.analyticsSnapshots.posts,
+    })
+    .from(schema.analyticsSnapshots)
+    .innerJoin(
+      schema.socialAccounts,
+      eq(schema.socialAccounts.id, schema.analyticsSnapshots.socialAccountId),
+    )
+    .where(eq(schema.analyticsSnapshots.campaignId, campaignId))
+
+  const totals = {
+    reach: 0,
+    impressions: 0,
+    engagements: 0,
+    likes: 0,
+    comments: 0,
+    shares: 0,
+    clicks: 0,
+    publishedSteps: steps.filter((s) => s.status === 'published').length,
+    totalSteps: steps.length,
+  }
+  const byPlatform = new Map<
+    PlatformKey,
+    { reach: number; impressions: number; engagements: number; posts: number }
+  >()
+  for (const s of snaps) {
+    totals.reach += s.reach
+    totals.impressions += s.impressions
+    totals.engagements += s.engagements
+    totals.likes += s.likes
+    totals.comments += s.comments
+    totals.shares += s.shares
+    totals.clicks += s.clicks
+    const key = s.platform as PlatformKey
+    const cur = byPlatform.get(key) ?? { reach: 0, impressions: 0, engagements: 0, posts: 0 }
+    cur.reach += s.reach
+    cur.impressions += s.impressions
+    cur.engagements += s.engagements
+    cur.posts += s.posts
+    byPlatform.set(key, cur)
+  }
+
+  return {
+    totals,
+    byPlatform: [...byPlatform.entries()].map(([platform, v]) => ({
+      platform,
+      reach: v.reach,
+      impressions: v.impressions,
+      engagements: v.engagements,
+      engagementRate: v.reach > 0 ? v.engagements / v.reach : 0,
+      posts: v.posts,
+    })),
+  }
+}
+
 // Activity timeline
 
 export type PostActivityRow = {

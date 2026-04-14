@@ -17,10 +17,12 @@ import {
   skipCampaignStepImpl,
   triggerCampaignStepNowImpl,
   listPostActivityImpl,
+  getCampaignAnalyticsImpl,
   type PostActivityRow,
+  type CampaignAnalytics,
 } from './posts.server'
 
-export type { PostActivityRow }
+export type { PostActivityRow, CampaignAnalytics }
 
 export type {
   PostsTab,
@@ -140,3 +142,7 @@ export const triggerCampaignStepNow = createServerFn({ method: 'POST' })
 export const listPostActivity = createServerFn({ method: 'GET' })
   .inputValidator((d: unknown) => singleSchema.parse(d))
   .handler(async ({ data }) => listPostActivityImpl(data.workspaceSlug, data.postId))
+
+export const getCampaignAnalytics = createServerFn({ method: 'GET' })
+  .inputValidator((d: unknown) => campaignActionSchema.parse(d))
+  .handler(async ({ data }) => getCampaignAnalyticsImpl(data.workspaceSlug, data.campaignId))
