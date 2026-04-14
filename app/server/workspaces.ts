@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
-import { loadSessionContext } from './auth-context'
+import { loadSessionContext } from './session'
 import { db, schema } from './db'
 import { slugify } from '~/lib/utils'
 
@@ -24,7 +24,7 @@ const createInput = z.object({
 })
 
 export const createWorkspace = createServerFn({ method: 'POST' })
-  .validator((d: unknown) => createInput.parse(d))
+  .inputValidator((d: unknown) => createInput.parse(d))
   .handler(async ({ data }) => {
     const ctx = await loadSessionContext()
     if (!ctx.user) throw new Error('Not authenticated')
@@ -60,7 +60,7 @@ export const createWorkspace = createServerFn({ method: 'POST' })
 const slugCheckInput = z.object({ slug: z.string().min(1) })
 
 export const isSlugAvailable = createServerFn({ method: 'GET' })
-  .validator((d: unknown) => slugCheckInput.parse(d))
+  .inputValidator((d: unknown) => slugCheckInput.parse(d))
   .handler(async ({ data }) => {
     const slug = slugify(data.slug)
     if (!slug) return { available: false, slug }
