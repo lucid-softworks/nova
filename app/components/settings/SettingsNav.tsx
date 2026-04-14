@@ -6,6 +6,7 @@ const TABS = [
   { key: 'schedule', label: 'Posting Schedule', to: '/$workspaceSlug/settings/schedule' as const },
   { key: 'notifications', label: 'Notifications', to: '/$workspaceSlug/settings/notifications' as const },
   { key: 'api', label: 'API & Webhooks', to: '/$workspaceSlug/settings/api' as const },
+  { key: 'security', label: 'Security', to: '/$workspaceSlug/settings/security' as const },
   { key: 'white-label', label: 'White Label', to: '/$workspaceSlug/settings/white-label' as const },
 ] as const
 

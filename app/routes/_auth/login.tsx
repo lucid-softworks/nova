@@ -65,6 +65,38 @@ function LoginPage() {
           <div className="h-px flex-1 bg-neutral-200" />
         </div>
         <div className="space-y-2">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={async () => {
+              const email = form.getValues('email')
+              if (!email) {
+                setError('Enter your email first')
+                return
+              }
+              setError(null)
+              const res = await authClient.signIn.magicLink({ email, callbackURL: '/' })
+              if (res?.error) setError(res.error.message ?? 'Could not send link')
+              else setError('Check your inbox for a sign-in link.')
+            }}
+          >
+            Email me a magic link
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={async () => {
+              setError(null)
+              try {
+                await authClient.signIn.passkey()
+                navigate({ to: '/' })
+              } catch (e) {
+                setError(e instanceof Error ? e.message : 'Passkey sign-in cancelled')
+              }
+            }}
+          >
+            Sign in with a passkey
+          </Button>
           <Button variant="outline" className="w-full" onClick={() => oauth('google')}>
             Continue with Google
           </Button>

@@ -1,12 +1,26 @@
 import { createAuthClient } from 'better-auth/react'
 import { apiKeyClient } from '@better-auth/api-key/client'
+import { passkeyClient } from '@better-auth/passkey/client'
+import {
+  twoFactorClient,
+  magicLinkClient,
+  emailOTPClient,
+  multiSessionClient,
+} from 'better-auth/client/plugins'
 
 export const authClient = createAuthClient({
   baseURL:
     typeof window !== 'undefined'
       ? window.location.origin
       : process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
-  plugins: [apiKeyClient()],
+  plugins: [
+    apiKeyClient(),
+    passkeyClient(),
+    twoFactorClient(),
+    magicLinkClient(),
+    emailOTPClient(),
+    multiSessionClient(),
+  ],
 })
 
 export const { signIn, signUp, signOut, useSession, getSession } = authClient
