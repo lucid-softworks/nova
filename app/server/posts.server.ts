@@ -701,6 +701,40 @@ export async function cancelCampaignImpl(slug: string, campaignId: string) {
   return { ok: true }
 }
 
+export async function skipCampaignStepImpl(slug: string, stepId: string) {
+  const { workspace } = await ensureWs(slug)
+  const step = await db.query.campaignSteps.findFirst({
+    where: eq(schema.campaignSteps.id, stepId),
+  })
+  if (!step) throw new Error('Step not found')
+  const campaign = await db.query.campaigns.findFirst({
+    where: eq(schema.campaigns.id, step.campaignId),
+  })
+  if (!campaign || campaign.workspaceId !== workspace.id) {
+    throw new Error('Step not found')
+  }
+  const { skipStep } = await import('./queues/campaignWorker')
+  await skipStep(stepId)
+  return { ok: true }
+}
+
+export async function triggerCampaignStepNowImpl(slug: string, stepId: string) {
+  const { workspace } = await ensureWs(slug)
+  const step = await db.query.campaignSteps.findFirst({
+    where: eq(schema.campaignSteps.id, stepId),
+  })
+  if (!step) throw new Error('Step not found')
+  const campaign = await db.query.campaigns.findFirst({
+    where: eq(schema.campaigns.id, step.campaignId),
+  })
+  if (!campaign || campaign.workspaceId !== workspace.id) {
+    throw new Error('Step not found')
+  }
+  const { triggerStepNow } = await import('./queues/campaignWorker')
+  await triggerStepNow(stepId)
+  return { ok: true }
+}
+
 export async function duplicateCampaignImpl(slug: string, campaignId: string) {
   const { workspace, user } = await ensureWs(slug)
   const source = await db.query.campaigns.findFirst({

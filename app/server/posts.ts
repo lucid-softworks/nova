@@ -14,6 +14,8 @@ import {
   pauseCampaignImpl,
   cancelCampaignImpl,
   duplicateCampaignImpl,
+  skipCampaignStepImpl,
+  triggerCampaignStepNowImpl,
 } from './posts.server'
 
 export type {
@@ -117,3 +119,16 @@ export const cancelCampaign = createServerFn({ method: 'POST' })
 export const duplicateCampaign = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => campaignActionSchema.parse(d))
   .handler(async ({ data }) => duplicateCampaignImpl(data.workspaceSlug, data.campaignId))
+
+const stepActionSchema = z.object({
+  workspaceSlug: z.string().min(1),
+  stepId: z.string().uuid(),
+})
+
+export const skipCampaignStep = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => stepActionSchema.parse(d))
+  .handler(async ({ data }) => skipCampaignStepImpl(data.workspaceSlug, data.stepId))
+
+export const triggerCampaignStepNow = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => stepActionSchema.parse(d))
+  .handler(async ({ data }) => triggerCampaignStepNowImpl(data.workspaceSlug, data.stepId))

@@ -1,7 +1,13 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { useState } from 'react'
-import { ArrowLeft, ExternalLink, RotateCw } from 'lucide-react'
-import { getCampaignDetail, retryPost, type CampaignDetail } from '~/server/posts'
+import { ArrowLeft, ExternalLink, RotateCw, SkipForward, Zap } from 'lucide-react'
+import {
+  getCampaignDetail,
+  retryPost,
+  skipCampaignStep,
+  triggerCampaignStepNow,
+  type CampaignDetail,
+} from '~/server/posts'
 import { PLATFORMS } from '~/lib/platforms'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
@@ -77,6 +83,14 @@ function CampaignDetailPage() {
                 await reload()
               }
             }}
+            onSkip={async () => {
+              await skipCampaignStep({ data: { workspaceSlug, stepId: step.id } })
+              await reload()
+            }}
+            onTriggerNow={async () => {
+              await triggerCampaignStepNow({ data: { workspaceSlug, stepId: step.id } })
+              await reload()
+            }}
           />
         ))}
       </div>
@@ -89,12 +103,29 @@ function StepCard({
   allSteps,
   workspaceSlug: _workspaceSlug,
   onRetry,
+  onSkip,
+  onTriggerNow,
 }: {
   step: CampaignDetail['stepsWithPlatforms'][number]
   allSteps: CampaignDetail['steps']
   workspaceSlug: string
   onRetry: () => Promise<void>
+  onSkip: () => Promise<void>
+  onTriggerNow: () => Promise<void>
 }) {
+  const [busy, setBusy] = useState(false)
+  const canTrigger =
+    step.status === 'waiting' || step.status === 'ready' || step.status === 'on_hold'
+  const canSkip =
+    step.status === 'waiting' || step.status === 'ready' || step.status === 'on_hold'
+  const guarded = async (fn: () => Promise<void>) => {
+    setBusy(true)
+    try {
+      await fn()
+    } finally {
+      setBusy(false)
+    }
+  }
   const depIndex = step.dependsOnStepId
     ? allSteps.findIndex((s) => s.id === step.dependsOnStepId)
     : -1
@@ -128,11 +159,36 @@ function StepCard({
             </div>
             <div className="text-xs text-neutral-500">{triggerDesc}</div>
           </div>
-          {step.post?.status === 'failed' ? (
-            <Button size="sm" variant="outline" onClick={onRetry}>
-              <RotateCw className="h-3 w-3" /> Retry
-            </Button>
-          ) : null}
+          <div className="flex flex-wrap gap-1">
+            {canTrigger ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void guarded(onTriggerNow)}
+                disabled={busy}
+              >
+                <Zap className="h-3 w-3" /> Trigger now
+              </Button>
+            ) : null}
+            {canSkip ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  if (!confirm('Skip this step? Dependents will fire as if it succeeded.')) return
+                  void guarded(onSkip)
+                }}
+                disabled={busy}
+              >
+                <SkipForward className="h-3 w-3" /> Skip
+              </Button>
+            ) : null}
+            {step.post?.status === 'failed' ? (
+              <Button size="sm" variant="outline" onClick={() => void guarded(onRetry)} disabled={busy}>
+                <RotateCw className="h-3 w-3" /> Retry
+              </Button>
+            ) : null}
+          </div>
         </div>
 
         {step.post ? (

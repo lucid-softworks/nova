@@ -3,6 +3,49 @@ import { db, schema } from '~/server/db'
 import { getPostQueue } from './postQueue'
 import { publishWebhookEvent } from '~/server/webhooks.server'
 
+export async function skipStep(stepId: string) {
+  const step = await db.query.campaignSteps.findFirst({
+    where: eq(schema.campaignSteps.id, stepId),
+  })
+  if (!step) return
+  await db
+    .update(schema.campaignSteps)
+    .set({ status: 'skipped' })
+    .where(eq(schema.campaignSteps.id, stepId))
+  if (step.postId) {
+    await db
+      .update(schema.posts)
+      .set({ status: 'draft', scheduledAt: null })
+      .where(eq(schema.posts.id, step.postId))
+  }
+  // Treat skip like success for dependent scheduling.
+  await scheduleDependents(step.campaignId, stepId)
+  await recomputeCampaignStatus(step.campaignId)
+}
+
+export async function triggerStepNow(stepId: string) {
+  const step = await db.query.campaignSteps.findFirst({
+    where: eq(schema.campaignSteps.id, stepId),
+  })
+  if (!step || !step.postId) return
+  const queue = getPostQueue()
+  const wsId = await workspaceForPost(step.postId)
+  await queue.add(
+    'publish',
+    { postId: step.postId, workspaceId: wsId },
+    { jobId: `post-${step.postId}-${Date.now()}` },
+  )
+  await db
+    .update(schema.campaignSteps)
+    .set({ status: 'publishing', triggerScheduledAt: new Date() })
+    .where(eq(schema.campaignSteps.id, stepId))
+  await db
+    .update(schema.posts)
+    .set({ status: 'publishing', scheduledAt: new Date() })
+    .where(eq(schema.posts.id, step.postId))
+  await recomputeCampaignStatus(step.campaignId)
+}
+
 export async function onStepComplete(stepId: string, success: boolean) {
   const step = await db.query.campaignSteps.findFirst({
     where: eq(schema.campaignSteps.id, stepId),
