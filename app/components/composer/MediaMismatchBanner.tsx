@@ -49,8 +49,41 @@ export function detectMismatches(
         message: `${PLATFORMS[platform].label} doesn't accept ${badVideo.originalName.split('.').pop()} videos (accepted: ${req.acceptedVideoFormats.join(', ') || 'none'}).`,
       })
     }
+    // Aspect-ratio check: when the platform enforces specific ratios and
+    // we know the image dimensions, flag any image that doesn't match.
+    if (req.requiredAspectRatios && req.requiredAspectRatios.length > 0) {
+      for (const img of images) {
+        if (!img.width || !img.height) continue
+        const ratio = img.width / img.height
+        const ok = req.requiredAspectRatios.some((spec) => {
+          const parsed = parseAspectRatio(spec)
+          return parsed !== null && withinTolerance(ratio, parsed)
+        })
+        if (!ok) {
+          out.push({
+            platform,
+            message: `${PLATFORMS[platform].label} requires ${req.requiredAspectRatios.join(' / ')} aspect ratio; "${img.originalName}" is ${img.width}×${img.height} (${ratio.toFixed(2)}:1).`,
+          })
+          break
+        }
+      }
+    }
   }
   return out
+}
+
+function parseAspectRatio(spec: string): number | null {
+  const m = spec.match(/^(\d+)\s*[:/]\s*(\d+)$/)
+  if (!m) return null
+  const w = Number(m[1])
+  const h = Number(m[2])
+  if (!w || !h) return null
+  return w / h
+}
+
+function withinTolerance(actual: number, target: number): boolean {
+  // 3% slack — lets 1080×1350 (4:5 = 0.80) match 0.78-0.82.
+  return Math.abs(actual - target) / target <= 0.03
 }
 
 export function MediaMismatchBanner({ items }: { items: Mismatch[] }) {

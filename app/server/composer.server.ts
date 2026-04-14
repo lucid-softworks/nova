@@ -259,6 +259,8 @@ export type LoadedPostMedia = {
   originalName: string
   mimeType: string
   size: number
+  width: number | null
+  height: number | null
 }
 
 export type LoadedPostVersion = {
@@ -322,6 +324,8 @@ export async function loadPostForComposerImpl(
       originalName: schema.mediaAssets.originalName,
       mimeType: schema.mediaAssets.mimeType,
       size: schema.mediaAssets.size,
+      width: schema.mediaAssets.width,
+      height: schema.mediaAssets.height,
     })
     .from(schema.postMedia)
     .innerJoin(schema.postVersions, eq(schema.postVersions.id, schema.postMedia.postVersionId))
@@ -338,6 +342,8 @@ export async function loadPostForComposerImpl(
       originalName: m.originalName,
       mimeType: m.mimeType,
       size: m.size,
+      width: m.width,
+      height: m.height,
     }
     const arr = mediaByVersion.get(m.versionId) ?? []
     arr.push(m.id)

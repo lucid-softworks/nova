@@ -7,6 +7,8 @@ export type MediaAsset = {
   originalName: string
   mimeType: string
   size: number
+  width?: number | null
+  height?: number | null
 }
 
 export type ThreadPart = {
@@ -88,6 +90,8 @@ export function hydrateStateFromPost(post: LoadedPost): ComposerState {
       originalName: m.originalName,
       mimeType: m.mimeType,
       size: m.size,
+      width: m.width,
+      height: m.height,
     }
   }
   const defaultV = versions.find((v) => v.isDefault) ?? versions[0]!

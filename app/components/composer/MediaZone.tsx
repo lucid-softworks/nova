@@ -151,6 +151,8 @@ export function MediaZone({
               originalName: a.originalName,
               mimeType: a.mimeType,
               size: a.size,
+              width: a.width,
+              height: a.height,
             })),
           )
         }
