@@ -153,14 +153,37 @@ export function authFailureToResponse(err: ApiAuthFailure): Response {
   return apiError('FORBIDDEN', 'Workspace not accessible', 403)
 }
 
-// In-memory token-bucket rate limiter, keyed by workspace. The API Key
-// plugin itself also supports per-key limits at the Better Auth layer;
-// this is a second safety net.
+// Redis-backed fixed-window rate limiter, keyed by workspace. Falls back
+// to an in-memory bucket when REDIS_URL is unset (dev without compose).
+// The API Key plugin itself also supports per-key limits at the Better
+// Auth layer; this is a second safety net shared across web replicas.
 const buckets = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT = 100
 const WINDOW_MS = 60_000
 
-export function rateLimit(key: string): { ok: boolean; remaining: number; resetInMs: number } {
+type RateResult = { ok: boolean; remaining: number; resetInMs: number }
+
+export async function rateLimit(key: string): Promise<RateResult> {
+  if (process.env.REDIS_URL) {
+    try {
+      const { getRedis } = await import('./queues/connection')
+      const redis = getRedis()
+      const windowKey = `ratelimit:${key}:${Math.floor(Date.now() / WINDOW_MS)}`
+      // INCR + PEXPIRE on first bump — atomically sets TTL only once.
+      const count = await redis.incr(windowKey)
+      if (count === 1) await redis.pexpire(windowKey, WINDOW_MS)
+      const ttl = await redis.pttl(windowKey)
+      const resetInMs = ttl > 0 ? ttl : WINDOW_MS
+      if (count > RATE_LIMIT) return { ok: false, remaining: 0, resetInMs }
+      return { ok: true, remaining: Math.max(0, RATE_LIMIT - count), resetInMs }
+    } catch {
+      // fall through to in-memory — Redis hiccup shouldn't lock out API.
+    }
+  }
+  return rateLimitInMemory(key)
+}
+
+function rateLimitInMemory(key: string): RateResult {
   const now = Date.now()
   const b = buckets.get(key)
   if (!b || b.resetAt <= now) {

@@ -43,7 +43,7 @@ export const Route = createFileRoute('/api/v1/posts/$id')({
       GET: async ({ request, params }) => {
         const auth = await authenticateApiRequest(request)
         if (!auth.ok) return authFailureToResponse(auth.err)
-        const rl = rateLimit(`ws:${auth.ctx.workspaceId}`)
+        const rl = await rateLimit(`ws:${auth.ctx.workspaceId}`)
         if (!rl.ok) return apiError('RATE_LIMITED', 'Too many requests', 429)
 
         const loaded = await loadPost(auth.ctx.workspaceId, params.id)
@@ -54,7 +54,7 @@ export const Route = createFileRoute('/api/v1/posts/$id')({
       PATCH: async ({ request, params }) => {
         const auth = await authenticateApiRequest(request)
         if (!auth.ok) return authFailureToResponse(auth.err)
-        const rl = rateLimit(`ws:${auth.ctx.workspaceId}`)
+        const rl = await rateLimit(`ws:${auth.ctx.workspaceId}`)
         if (!rl.ok) return apiError('RATE_LIMITED', 'Too many requests', 429)
 
         let body: unknown
@@ -92,7 +92,7 @@ export const Route = createFileRoute('/api/v1/posts/$id')({
       DELETE: async ({ request, params }) => {
         const auth = await authenticateApiRequest(request)
         if (!auth.ok) return authFailureToResponse(auth.err)
-        const rl = rateLimit(`ws:${auth.ctx.workspaceId}`)
+        const rl = await rateLimit(`ws:${auth.ctx.workspaceId}`)
         if (!rl.ok) return apiError('RATE_LIMITED', 'Too many requests', 429)
 
         return withApiAuth(auth.ctx, async () => {

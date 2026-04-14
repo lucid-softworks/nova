@@ -21,7 +21,7 @@ export const Route = createFileRoute('/api/v1/analytics')({
       GET: async ({ request }) => {
         const auth = await authenticateApiRequest(request)
         if (!auth.ok) return authFailureToResponse(auth.err)
-        const rl = rateLimit(`ws:${auth.ctx.workspaceId}`)
+        const rl = await rateLimit(`ws:${auth.ctx.workspaceId}`)
         if (!rl.ok) return apiError('RATE_LIMITED', 'Too many requests', 429)
         const url = new URL(request.url)
         const parsed = querySchema.safeParse(Object.fromEntries(url.searchParams))

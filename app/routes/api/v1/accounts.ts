@@ -15,7 +15,7 @@ export const Route = createFileRoute('/api/v1/accounts')({
       GET: async ({ request }) => {
         const auth = await authenticateApiRequest(request)
         if (!auth.ok) return authFailureToResponse(auth.err)
-        const rl = rateLimit(`ws:${auth.ctx.workspaceId}`)
+        const rl = await rateLimit(`ws:${auth.ctx.workspaceId}`)
         if (!rl.ok) return apiError('RATE_LIMITED', 'Too many requests', 429)
         return withApiAuth(auth.ctx, async () => {
           const list = await listAccountsImpl(auth.ctx.workspaceSlug)
