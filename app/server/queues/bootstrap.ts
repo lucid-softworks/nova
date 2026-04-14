@@ -10,6 +10,11 @@ declare global {
 
 export function bootQueues() {
   if (globalThis.__socialhubQueuesBooted) return
+  if (process.env.DISABLE_INLINE_WORKER === '1') {
+    // Prod: web process doesn't run the worker; it's a separate `pnpm worker`
+    // process. Set this in the web container only.
+    return
+  }
   if (!process.env.REDIS_URL) {
     console.warn('[queues] REDIS_URL missing — scheduler and worker disabled')
     return
