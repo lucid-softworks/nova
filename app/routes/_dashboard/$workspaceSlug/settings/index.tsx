@@ -5,6 +5,7 @@ import { Input } from '~/components/ui/input'
 import { Field } from '~/components/ui/field'
 import { Card } from '~/components/ui/card'
 import { Spinner } from '~/components/ui/spinner'
+import { LogoUploader } from '~/components/settings/LogoUploader'
 import { SettingsNav } from '~/components/settings/SettingsNav'
 import {
   getWorkspaceSettings,
@@ -116,12 +117,12 @@ function GeneralSettings() {
               onChange={(e) => setSettings((s) => ({ ...s, slug: e.target.value }))}
             />
           </Field>
-          <Field label="Logo URL" htmlFor="logo" hint="Paste an HTTPS image URL (upload UI coming later)">
-            <Input
-              id="logo"
+          <Field label="Logo" htmlFor="logo" hint="Square image works best">
+            <LogoUploader
+              workspaceSlug={workspaceSlug}
               value={settings.logoUrl ?? ''}
+              onChange={(url) => setSettings((s) => ({ ...s, logoUrl: url }))}
               disabled={!canEdit}
-              onChange={(e) => setSettings((s) => ({ ...s, logoUrl: e.target.value }))}
             />
           </Field>
           <Field label="Timezone" htmlFor="tz">

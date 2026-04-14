@@ -5,6 +5,7 @@ import { Input } from '~/components/ui/input'
 import { Field } from '~/components/ui/field'
 import { Card } from '~/components/ui/card'
 import { Spinner } from '~/components/ui/spinner'
+import { LogoUploader } from '~/components/settings/LogoUploader'
 import { SettingsNav } from '~/components/settings/SettingsNav'
 import { getWorkspaceSettings, updateWorkspaceGeneral } from '~/server/settings'
 
@@ -57,12 +58,12 @@ function WhiteLabelPage() {
                 onChange={(e) => setAppName(e.target.value)}
               />
             </Field>
-            <Field label="Logo URL" htmlFor="logo-url" hint="Square image works best">
-              <Input
-                id="logo-url"
+            <Field label="Logo" htmlFor="logo-url" hint="Square image works best">
+              <LogoUploader
+                workspaceSlug={workspaceSlug}
                 value={logoUrl}
+                onChange={setLogoUrl}
                 disabled={!canEdit}
-                onChange={(e) => setLogoUrl(e.target.value)}
               />
             </Field>
             {message ? <p className="text-sm text-neutral-600">{message}</p> : null}
