@@ -345,26 +345,31 @@ export const mediaFolders = pgTable('media_folders', {
   createdAt: now(),
 })
 
-export const mediaAssets = pgTable('media_assets', {
-  id: id(),
-  workspaceId: uuid('workspace_id')
-    .notNull()
-    .references(() => workspaces.id, { onDelete: 'cascade' }),
-  uploadedById: text('uploaded_by_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'restrict' }),
-  filename: text('filename').notNull(),
-  originalName: text('original_name').notNull(),
-  mimeType: text('mime_type').notNull(),
-  size: integer('size').notNull(),
-  width: integer('width'),
-  height: integer('height'),
-  duration: integer('duration'),
-  url: text('url').notNull(),
-  thumbnailUrl: text('thumbnail_url'),
-  folderId: uuid('folder_id').references(() => mediaFolders.id, { onDelete: 'set null' }),
-  createdAt: now(),
-})
+export const mediaAssets = pgTable(
+  'media_assets',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    uploadedById: text('uploaded_by_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'restrict' }),
+    filename: text('filename').notNull(),
+    originalName: text('original_name').notNull(),
+    mimeType: text('mime_type').notNull(),
+    size: integer('size').notNull(),
+    width: integer('width'),
+    height: integer('height'),
+    duration: integer('duration'),
+    url: text('url').notNull(),
+    thumbnailUrl: text('thumbnail_url'),
+    folderId: uuid('folder_id').references(() => mediaFolders.id, { onDelete: 'set null' }),
+    contentHash: text('content_hash'),
+    createdAt: now(),
+  },
+  (t) => [index('media_assets_ws_hash_idx').on(t.workspaceId, t.contentHash)],
+)
 
 export const postMedia = pgTable('post_media', {
   id: id(),

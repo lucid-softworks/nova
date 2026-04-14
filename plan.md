@@ -18,6 +18,7 @@ Split into sections under [`plan/`](./plan/).
 - [Stage 5 — Campaign Mode in Composer](./plan/stage-05-campaigns.md)
 - [Stage 6 — Platform Publishing (Originals)](./plan/stage-06-publishing.md)
 - [Stage 7 — Media Library](./plan/stage-07-media.md)
+- [Stage 7b — Media Library Deduplication](./plan/stage-07b-media-dedup.md)
 - [Stage 8 — AI Assist](./plan/stage-08-ai.md)
 - [Stage 9 — Reshare System](./plan/stage-09-reshare.md)
 - [Stage 10 — Posts List](./plan/stage-10-posts-list.md)

@@ -238,8 +238,13 @@ export async function moveAssetsImpl(slug: string, assetIds: string[], folderId:
 export async function deleteAssetsImpl(slug: string, assetIds: string[]) {
   const { workspace } = await ensureWs(slug)
   if (assetIds.length === 0) return { ok: true }
+
   const rows = await db
-    .select({ filename: schema.mediaAssets.filename })
+    .select({
+      id: schema.mediaAssets.id,
+      filename: schema.mediaAssets.filename,
+      contentHash: schema.mediaAssets.contentHash,
+    })
     .from(schema.mediaAssets)
     .where(
       and(
@@ -247,6 +252,7 @@ export async function deleteAssetsImpl(slug: string, assetIds: string[]) {
         inArray(schema.mediaAssets.id, assetIds),
       ),
     )
+
   await db
     .delete(schema.mediaAssets)
     .where(
@@ -255,9 +261,21 @@ export async function deleteAssetsImpl(slug: string, assetIds: string[]) {
         inArray(schema.mediaAssets.id, assetIds),
       ),
     )
-  // Best-effort disk cleanup
+
+  // Only unlink the file if no other row in this workspace still references
+  // the same contentHash. Rows without a hash fall back to filename
+  // uniqueness and can be unlinked directly.
   const dir = process.env.STORAGE_LOCAL_PATH ?? './storage'
   for (const r of rows) {
+    if (r.contentHash) {
+      const stillReferenced = await db.query.mediaAssets.findFirst({
+        where: and(
+          eq(schema.mediaAssets.workspaceId, workspace.id),
+          eq(schema.mediaAssets.contentHash, r.contentHash),
+        ),
+      })
+      if (stillReferenced) continue
+    }
     await unlink(path.join(dir, r.filename)).catch(() => {})
   }
   return { ok: true }

@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from 'node:fs/promises'
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import path from 'node:path'
 import { and, eq, inArray } from 'drizzle-orm'
 import { db, schema } from './db'
@@ -22,13 +22,6 @@ async function ensureWs(slug: string) {
 
 export async function uploadMediaImpl(slug: string, file: File, folderId: string | null = null) {
   const { workspace, user } = await ensureWs(slug)
-  const ext = path.extname(file.name) || ''
-  const filename = `${randomUUID()}${ext}`
-  const dir = storagePath()
-  await mkdir(dir, { recursive: true })
-  const abs = path.join(dir, filename)
-  const buf = Buffer.from(await file.arrayBuffer())
-  await writeFile(abs, buf)
 
   if (folderId) {
     const parent = await db.query.mediaFolders.findFirst({
@@ -39,6 +32,34 @@ export async function uploadMediaImpl(slug: string, file: File, folderId: string
     })
     if (!parent) throw new Error('Destination folder not found')
   }
+
+  const buf = Buffer.from(await file.arrayBuffer())
+  const contentHash = createHash('sha256').update(buf).digest('hex')
+
+  // Dedup: if the same bytes already exist in this workspace, reuse that row.
+  const existing = await db.query.mediaAssets.findFirst({
+    where: and(
+      eq(schema.mediaAssets.workspaceId, workspace.id),
+      eq(schema.mediaAssets.contentHash, contentHash),
+    ),
+  })
+  if (existing) {
+    return {
+      id: existing.id,
+      filename: existing.filename,
+      originalName: existing.originalName,
+      mimeType: existing.mimeType,
+      size: existing.size,
+      url: existing.url,
+    }
+  }
+
+  const ext = path.extname(file.name) || ''
+  const filename = `${randomUUID()}${ext}`
+  const dir = storagePath()
+  await mkdir(dir, { recursive: true })
+  const abs = path.join(dir, filename)
+  await writeFile(abs, buf)
 
   const [row] = await db
     .insert(schema.mediaAssets)
@@ -51,6 +72,7 @@ export async function uploadMediaImpl(slug: string, file: File, folderId: string
       size: buf.length,
       url: publicUrlFor(filename),
       folderId,
+      contentHash,
     })
     .returning()
   if (!row) throw new Error('Failed to record media')
