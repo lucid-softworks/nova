@@ -81,3 +81,10 @@ export function startScheduler() {
   // Run once immediately on boot so scheduled posts in the past get picked up quickly.
   setTimeout(() => tickScheduler().catch(() => {}), 2_000)
 }
+
+export function stopScheduler() {
+  if (interval) {
+    clearInterval(interval)
+    interval = null
+  }
+}

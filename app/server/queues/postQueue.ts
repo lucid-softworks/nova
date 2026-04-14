@@ -21,3 +21,7 @@ export function getPostQueue(): Queue<PostJobData> {
   })
   return queue
 }
+
+export function resetPostQueue() {
+  queue = null
+}

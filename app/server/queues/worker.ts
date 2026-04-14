@@ -35,6 +35,10 @@ export function getPostWorker(): Worker<PostJobData> {
   return worker
 }
 
+export function resetPostWorker() {
+  worker = null
+}
+
 async function processJob(job: { data: PostJobData }) {
   const { postId } = job.data
   const post = await db.query.posts.findFirst({
