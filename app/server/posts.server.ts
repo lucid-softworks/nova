@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray, isNotNull, lte, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray, isNotNull, lte, or, sql } from 'drizzle-orm'
 import { db, schema } from './db'
 import { requireWorkspaceAccess } from './session.server'
 import type { PlatformKey } from '~/lib/platforms'
@@ -266,6 +266,176 @@ export async function countsByStatusImpl(slug: string): Promise<CountsByStatus> 
     }
   }
   return counts
+}
+
+// --------------------------------------------------------------------------
+// Calendar query: posts scheduled OR published within a date range.
+
+export async function listPostsForCalendarImpl(
+  slug: string,
+  fromIso: string,
+  toIso: string,
+): Promise<PostRow[]> {
+  const { workspace } = await ensureWs(slug)
+  const fromDate = new Date(fromIso)
+  const toDate = new Date(toIso)
+
+  const postRows = await db
+    .select({
+      id: schema.posts.id,
+      type: schema.posts.type,
+      status: schema.posts.status,
+      scheduledAt: schema.posts.scheduledAt,
+      publishedAt: schema.posts.publishedAt,
+      createdAt: schema.posts.createdAt,
+      updatedAt: schema.posts.updatedAt,
+      failureReason: schema.posts.failureReason,
+      isQueue: schema.posts.isQueue,
+      authorName: schema.user.name,
+      authorId: schema.posts.authorId,
+      campaignId: schema.posts.campaignId,
+      campaignName: schema.campaigns.name,
+      campaignStepOrder: schema.campaignSteps.stepOrder,
+    })
+    .from(schema.posts)
+    .leftJoin(schema.user, eq(schema.user.id, schema.posts.authorId))
+    .leftJoin(schema.campaigns, eq(schema.campaigns.id, schema.posts.campaignId))
+    .leftJoin(schema.campaignSteps, eq(schema.campaignSteps.postId, schema.posts.id))
+    .where(
+      and(
+        eq(schema.posts.workspaceId, workspace.id),
+        or(
+          and(
+            isNotNull(schema.posts.scheduledAt),
+            gte(schema.posts.scheduledAt, fromDate),
+            lte(schema.posts.scheduledAt, toDate),
+          ),
+          and(
+            isNotNull(schema.posts.publishedAt),
+            gte(schema.posts.publishedAt, fromDate),
+            lte(schema.posts.publishedAt, toDate),
+          ),
+        ),
+      ),
+    )
+    .orderBy(asc(sql`COALESCE(${schema.posts.publishedAt}, ${schema.posts.scheduledAt})`))
+    .limit(500)
+
+  return hydratePostRows(postRows)
+}
+
+type PostBase = {
+  id: string
+  type: 'original' | 'reshare'
+  status: PostRow['status']
+  scheduledAt: Date | null
+  publishedAt: Date | null
+  createdAt: Date
+  updatedAt: Date
+  failureReason: string | null
+  isQueue: boolean
+  authorName: string | null
+  authorId: string | null
+  campaignId: string | null
+  campaignName: string | null
+  campaignStepOrder: number | null
+}
+
+async function hydratePostRows(postRows: PostBase[]): Promise<PostRow[]> {
+  if (postRows.length === 0) return []
+  const postIds = postRows.map((r) => r.id)
+
+  const versions = await db
+    .select()
+    .from(schema.postVersions)
+    .where(inArray(schema.postVersions.postId, postIds))
+
+  const platformTargets = await db
+    .select({
+      postId: schema.postPlatforms.postId,
+      socialAccountId: schema.postPlatforms.socialAccountId,
+      platform: schema.socialAccounts.platform,
+      accountHandle: schema.socialAccounts.accountHandle,
+      status: schema.postPlatforms.status,
+      publishedUrl: schema.postPlatforms.publishedUrl,
+    })
+    .from(schema.postPlatforms)
+    .innerJoin(
+      schema.socialAccounts,
+      eq(schema.socialAccounts.id, schema.postPlatforms.socialAccountId),
+    )
+    .where(inArray(schema.postPlatforms.postId, postIds))
+
+  const reshareDetails = await db
+    .select()
+    .from(schema.postReshareDetails)
+    .where(inArray(schema.postReshareDetails.postId, postIds))
+
+  const firstMedia = await db
+    .select({
+      postId: schema.postVersions.postId,
+      mediaId: schema.postMedia.mediaId,
+      url: schema.mediaAssets.url,
+      mimeType: schema.mediaAssets.mimeType,
+      sortOrder: schema.postMedia.sortOrder,
+      isDefault: schema.postVersions.isDefault,
+    })
+    .from(schema.postMedia)
+    .innerJoin(schema.postVersions, eq(schema.postVersions.id, schema.postMedia.postVersionId))
+    .innerJoin(schema.mediaAssets, eq(schema.mediaAssets.id, schema.postMedia.mediaId))
+    .where(inArray(schema.postVersions.postId, postIds))
+    .orderBy(asc(schema.postMedia.sortOrder))
+
+  const versionsByPost = groupBy(versions, (v) => v.postId)
+  const targetsByPost = groupBy(platformTargets, (t) => t.postId)
+  const mediaByPost = groupBy(firstMedia, (m) => m.postId)
+  const reshareByPost = new Map(reshareDetails.map((r) => [r.postId, r]))
+
+  return postRows.map((r): PostRow => {
+    const vs = versionsByPost.get(r.id) ?? []
+    const defaultV = vs.find((v) => v.isDefault) ?? vs[0]
+    const media = (mediaByPost.get(r.id) ?? []).sort((a, b) => {
+      const aDefault = a.isDefault ? 0 : 1
+      const bDefault = b.isDefault ? 0 : 1
+      return aDefault - bDefault || a.sortOrder - b.sortOrder
+    })
+    const first = media[0] ?? null
+    const reshare = reshareByPost.get(r.id)
+    return {
+      id: r.id,
+      type: r.type,
+      status: r.status,
+      scheduledAt: r.scheduledAt?.toISOString() ?? null,
+      publishedAt: r.publishedAt?.toISOString() ?? null,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+      failureReason: r.failureReason,
+      isQueue: r.isQueue,
+      authorName: r.authorName,
+      authorId: r.authorId,
+      campaignId: r.campaignId,
+      campaignName: r.campaignName,
+      campaignStepOrder: r.campaignStepOrder,
+      versionCount: vs.length,
+      defaultContent: defaultV?.content ?? '',
+      firstMediaUrl: first?.url ?? null,
+      firstMediaMime: first?.mimeType ?? null,
+      platforms: (targetsByPost.get(r.id) ?? []).map((t) => ({
+        socialAccountId: t.socialAccountId,
+        platform: t.platform as PlatformKey,
+        accountHandle: t.accountHandle,
+        status: t.status,
+        publishedUrl: t.publishedUrl,
+      })),
+      reshareSource: reshare
+        ? {
+            platform: reshare.sourcePlatform as PlatformKey,
+            authorHandle: reshare.sourceAuthorHandle,
+            preview: reshare.sourceContent.slice(0, 200),
+          }
+        : null,
+    }
+  })
 }
 
 // --------------------------------------------------------------------------

@@ -10,6 +10,7 @@ import {
   duplicatePostImpl,
   retryPostImpl,
   changeToDraftImpl,
+  listPostsForCalendarImpl,
 } from './posts.server'
 
 export type {
@@ -84,3 +85,15 @@ export const duplicatePost = createServerFn({ method: 'POST' })
 export const retryPost = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => singleSchema.parse(d))
   .handler(async ({ data }) => retryPostImpl(data.workspaceSlug, data.postId))
+
+const calendarSchema = z.object({
+  workspaceSlug: z.string().min(1),
+  fromIso: z.string().datetime(),
+  toIso: z.string().datetime(),
+})
+
+export const listPostsForCalendar = createServerFn({ method: 'GET' })
+  .inputValidator((d: unknown) => calendarSchema.parse(d))
+  .handler(async ({ data }) =>
+    listPostsForCalendarImpl(data.workspaceSlug, data.fromIso, data.toIso),
+  )
