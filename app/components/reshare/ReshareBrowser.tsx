@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { X, Search, Check, AlertCircle } from 'lucide-react'
+import { X, Search, Check, AlertCircle, Sparkles } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import { PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
+import { AIAssistPanel } from '~/components/composer/AIAssistPanel'
 import { cn } from '~/lib/utils'
 import {
   RESHARE_PLATFORMS,
@@ -312,6 +313,7 @@ export function ReshareBrowser({
                   key={src.sourcePostId}
                   src={src}
                   platform={platform}
+                  workspaceSlug={workspaceSlug}
                   selected={selectedBySource[src.sourcePostId] ?? null}
                   onToggle={() => toggleSelected(src)}
                   onUpdate={(patch) => updateSelected(src.sourcePostId, patch)}
@@ -385,17 +387,20 @@ export function ReshareBrowser({
 function ResultCard({
   src,
   platform,
+  workspaceSlug,
   selected,
   onToggle,
   onUpdate,
 }: {
   src: ReshareSource
   platform: ResharePlatform
+  workspaceSlug: string
   selected: SelectedItem | null
   onToggle: () => void
   onUpdate: (patch: Partial<SelectedItem>) => void
 }) {
   const [expanded, setExpanded] = useState(false)
+  const [aiOpen, setAiOpen] = useState(false)
   const longText = src.sourceContent.length > 280
   const textLimit = PLATFORMS[platform].textLimit
   const options = reshareOptions(platform)
@@ -496,11 +501,26 @@ function ResultCard({
                 placeholder="Add your commentary"
                 className="min-h-[60px] w-full resize-y rounded border border-neutral-200 p-2 text-sm"
               />
-              <div className="flex justify-between text-[11px] text-neutral-500">
+              <div className="flex items-center justify-between text-[11px] text-neutral-500">
                 <span>
                   {selected.quoteComment.length} / {textLimit.toLocaleString()}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setAiOpen(true)}
+                  className="inline-flex items-center gap-1 text-indigo-600 hover:underline"
+                >
+                  <Sparkles className="h-3 w-3" /> AI Assist
+                </button>
               </div>
+              <AIAssistPanel
+                open={aiOpen}
+                onClose={() => setAiOpen(false)}
+                workspaceSlug={workspaceSlug}
+                platforms={[platform]}
+                existingContent={selected.quoteComment || src.sourceContent}
+                onUseText={(text) => onUpdate({ quoteComment: text })}
+              />
             </div>
           ) : null}
           {showSub ? (

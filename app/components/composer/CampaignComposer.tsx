@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { Plus, Trash2, ChevronDown, ChevronRight, Code } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ChevronRight, Code, Sparkles } from 'lucide-react'
 import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -8,6 +8,7 @@ import { Field } from '~/components/ui/field'
 import { Spinner } from '~/components/ui/spinner'
 import { PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { MediaZone } from './MediaZone'
+import { AIAssistPanel } from './AIAssistPanel'
 import { detectMismatches, MediaMismatchBanner } from './MediaMismatchBanner'
 import { cn } from '~/lib/utils'
 import { saveCampaign } from '~/server/campaigns'
@@ -402,6 +403,8 @@ function StepCard({
             content={step.content}
             onChange={(v) => onChange({ content: v })}
             urlVariables={urlVariables}
+            workspaceSlug={workspaceSlug}
+            platforms={platforms}
           />
 
           <MediaZone
@@ -427,12 +430,17 @@ function StepContent({
   content,
   onChange,
   urlVariables,
+  workspaceSlug,
+  platforms,
 }: {
   content: string
   onChange: (v: string) => void
   urlVariables: { key: string; label: string }[]
+  workspaceSlug: string
+  platforms: PlatformKey[]
 }) {
   const [open, setOpen] = useState(false)
+  const [aiOpen, setAiOpen] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const insertAtCursor = (text: string) => {
@@ -459,6 +467,19 @@ function StepContent({
         onChange={(e) => onChange(e.target.value)}
         placeholder="Step content"
         className="min-h-[120px] w-full resize-y rounded-md border border-neutral-200 p-3 text-sm"
+      />
+      <div className="flex items-center gap-2">
+        <Button type="button" variant="ghost" size="sm" onClick={() => setAiOpen(true)}>
+          <Sparkles className="h-3 w-3" /> AI Assist
+        </Button>
+      </div>
+      <AIAssistPanel
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        workspaceSlug={workspaceSlug}
+        platforms={platforms}
+        existingContent={content}
+        onUseText={(text) => onChange(text)}
       />
       {urlVariables.length > 0 ? (
         <div className="relative inline-block">
