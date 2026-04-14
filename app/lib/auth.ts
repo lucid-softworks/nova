@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
+import { apiKey } from '@better-auth/api-key'
 import { db, schema } from '~/server/db'
 
 const requireEnv = (key: string): string => {
@@ -21,6 +22,7 @@ export const auth = betterAuth({
       session: schema.session,
       account: schema.account,
       verification: schema.verification,
+      apikey: schema.apikey,
     },
   }),
   emailAndPassword: {
@@ -43,7 +45,22 @@ export const auth = betterAuth({
       clientSecret: optionalEnv('GITHUB_CLIENT_SECRET') ?? '',
     },
   },
-  plugins: [tanstackStartCookies()],
+  plugins: [
+    apiKey({
+      defaultPrefix: 'sk_',
+      apiKeyHeaders: ['x-api-key', 'authorization'],
+      enableSessionForAPIKeys: true,
+      // Allow bearer-prefixed values in the `authorization` header.
+      customAPIKeyGetter: (ctx) => {
+        const raw = ctx.headers?.get('authorization') ?? null
+        if (raw && raw.toLowerCase().startsWith('bearer ')) {
+          return raw.slice('bearer '.length).trim() || null
+        }
+        return ctx.headers?.get('x-api-key') ?? raw ?? null
+      },
+    }),
+    tanstackStartCookies(),
+  ],
 })
 
 export type Auth = typeof auth

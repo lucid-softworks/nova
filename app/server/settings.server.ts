@@ -1,5 +1,7 @@
-import { createHash, randomBytes } from 'node:crypto'
+import { randomBytes } from 'node:crypto'
 import { and, desc, eq } from 'drizzle-orm'
+import { getRequest } from '@tanstack/react-start/server'
+import { auth } from '~/lib/auth'
 import { db, schema } from './db'
 import { requireWorkspaceAccess } from './session.server'
 import type { WorkspaceRole } from './types'
@@ -144,6 +146,9 @@ export async function setPostingScheduleImpl(slug: string, schedule: PostingSche
 }
 
 // ---------- API keys ------------------------------------------------------
+// Delegated to the Better Auth @better-auth/api-key plugin. Keys are bound
+// to the calling user (not the workspace) — workspace scoping flows from
+// the user's membership at request time.
 
 export type ApiKeyRow = {
   id: string
@@ -153,31 +158,32 @@ export type ApiKeyRow = {
   createdAt: string
 }
 
-function sha256(s: string): string {
-  return createHash('sha256').update(s).digest('hex')
+function authHeaders() {
+  return getRequest().headers
 }
 
-function generateApiKey(): string {
-  const body = randomBytes(24).toString('hex')
-  return `sk_${body}`
+type BetterAuthKey = {
+  id: string
+  name?: string | null
+  start?: string | null
+  prefix?: string | null
+  lastRequest?: string | Date | null
+  createdAt: string | Date
 }
 
 export async function listApiKeysImpl(slug: string): Promise<ApiKeyRow[]> {
   const { workspace } = await ensureWs(slug)
   if (!isAdminOrManager(workspace.role)) throw new Error('Insufficient permission')
-  const rows = await db
-    .select()
-    .from(schema.apiKeys)
-    .where(eq(schema.apiKeys.workspaceId, workspace.id))
-    .orderBy(desc(schema.apiKeys.createdAt))
+  const result = (await auth.api.listApiKeys({ headers: authHeaders() })) as
+    | BetterAuthKey[]
+    | { apiKeys: BetterAuthKey[] }
+  const rows: BetterAuthKey[] = Array.isArray(result) ? result : result.apiKeys
   return rows.map((r) => ({
     id: r.id,
-    name: r.name,
-    // We don't keep plaintext; show a generic masked placeholder suffixed with
-    // the last 4 chars of the keyHash so users can distinguish multiple keys.
-    maskedKey: `sk_••••••••••••••••${r.keyHash.slice(-4)}`,
-    lastUsedAt: r.lastUsedAt?.toISOString() ?? null,
-    createdAt: r.createdAt.toISOString(),
+    name: r.name ?? 'Unnamed key',
+    maskedKey: `${r.prefix ?? 'sk_'}••••••••••••••••${r.start ?? ''}`,
+    lastUsedAt: r.lastRequest ? new Date(r.lastRequest).toISOString() : null,
+    createdAt: new Date(r.createdAt).toISOString(),
   }))
 }
 
@@ -185,27 +191,24 @@ export async function createApiKeyImpl(slug: string, name: string) {
   const { workspace } = await ensureWs(slug)
   if (!isAdminOrManager(workspace.role)) throw new Error('Insufficient permission')
   if (!name.trim()) throw new Error('Name is required')
-  const plaintext = generateApiKey()
-  const [row] = await db
-    .insert(schema.apiKeys)
-    .values({
-      workspaceId: workspace.id,
-      name: name.trim(),
-      keyHash: sha256(plaintext),
-    })
-    .returning({ id: schema.apiKeys.id })
-  if (!row) throw new Error('Failed to create key')
-  return { id: row.id, plaintext }
+  const result = (await auth.api.createApiKey({
+    headers: authHeaders(),
+    body: { name: name.trim() },
+  })) as { id: string; key: string }
+  return { id: result.id, plaintext: result.key }
 }
 
 export async function deleteApiKeyImpl(slug: string, keyId: string) {
   const { workspace } = await ensureWs(slug)
   if (!isAdminOrManager(workspace.role)) throw new Error('Insufficient permission')
-  await db
-    .delete(schema.apiKeys)
-    .where(and(eq(schema.apiKeys.id, keyId), eq(schema.apiKeys.workspaceId, workspace.id)))
+  await auth.api.deleteApiKey({ headers: authHeaders(), body: { keyId } })
   return { ok: true }
 }
+
+// Silence unused-import warnings for pieces that older impls relied on.
+void and
+void desc
+void randomBytes
 
 // ---------- webhooks ------------------------------------------------------
 

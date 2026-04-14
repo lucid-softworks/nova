@@ -1,5 +1,4 @@
-import { createHash } from 'node:crypto'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { auth } from '~/lib/auth'
 import { db, schema } from './db'
 import { withSessionOverride } from './session.server'
@@ -20,89 +19,86 @@ export type ApiAuthFailure =
 
 export type ApiAuthResult = { ok: true; ctx: ApiAuthContext } | { ok: false; err: ApiAuthFailure }
 
-function sha256(input: string): string {
-  return createHash('sha256').update(input).digest('hex')
-}
-
 /**
- * Authenticate an API v1 request via either:
- *  - Authorization: Bearer sk_... → looks up api_keys by SHA-256 hash, resolves
- *    the owning workspace and the caller's membership (required)
- *  - Better Auth session cookie + ?workspaceSlug=... / X-Workspace-Slug header
+ * Authenticate an API v1 request.
  *
- * Returns the resolved workspace + user context, or a structured failure.
+ * Strategy:
+ *   1. Try Better Auth's getSession first. With the apiKey plugin configured
+ *      to treat bearer tokens as sessions, this resolves the underlying user
+ *      for both cookie-based and API-key-based callers in one call.
+ *   2. Fall back to a direct verifyApiKey for unusual cases where the
+ *      session middleware didn't engage.
+ *   3. Resolve the workspace via an explicit slug (query string /
+ *      X-Workspace-Slug / arg), defaulting to the user's single workspace
+ *      if they only belong to one.
  */
 export async function authenticateApiRequest(
   request: Request,
   explicitSlug?: string | null,
 ): Promise<ApiAuthResult> {
-  const header = request.headers.get('authorization') ?? request.headers.get('Authorization')
-  if (header && header.startsWith('Bearer ')) {
-    const token = header.slice('Bearer '.length).trim()
-    if (!token) return { ok: false, err: { kind: 'invalid_key' } }
-    const hash = sha256(token)
+  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null)
 
-    const row = await db.query.apiKeys.findFirst({
-      where: eq(schema.apiKeys.keyHash, hash),
-    })
-    if (!row) return { ok: false, err: { kind: 'invalid_key' } }
+  let userId: string | null = session?.user?.id ?? null
+  let viaApiKey = false
 
-    const ws = await db.query.workspaces.findFirst({
-      where: eq(schema.workspaces.id, row.workspaceId),
-    })
-    if (!ws) return { ok: false, err: { kind: 'forbidden', reason: 'workspace_not_found' } }
-
-    // Touch lastUsedAt; fire-and-forget (don't block the request).
-    db
-      .update(schema.apiKeys)
-      .set({ lastUsedAt: new Date() })
-      .where(eq(schema.apiKeys.id, row.id))
-      .catch(() => {})
-
-    return {
-      ok: true,
-      ctx: {
-        userId: ws.ownerId,
-        workspaceId: ws.id,
-        workspaceSlug: ws.slug,
-        role: 'admin',
-        viaApiKey: true,
-      },
+  if (!userId) {
+    const headerValue =
+      request.headers.get('authorization') ?? request.headers.get('Authorization')
+    const raw = headerValue?.toLowerCase().startsWith('bearer ')
+      ? headerValue.slice('bearer '.length).trim()
+      : (request.headers.get('x-api-key') ?? null)
+    if (raw) {
+      const verified = (await auth.api
+        .verifyApiKey({ body: { key: raw } })
+        .catch(() => null)) as
+        | { valid?: boolean; key?: { userId?: string } | null }
+        | null
+      if (verified?.valid && verified.key?.userId) {
+        userId = verified.key.userId
+        viaApiKey = true
+      } else {
+        return { ok: false, err: { kind: 'invalid_key' } }
+      }
     }
   }
 
-  // Session-cookie path.
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null)
-  if (!session?.user) return { ok: false, err: { kind: 'unauthenticated' } }
+  if (!userId) return { ok: false, err: { kind: 'unauthenticated' } }
 
   const url = new URL(request.url)
   const slug =
     explicitSlug ??
     url.searchParams.get('workspaceSlug') ??
     request.headers.get('x-workspace-slug')
-  if (!slug) return { ok: false, err: { kind: 'forbidden', reason: 'workspace_not_found' } }
 
-  const ws = await db.query.workspaces.findFirst({
-    where: eq(schema.workspaces.slug, slug),
-  })
-  if (!ws) return { ok: false, err: { kind: 'forbidden', reason: 'workspace_not_found' } }
+  const memberships = await db
+    .select({
+      id: schema.workspaces.id,
+      slug: schema.workspaces.slug,
+      role: schema.workspaceMembers.role,
+    })
+    .from(schema.workspaceMembers)
+    .innerJoin(schema.workspaces, eq(schema.workspaces.id, schema.workspaceMembers.workspaceId))
+    .where(eq(schema.workspaceMembers.userId, userId))
 
-  const membership = await db.query.workspaceMembers.findFirst({
-    where: and(
-      eq(schema.workspaceMembers.workspaceId, ws.id),
-      eq(schema.workspaceMembers.userId, session.user.id),
-    ),
-  })
-  if (!membership) return { ok: false, err: { kind: 'forbidden', reason: 'no_access' } }
+  let target: (typeof memberships)[number] | null = null
+  if (slug) target = memberships.find((m) => m.slug === slug) ?? null
+  else if (memberships.length === 1) target = memberships[0]!
+
+  if (!target) {
+    if (memberships.length === 0) {
+      return { ok: false, err: { kind: 'forbidden', reason: 'no_access' } }
+    }
+    return { ok: false, err: { kind: 'forbidden', reason: 'workspace_not_found' } }
+  }
 
   return {
     ok: true,
     ctx: {
-      userId: session.user.id,
-      workspaceId: ws.id,
-      workspaceSlug: ws.slug,
-      role: membership.role,
-      viaApiKey: false,
+      userId,
+      workspaceId: target.id,
+      workspaceSlug: target.slug,
+      role: target.role,
+      viaApiKey,
     },
   }
 }
@@ -157,9 +153,9 @@ export function authFailureToResponse(err: ApiAuthFailure): Response {
   return apiError('FORBIDDEN', 'Workspace not accessible', 403)
 }
 
-// In-memory token-bucket rate limiter keyed by a caller identifier.
-// 100 requests per rolling minute. Upstash/Redis is the plan, this keeps
-// the door closed until that lands.
+// In-memory token-bucket rate limiter, keyed by workspace. The API Key
+// plugin itself also supports per-key limits at the Better Auth layer;
+// this is a second safety net.
 const buckets = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT = 100
 const WINDOW_MS = 60_000

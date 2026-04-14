@@ -169,6 +169,41 @@ export const verification = pgTable('verification', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
+// Better Auth API Key plugin (@better-auth/api-key) — table name is fixed
+// by the plugin as "apikey"; columns must match its schema.
+export const apikey = pgTable(
+  'apikey',
+  {
+    id: text('id').primaryKey(),
+    configId: text('config_id').notNull().default('default'),
+    name: text('name'),
+    start: text('start'),
+    referenceId: text('reference_id').notNull(),
+    prefix: text('prefix'),
+    key: text('key').notNull(),
+    refillInterval: integer('refill_interval'),
+    refillAmount: integer('refill_amount'),
+    lastRefillAt: timestamp('last_refill_at', { withTimezone: true }),
+    enabled: boolean('enabled').default(true).notNull(),
+    rateLimitEnabled: boolean('rate_limit_enabled').default(true).notNull(),
+    rateLimitTimeWindow: integer('rate_limit_time_window'),
+    rateLimitMax: integer('rate_limit_max'),
+    requestCount: integer('request_count').default(0).notNull(),
+    remaining: integer('remaining'),
+    lastRequest: timestamp('last_request', { withTimezone: true }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+    permissions: text('permissions'),
+    metadata: text('metadata'),
+  },
+  (t) => [
+    index('apikey_config_id_idx').on(t.configId),
+    index('apikey_reference_id_idx').on(t.referenceId),
+    index('apikey_key_idx').on(t.key),
+  ],
+)
+
 // -- Domain tables ---------------------------------------------------------
 
 export const workspaces = pgTable(
@@ -473,16 +508,9 @@ export const analyticsSnapshots = pgTable('analytics_snapshots', {
   createdAt: now(),
 })
 
-export const apiKeys = pgTable('api_keys', {
-  id: id(),
-  workspaceId: uuid('workspace_id')
-    .notNull()
-    .references(() => workspaces.id, { onDelete: 'cascade' }),
-  name: text('name').notNull(),
-  keyHash: text('key_hash').notNull().unique(),
-  lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
-  createdAt: now(),
-})
+// The legacy per-workspace api_keys table has been replaced by Better Auth's
+// apikey table (defined above). Keys are issued to users; the API Key plugin
+// also resolves a session from the bearer header on inbound requests.
 
 export const webhooks = pgTable('webhooks', {
   id: id(),
