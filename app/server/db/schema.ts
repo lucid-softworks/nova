@@ -93,7 +93,7 @@ export const postPlatformStatusEnum = pgEnum('post_platform_status', [
   'failed',
 ])
 
-export const postActivityEnum = pgEnum('post_activity', [
+export const postActivityEnum = pgEnum('post_activity_action', [
   'created',
   'edited',
   'scheduled',
