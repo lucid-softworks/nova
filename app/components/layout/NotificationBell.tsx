@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { Bell, Check, CheckCheck } from 'lucide-react'
 import {
   listMyNotifications,
@@ -18,6 +18,8 @@ export function NotificationBell() {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const rootRef = useRef<HTMLDivElement>(null)
+  const params = useParams({ strict: false })
+  const workspaceSlug = typeof params.workspaceSlug === 'string' ? params.workspaceSlug : null
 
   const reload = async () => {
     try {
@@ -106,6 +108,18 @@ export function NotificationBell() {
               <CheckCheck className="h-3 w-3" /> Mark all read
             </button>
           </div>
+          {workspaceSlug ? (
+            <div className="border-b border-neutral-100 px-3 py-1.5 text-right">
+              <Link
+                to="/$workspaceSlug/notifications"
+                params={{ workspaceSlug }}
+                className="text-xs text-indigo-600 hover:underline"
+                onClick={() => setOpen(false)}
+              >
+                See all
+              </Link>
+            </div>
+          ) : null}
           <div className="max-h-[500px] overflow-auto">
             {loading ? (
               <div className="px-3 py-6 text-center text-xs text-neutral-500">Loading…</div>
@@ -152,6 +166,10 @@ function TypeIcon({ type: _type }: { type: NotificationRow['type'] }) {
       <Check className="h-3 w-3" />
     </div>
   )
+}
+
+export function deriveNotificationLink(n: NotificationRow): string | null {
+  return deriveLink(n)
 }
 
 function deriveLink(n: NotificationRow): string | null {
