@@ -116,17 +116,28 @@ function CalendarPage() {
 
   const onDragEnd = async (e: DragEndEvent) => {
     const postId = e.active.id as string
-    const dayKey = e.over?.id as string | undefined
-    if (!postId || !dayKey) return
+    const overKey = e.over?.id as string | undefined
+    if (!postId || !overKey) return
     const post = posts.find((p) => p.id === postId)
     if (!post) return
     const sourceIso = post.scheduledAt ?? post.publishedAt
     if (!sourceIso) return
     const source = new Date(sourceIso)
-    const target = new Date(dayKey)
-    target.setHours(source.getHours(), source.getMinutes(), source.getSeconds(), 0)
 
-    if (ymd(source) === ymd(target)) return // same day — noop
+    // Two drop-zone shapes:
+    //   "YYYY-MM-DD"            — month view: keep source time, change day
+    //   "YYYY-MM-DD|HH"         — week view: snap to top of the dropped hour
+    let target: Date
+    const [dayPart, hourPart] = overKey.split('|')
+    if (!dayPart) return
+    target = new Date(dayPart)
+    if (hourPart !== undefined) {
+      target.setHours(Number(hourPart), 0, 0, 0)
+    } else {
+      target.setHours(source.getHours(), source.getMinutes(), source.getSeconds(), 0)
+    }
+
+    if (target.getTime() === source.getTime()) return
     if (post.status === 'published') {
       alert("Can't reschedule a post that's already published.")
       return
@@ -436,31 +447,59 @@ function HourRow({
       <div className="border-t border-neutral-100 px-1 py-1 text-[10px] text-neutral-400">
         {String(hour).padStart(2, '0')}:00
       </div>
-      {days.map((d) => {
-        const slotDate = new Date(d)
-        slotDate.setHours(hour, 0, 0, 0)
-        const entries = (postsByDay.get(ymd(d)) ?? []).filter((p) => {
-          const iso = p.publishedAt ?? p.scheduledAt
-          if (!iso) return false
-          return new Date(iso).getHours() === hour
-        })
-        return (
-          <div
-            key={d.toISOString()}
-            className="relative min-h-[40px] border-l border-t border-neutral-100 p-0.5"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) onClickEmpty(slotDate)
-            }}
-          >
-            <div className="flex flex-col gap-0.5">
-              {entries.map((p) => (
-                <PostPill key={p.id} post={p} onClick={() => onClickPost(p)} compact draggable={false} />
-              ))}
-            </div>
-          </div>
-        )
-      })}
+      {days.map((d) => (
+        <HourCell
+          key={d.toISOString()}
+          day={d}
+          hour={hour}
+          postsByDay={postsByDay}
+          onClickEmpty={onClickEmpty}
+          onClickPost={onClickPost}
+        />
+      ))}
     </>
+  )
+}
+
+function HourCell({
+  day,
+  hour,
+  postsByDay,
+  onClickEmpty,
+  onClickPost,
+}: {
+  day: Date
+  hour: number
+  postsByDay: Map<string, PostRow[]>
+  onClickEmpty: (d: Date) => void
+  onClickPost: (p: PostRow) => void
+}) {
+  const slotDate = new Date(day)
+  slotDate.setHours(hour, 0, 0, 0)
+  const dropId = `${ymd(day)}|${String(hour).padStart(2, '0')}`
+  const { setNodeRef, isOver } = useDroppable({ id: dropId })
+  const entries = (postsByDay.get(ymd(day)) ?? []).filter((p) => {
+    const iso = p.publishedAt ?? p.scheduledAt
+    if (!iso) return false
+    return new Date(iso).getHours() === hour
+  })
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        'relative min-h-[40px] border-l border-t border-neutral-100 p-0.5',
+        isOver && 'bg-indigo-50',
+      )}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClickEmpty(slotDate)
+      }}
+    >
+      <div className="flex flex-col gap-0.5">
+        {entries.map((p) => (
+          <PostPill key={p.id} post={p} onClick={() => onClickPost(p)} compact />
+        ))}
+      </div>
+    </div>
   )
 }
 
