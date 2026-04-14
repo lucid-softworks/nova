@@ -20,6 +20,9 @@ async function main() {
     console.log(`Created user ${email} (${userId})`)
   }
 
+  // Promote the seeded user to platform-admin for Stage 21's /admin console.
+  await db.update(schema.user).set({ role: 'admin' }).where(eq(schema.user.id, userId))
+
   const existingWorkspace = await db
     .select()
     .from(schema.workspaces)

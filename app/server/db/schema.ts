@@ -128,6 +128,11 @@ export const user = pgTable('user', {
   twoFactorEnabled: boolean('two_factor_enabled').default(false).notNull(),
   notificationPreferences: jsonb('notification_preferences').default({}).notNull(),
   brrrWebhookSecret: text('brrr_webhook_secret'),
+  // Better Auth admin plugin
+  role: text('role'),
+  banned: boolean('banned').default(false),
+  banReason: text('ban_reason'),
+  banExpires: timestamp('ban_expires', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
@@ -141,6 +146,8 @@ export const session = pgTable('session', {
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
+  // Better Auth admin plugin: set when an admin is impersonating this user.
+  impersonatedBy: text('impersonated_by'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })

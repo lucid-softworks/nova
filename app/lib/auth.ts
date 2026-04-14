@@ -10,6 +10,7 @@ import {
   haveIBeenPwned,
   multiSession,
   captcha,
+  admin,
 } from 'better-auth/plugins'
 import { db, schema } from '~/server/db'
 import { sendEmail } from '~/server/mailer.server'
@@ -89,6 +90,11 @@ const plugins = [
       'This password has appeared in a known breach. Pick something different.',
   }),
   multiSession(),
+  admin({
+    // Platform-admin role (separate from our workspace-role system).
+    defaultRole: 'user',
+    adminRoles: ['admin'],
+  }),
   ...(captchaSiteKey && captchaSecretKey
     ? [
         captcha({
@@ -113,6 +119,7 @@ export const auth = betterAuth({
       apikey: schema.apikey,
       twoFactor: schema.twoFactor,
       passkey: schema.passkey,
+      // admin plugin reuses user + session (columns added to existing tables)
     },
   }),
   emailAndPassword: {

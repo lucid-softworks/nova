@@ -6,6 +6,7 @@ import {
   magicLinkClient,
   emailOTPClient,
   multiSessionClient,
+  adminClient,
 } from 'better-auth/client/plugins'
 
 export const authClient = createAuthClient({
@@ -20,6 +21,7 @@ export const authClient = createAuthClient({
     magicLinkClient(),
     emailOTPClient(),
     multiSessionClient(),
+    adminClient(),
   ],
 })
 
