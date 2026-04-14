@@ -478,11 +478,15 @@ function HourCell({
   slotDate.setHours(hour, 0, 0, 0)
   const dropId = `${ymd(day)}|${String(hour).padStart(2, '0')}`
   const { setNodeRef, isOver } = useDroppable({ id: dropId })
+  const [showMore, setShowMore] = useState(false)
   const entries = (postsByDay.get(ymd(day)) ?? []).filter((p) => {
     const iso = p.publishedAt ?? p.scheduledAt
     if (!iso) return false
     return new Date(iso).getHours() === hour
   })
+  const MAX_VISIBLE = 2
+  const visible = entries.slice(0, MAX_VISIBLE)
+  const hidden = entries.slice(MAX_VISIBLE)
   return (
     <div
       ref={setNodeRef}
@@ -495,9 +499,42 @@ function HourCell({
       }}
     >
       <div className="flex flex-col gap-0.5">
-        {entries.map((p) => (
+        {visible.map((p) => (
           <PostPill key={p.id} post={p} onClick={() => onClickPost(p)} compact />
         ))}
+        {hidden.length > 0 ? (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowMore((s) => !s)
+              }}
+              className="w-full rounded bg-neutral-100 px-1 py-0.5 text-left text-[10px] font-semibold text-neutral-600 hover:bg-neutral-200"
+            >
+              +{hidden.length} more
+            </button>
+            {showMore ? (
+              <div
+                className="absolute left-0 top-full z-20 mt-1 w-56 space-y-0.5 rounded-md border border-neutral-200 bg-white p-1 shadow-lg"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {hidden.map((p) => (
+                  <PostPill
+                    key={p.id}
+                    post={p}
+                    onClick={() => {
+                      setShowMore(false)
+                      onClickPost(p)
+                    }}
+                    draggable={false}
+                    compact
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   )
