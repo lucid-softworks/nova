@@ -1,10 +1,9 @@
-import { useMemo, useReducer, useRef, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import {
   Plus,
   X,
   Sparkles,
   Smile,
-  Hash,
   Code,
   ArrowUp,
   ArrowDown,
@@ -27,6 +26,7 @@ import { MediaZone } from './MediaZone'
 import { detectMismatches, MediaMismatchBanner } from './MediaMismatchBanner'
 import { PostPreview } from './PostPreview'
 import { AIAssistPanel } from './AIAssistPanel'
+import { HashtagPickerButton } from './HashtagPickerButton'
 import { saveDraft } from '~/server/composer'
 import { addToQueue, publishNow, schedulePost } from '~/server/scheduling'
 
@@ -45,6 +45,37 @@ export function StandardComposer({
   const [scheduleAt, setScheduleAt] = useState<string>(defaultScheduleLocal())
   const [aiOpen, setAiOpen] = useState(false)
   const navigate = useNavigate()
+
+  // Read a pending template from sessionStorage (written by the Templates page
+  // "Use Template" button) and pre-fill the default version + auto-select any
+  // single-account-per-platform matches.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    let payload: { content?: string; platforms?: string[] } | null = null
+    try {
+      const raw = sessionStorage.getItem('nova:template:next')
+      if (!raw) return
+      payload = JSON.parse(raw)
+      sessionStorage.removeItem('nova:template:next')
+    } catch {
+      return
+    }
+    if (!payload) return
+    const defaultVersion = state.versions.find((v) => v.isDefault)
+    if (defaultVersion && payload.content) {
+      dispatch({ type: 'UPDATE_CONTENT', versionId: defaultVersion.id, content: payload.content })
+    }
+    if (payload.platforms) {
+      for (const p of payload.platforms) {
+        const match = accounts.filter((a) => a.platform === p)
+        if (match.length === 1 && !state.selectedAccountIds.includes(match[0]!.id)) {
+          dispatch({ type: 'TOGGLE_ACCOUNT', accountId: match[0]!.id, accounts })
+        }
+      }
+    }
+    // Intentionally runs once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const selectedPlatforms = useMemo<PlatformKey[]>(() => {
     const set = new Set<PlatformKey>()
@@ -209,6 +240,7 @@ export function StandardComposer({
               supportsThread={!!supportsThread}
               dispatch={dispatch}
               onOpenAI={() => setAiOpen(true)}
+              workspaceSlug={workspaceSlug}
             />
             <MediaZone
               workspaceSlug={workspaceSlug}
@@ -612,12 +644,14 @@ function Editor({
   supportsThread,
   dispatch,
   onOpenAI,
+  workspaceSlug,
 }: {
   version: Version
   supportsFirstComment: boolean
   supportsThread: boolean
   dispatch: React.Dispatch<import('./state').Action>
   onOpenAI: () => void
+  workspaceSlug: string
 }) {
   const minLimit = version.platforms.length
     ? Math.min(...version.platforms.map((p) => PLATFORMS[p].textLimit))
@@ -718,9 +752,10 @@ function Editor({
           <ToolbarBtn title="Emoji" onClick={() => alert('Emoji picker — coming later')}>
             <Smile className="h-4 w-4" />
           </ToolbarBtn>
-          <ToolbarBtn title="Hashtag groups" onClick={() => alert('Hashtag groups land in Stage 12')}>
-            <Hash className="h-4 w-4" />
-          </ToolbarBtn>
+          <HashtagPickerButton
+            workspaceSlug={workspaceSlug}
+            onInsert={(text) => insertAtCursor(` ${text}`)}
+          />
           <div className="relative">
             <ToolbarBtn title="Variables" onClick={() => setShowVariables((o) => !o)}>
               <Code className="h-4 w-4" />
