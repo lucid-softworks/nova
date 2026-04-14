@@ -3,7 +3,9 @@ import { db, schema } from './db'
 import { requireWorkspaceAccess } from './session.server'
 import type { PlatformKey } from '~/lib/platforms'
 
-export type AnalyticsRange = '7d' | '30d' | '90d'
+export type AnalyticsRange = '7d' | '30d' | '90d' | 'custom'
+
+export type CustomRange = { fromIso: string; toIso: string } | null
 
 export type AnalyticsSummary = {
   totalPosts: number
@@ -74,10 +76,26 @@ async function ensureWs(slug: string) {
 }
 
 function rangeToDays(r: AnalyticsRange): number {
-  return r === '7d' ? 7 : r === '30d' ? 30 : 90
+  return r === '7d' ? 7 : r === '30d' ? 30 : r === '90d' ? 90 : 30
 }
 
-function rangeWindow(range: AnalyticsRange, anchor: Date = new Date()) {
+function rangeWindow(
+  range: AnalyticsRange,
+  custom: CustomRange = null,
+  anchor: Date = new Date(),
+) {
+  if (range === 'custom' && custom) {
+    const start = new Date(custom.fromIso)
+    start.setHours(0, 0, 0, 0)
+    const end = new Date(custom.toIso)
+    end.setHours(23, 59, 59, 999)
+    const dayMs = 24 * 60 * 60 * 1000
+    const spanMs = end.getTime() - start.getTime() + 1
+    const prevEnd = new Date(start.getTime() - 1)
+    const prevStart = new Date(prevEnd.getTime() - spanMs + dayMs)
+    prevStart.setHours(0, 0, 0, 0)
+    return { start, end, prevStart, prevEnd }
+  }
   const days = rangeToDays(range)
   const end = new Date(anchor)
   end.setHours(23, 59, 59, 999)
@@ -216,9 +234,10 @@ export async function getSummaryImpl(
   slug: string,
   range: AnalyticsRange,
   accountId: string | null,
+  custom: CustomRange = null,
 ): Promise<AnalyticsSummary> {
   const { workspace } = await ensureWs(slug)
-  const { start, end, prevStart, prevEnd } = rangeWindow(range)
+  const { start, end, prevStart, prevEnd } = rangeWindow(range, custom)
 
   const [curr, prev, currPosts, prevPosts] = await Promise.all([
     sumSnapshots(workspace.id, start, end, accountId),
@@ -254,9 +273,10 @@ export async function getFollowerSeriesImpl(
   slug: string,
   range: AnalyticsRange,
   accountId: string | null,
+  custom: CustomRange = null,
 ): Promise<FollowerPoint[]> {
   const { workspace } = await ensureWs(slug)
-  const { start, end } = rangeWindow(range)
+  const { start, end } = rangeWindow(range, custom)
   const accountIds = await workspaceAccountIds(workspace.id)
   if (accountIds.length === 0) return []
 
@@ -290,9 +310,10 @@ export async function getDailyEngagementsImpl(
   slug: string,
   range: AnalyticsRange,
   accountId: string | null,
+  custom: CustomRange = null,
 ): Promise<DailyEngagementRow[]> {
   const { workspace } = await ensureWs(slug)
-  const { start, end } = rangeWindow(range)
+  const { start, end } = rangeWindow(range, custom)
   const accountIds = await workspaceAccountIds(workspace.id)
   if (accountIds.length === 0) return []
 
@@ -328,9 +349,10 @@ export async function getDailyEngagementsImpl(
 export async function getPlatformTableImpl(
   slug: string,
   range: AnalyticsRange,
+  custom: CustomRange = null,
 ): Promise<PlatformTableRow[]> {
   const { workspace } = await ensureWs(slug)
-  const { start, end } = rangeWindow(range)
+  const { start, end } = rangeWindow(range, custom)
   const accounts = await db
     .select()
     .from(schema.socialAccounts)
@@ -400,10 +422,11 @@ export async function getPlatformTableImpl(
 export async function getTopPostsImpl(
   slug: string,
   range: AnalyticsRange,
+  custom: CustomRange = null,
   limit = 5,
 ): Promise<TopPostRow[]> {
   const { workspace } = await ensureWs(slug)
-  const { start, end } = rangeWindow(range)
+  const { start, end } = rangeWindow(range, custom)
 
   // Use analytics_snapshots aggregated by campaignId → post link is indirect.
   // Simpler approach: rank posts by post_platforms.published_at in range and
@@ -465,9 +488,10 @@ export async function getTopPostsImpl(
 export async function getBestPostingTimesImpl(
   slug: string,
   range: AnalyticsRange,
+  custom: CustomRange = null,
 ): Promise<HeatmapRow[]> {
   const { workspace } = await ensureWs(slug)
-  const { start, end } = rangeWindow(range)
+  const { start, end } = rangeWindow(range, custom)
   const rows = await db
     .select({
       publishedAt: schema.postPlatforms.publishedAt,

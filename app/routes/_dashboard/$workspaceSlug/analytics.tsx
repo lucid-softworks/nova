@@ -62,6 +62,12 @@ function AnalyticsPage() {
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData()
   const [range, setRange] = useState<AnalyticsRange>('30d')
+  const [customFrom, setCustomFrom] = useState<string>(() => {
+    const d = new Date()
+    d.setDate(d.getDate() - 30)
+    return d.toISOString().slice(0, 10)
+  })
+  const [customTo, setCustomTo] = useState<string>(() => new Date().toISOString().slice(0, 10))
   const [accountId, setAccountId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState({
@@ -75,15 +81,22 @@ function AnalyticsPage() {
 
   const reload = async () => {
     setLoading(true)
+    const customDates =
+      range === 'custom'
+        ? {
+            fromIso: new Date(`${customFrom}T00:00:00`).toISOString(),
+            toIso: new Date(`${customTo}T23:59:59`).toISOString(),
+          }
+        : {}
     try {
       const [summary, followers, engagements, platformTable, topPosts, heatmap] =
         await Promise.all([
-          getSummary({ data: { workspaceSlug, range, accountId } }),
-          getFollowerSeries({ data: { workspaceSlug, range, accountId } }),
-          getDailyEngagements({ data: { workspaceSlug, range, accountId } }),
-          getPlatformTable({ data: { workspaceSlug, range } }),
-          getTopPosts({ data: { workspaceSlug, range } }),
-          getBestPostingTimes({ data: { workspaceSlug, range } }),
+          getSummary({ data: { workspaceSlug, range, accountId, ...customDates } }),
+          getFollowerSeries({ data: { workspaceSlug, range, accountId, ...customDates } }),
+          getDailyEngagements({ data: { workspaceSlug, range, accountId, ...customDates } }),
+          getPlatformTable({ data: { workspaceSlug, range, ...customDates } }),
+          getTopPosts({ data: { workspaceSlug, range, ...customDates } }),
+          getBestPostingTimes({ data: { workspaceSlug, range, ...customDates } }),
         ])
       setData({ summary, followers, engagements, platformTable, topPosts, heatmap })
     } finally {
@@ -94,7 +107,7 @@ function AnalyticsPage() {
   useEffect(() => {
     void reload()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, accountId])
+  }, [range, accountId, customFrom, customTo])
 
   return (
     <div className="space-y-5">
@@ -103,8 +116,27 @@ function AnalyticsPage() {
           <h2 className="text-2xl font-semibold text-neutral-900">Analytics</h2>
           <p className="text-sm text-neutral-500">Performance across your connected accounts.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <RangeToggle value={range} onChange={setRange} />
+          {range === 'custom' ? (
+            <div className="flex items-center gap-1 text-xs text-neutral-600">
+              <input
+                type="date"
+                value={customFrom}
+                max={customTo}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="h-8 rounded-md border border-neutral-200 bg-white px-2"
+              />
+              <span>→</span>
+              <input
+                type="date"
+                value={customTo}
+                min={customFrom}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="h-8 rounded-md border border-neutral-200 bg-white px-2"
+              />
+            </div>
+          ) : null}
           <AccountFilter
             accounts={initial.accounts}
             value={accountId}
@@ -159,7 +191,7 @@ function RangeToggle({
 }) {
   return (
     <div className="inline-flex rounded-md border border-neutral-200 bg-white p-0.5 text-xs">
-      {(['7d', '30d', '90d'] as AnalyticsRange[]).map((r) => (
+      {(['7d', '30d', '90d', 'custom'] as AnalyticsRange[]).map((r) => (
         <button
           key={r}
           type="button"
@@ -169,7 +201,13 @@ function RangeToggle({
             value === r ? 'bg-neutral-900 text-white' : 'text-neutral-600',
           )}
         >
-          {r === '7d' ? '7 days' : r === '30d' ? '30 days' : '90 days'}
+          {r === '7d'
+            ? '7 days'
+            : r === '30d'
+              ? '30 days'
+              : r === '90d'
+                ? '90 days'
+                : 'Custom'}
         </button>
       ))}
     </div>
