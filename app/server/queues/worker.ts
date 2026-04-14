@@ -13,10 +13,12 @@ import {
   type ReshareContext,
   type ResharePayload,
 } from '~/server/publishing'
-import type { PlatformKey } from '~/lib/platforms'
+import { PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { getRedis } from './connection'
 import type { PostJobData } from './postQueue'
 import { onStepComplete } from './campaignWorker'
+import { buildVariableMap, substitute } from '~/server/publishing/variables'
+import { isPublishError } from '~/server/publishing/errors'
 
 let worker: Worker<PostJobData> | null = null
 
@@ -100,6 +102,8 @@ async function processJob(job: { data: PostJobData }) {
     )
   }
 
+  const vars = await buildVariableMap(postId)
+
   let anyFailed = false
   let firstError: string | null = null
 
@@ -126,10 +130,12 @@ async function processJob(job: { data: PostJobData }) {
     }
     const publishVersion: PublishVersion = {
       id: version.id,
-      content: version.content,
-      firstComment: version.firstComment,
+      content: substitute(version.content, vars),
+      firstComment: version.firstComment ? substitute(version.firstComment, vars) : null,
       isThread: version.isThread,
-      threadParts: (version.threadParts as { content: string; mediaIds: string[] }[]) ?? [],
+      threadParts: ((version.threadParts as { content: string; mediaIds: string[] }[]) ?? []).map(
+        (p) => ({ content: substitute(p.content, vars), mediaIds: p.mediaIds }),
+      ),
       mediaIds: [],
       platformVariables: (version.platformVariables as Record<string, string>) ?? {},
     }
@@ -159,14 +165,50 @@ async function processJob(job: { data: PostJobData }) {
           failureReason: null,
         })
         .where(eq(schema.postPlatforms.id, target.platform.id))
+
+      // Record the returned URL into the version's platformVariables so
+      // campaign dependents that referenced {stepN_<platform>_url} can
+      // resolve it (the substitution reads from buildVariableMap, but we
+      // also persist this for observability and UI surfacing).
+      const varName = PLATFORMS[target.account.platform].urlVariableName
+      if (varName && result.url) {
+        const existing = (version.platformVariables as Record<string, string>) ?? {}
+        await db
+          .update(schema.postVersions)
+          .set({ platformVariables: { ...existing, [varName]: result.url } })
+          .where(eq(schema.postVersions.id, version.id))
+      }
     } catch (err) {
       anyFailed = true
       const msg = err instanceof Error ? err.message : 'publish failed'
-      firstError ??= msg
+      const userMsg = isPublishError(err) ? err.userMessage : msg
+      firstError ??= userMsg
       await db
         .update(schema.postPlatforms)
-        .set({ status: 'failed', failureReason: msg })
+        .set({ status: 'failed', failureReason: userMsg })
         .where(eq(schema.postPlatforms.id, target.platform.id))
+
+      if (isPublishError(err) && err.code === 'AUTH_EXPIRED') {
+        await db
+          .update(schema.socialAccounts)
+          .set({ status: 'expired' })
+          .where(eq(schema.socialAccounts.id, target.account.id))
+        // Notify everyone in the workspace so they can reconnect.
+        const members = await db
+          .select({ userId: schema.workspaceMembers.userId })
+          .from(schema.workspaceMembers)
+          .where(eq(schema.workspaceMembers.workspaceId, target.account.workspaceId))
+        for (const m of members) {
+          await db.insert(schema.notifications).values({
+            userId: m.userId,
+            workspaceId: target.account.workspaceId,
+            type: 'post_failed',
+            title: `${PLATFORMS[target.account.platform].label} needs reconnection`,
+            body: `@${target.account.accountHandle}'s token is expired.`,
+            data: { socialAccountId: target.account.id, postId },
+          })
+        }
+      }
     }
   }
 
