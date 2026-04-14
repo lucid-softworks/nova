@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #6366f1;
+  --color-sidebar-bg: #0f1117;
+  --color-app-bg: #f8f9fb;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply text-neutral-900 antialiased;
+    background: var(--color-app-bg);
+  }
+}
