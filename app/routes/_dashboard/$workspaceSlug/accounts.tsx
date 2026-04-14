@@ -1,6 +1,222 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Placeholder } from '~/components/layout/Placeholder'
+import { useState } from 'react'
+import { ChevronDown, Plug, RotateCw } from 'lucide-react'
+import { listAccounts, disconnectAccount, type AccountSummary } from '~/server/accounts'
+import { PLATFORM_KEYS, PLATFORMS, type PlatformKey } from '~/lib/platforms'
+import { Card, CardContent } from '~/components/ui/card'
+import { Button } from '~/components/ui/button'
+import { Spinner } from '~/components/ui/spinner'
+import { PlatformIcon } from '~/components/accounts/PlatformIcon'
+import { StatusBadge } from '~/components/accounts/StatusBadge'
+import { AddAccountDialog } from '~/components/accounts/AddAccountDialog'
+import { cn } from '~/lib/utils'
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/accounts')({
-  component: () => <Placeholder title="Accounts" stage={2} />,
+  loader: async ({ params }) => ({
+    accounts: await listAccounts({ data: { workspaceSlug: params.workspaceSlug } }),
+  }),
+  component: AccountsPage,
 })
+
+function AccountsPage() {
+  const { workspaceSlug } = Route.useParams()
+  const initial = Route.useLoaderData()
+  const [accounts, setAccounts] = useState<AccountSummary[]>(initial.accounts)
+  const [expanded, setExpanded] = useState<Set<PlatformKey>>(
+    () => new Set(accounts.map((a) => a.platform)),
+  )
+
+  const reload = async () => {
+    const fresh = await listAccounts({ data: { workspaceSlug } })
+    setAccounts(fresh)
+  }
+
+  const togglePlatform = (p: PlatformKey) => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(p)) next.delete(p)
+      else next.add(p)
+      return next
+    })
+  }
+
+  const byPlatform = groupByPlatform(accounts)
+  const counts: Partial<Record<PlatformKey, number>> = {}
+  for (const [k, v] of Object.entries(byPlatform)) {
+    counts[k as PlatformKey] = v.length
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold text-neutral-900">Connected Accounts</h2>
+          <p className="text-sm text-neutral-500">Link the platforms you want to publish to.</p>
+        </div>
+        <AddAccountDialog
+          workspaceSlug={workspaceSlug}
+          connectedCounts={counts}
+          onConnected={reload}
+        />
+      </div>
+
+      {accounts.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center">
+            <Plug className="mx-auto mb-3 h-8 w-8 text-neutral-300" />
+            <p className="text-sm text-neutral-600">No accounts connected yet.</p>
+            <p className="text-xs text-neutral-500">
+              Click &quot;Add Account&quot; to connect your first platform.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {PLATFORM_KEYS.filter((p) => (byPlatform[p] ?? []).length > 0).map((p) => (
+            <PlatformGroup
+              key={p}
+              platform={p}
+              accounts={byPlatform[p] ?? []}
+              expanded={expanded.has(p)}
+              onToggle={() => togglePlatform(p)}
+              onReload={reload}
+              workspaceSlug={workspaceSlug}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PlatformGroup({
+  platform,
+  accounts,
+  expanded,
+  onToggle,
+  onReload,
+  workspaceSlug,
+}: {
+  platform: PlatformKey
+  accounts: AccountSummary[]
+  expanded: boolean
+  onToggle: () => void
+  onReload: () => Promise<void>
+  workspaceSlug: string
+}) {
+  const p = PLATFORMS[platform]
+  return (
+    <Card>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-3 p-4 text-left"
+      >
+        <PlatformIcon platform={platform} />
+        <div className="flex-1">
+          <div className="font-medium text-neutral-900">{p.label}</div>
+          <div className="text-xs text-neutral-500">
+            {accounts.length} {accounts.length === 1 ? 'account' : 'accounts'}
+          </div>
+        </div>
+        <ChevronDown
+          className={cn('h-4 w-4 text-neutral-400 transition-transform', expanded && 'rotate-180')}
+        />
+      </button>
+      {expanded ? (
+        <div className="border-t border-neutral-100">
+          {accounts.map((a) => (
+            <AccountRow
+              key={a.id}
+              account={a}
+              onReload={onReload}
+              workspaceSlug={workspaceSlug}
+            />
+          ))}
+        </div>
+      ) : null}
+    </Card>
+  )
+}
+
+function AccountRow({
+  account,
+  onReload,
+  workspaceSlug,
+}: {
+  account: AccountSummary
+  onReload: () => Promise<void>
+  workspaceSlug: string
+}) {
+  const [busy, setBusy] = useState(false)
+  const expiring = account.tokenExpiresAt
+    ? new Date(account.tokenExpiresAt).getTime() - Date.now() < 7 * 24 * 60 * 60 * 1000
+    : false
+
+  const handleDisconnect = async () => {
+    if (!confirm(`Disconnect @${account.accountHandle}?`)) return
+    setBusy(true)
+    try {
+      await disconnectAccount({ data: { workspaceSlug, accountId: account.id } })
+      await onReload()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      {account.avatarUrl ? (
+        <img src={account.avatarUrl} alt="" className="h-9 w-9 rounded-full" />
+      ) : (
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
+          {initialsOf(account.accountName)}
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-medium text-neutral-900">{account.accountName}</div>
+        <div className="flex items-center gap-2 text-xs text-neutral-500">
+          <span className="truncate">@{account.accountHandle}</span>
+          {account.lastSyncedAt ? <span>· Synced {fmtDate(account.lastSyncedAt)}</span> : null}
+        </div>
+      </div>
+      {expiring && account.status === 'connected' ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-700">
+          Token expiring soon
+        </span>
+      ) : null}
+      <StatusBadge status={account.status} />
+      {account.status === 'connected' ? (
+        <Button variant="outline" size="sm" onClick={handleDisconnect} disabled={busy}>
+          {busy ? <Spinner /> : null}
+          Disconnect
+        </Button>
+      ) : (
+        <Button variant="outline" size="sm" disabled>
+          <RotateCw className="h-3 w-3" /> Reconnect
+        </Button>
+      )}
+    </div>
+  )
+}
+
+function groupByPlatform(list: AccountSummary[]) {
+  const out: Partial<Record<PlatformKey, AccountSummary[]>> = {}
+  for (const a of list) {
+    ;(out[a.platform] ??= []).push(a)
+  }
+  return out
+}
+
+function initialsOf(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p.charAt(0).toUpperCase())
+    .join('') || '?'
+}
+
+function fmtDate(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
