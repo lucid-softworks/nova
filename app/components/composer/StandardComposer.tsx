@@ -3,7 +3,6 @@ import {
   Plus,
   X,
   Sparkles,
-  Smile,
   Code,
   ArrowUp,
   ArrowDown,
@@ -27,6 +26,7 @@ import { MediaZone } from './MediaZone'
 import { detectMismatches, MediaMismatchBanner } from './MediaMismatchBanner'
 import { PostPreview } from './PostPreview'
 import { AIAssistPanel } from './AIAssistPanel'
+import { EmojiPicker } from './EmojiPicker'
 import { HashtagPickerButton } from './HashtagPickerButton'
 import { saveDraft } from '~/server/composer'
 import { addToQueue, publishNow, schedulePost, submitForApproval } from '~/server/scheduling'
@@ -801,9 +801,7 @@ function Editor({
         )}
 
         <div className="flex flex-wrap items-center gap-2">
-          <ToolbarBtn title="Emoji" onClick={() => alert('Emoji picker — coming later')}>
-            <Smile className="h-4 w-4" />
-          </ToolbarBtn>
+          <EmojiPicker onPick={(e) => insertAtCursor(e)} />
           <HashtagPickerButton
             workspaceSlug={workspaceSlug}
             onInsert={(text) => insertAtCursor(` ${text}`)}
