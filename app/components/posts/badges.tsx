@@ -18,6 +18,8 @@ const CAMPAIGN_STATUS_STYLES: Record<CampaignStatus, { label: string; bg: string
   failed: { label: 'Failed', bg: 'bg-red-50', text: 'text-red-700' },
   partial: { label: 'Partial', bg: 'bg-amber-50', text: 'text-amber-700' },
   on_hold: { label: 'On Hold', bg: 'bg-yellow-50', text: 'text-yellow-800' },
+  paused: { label: 'Paused', bg: 'bg-neutral-100', text: 'text-neutral-700' },
+  cancelled: { label: 'Cancelled', bg: 'bg-neutral-200', text: 'text-neutral-600' },
 }
 
 export function PostStatusBadge({ status }: { status: PostStatus }) {

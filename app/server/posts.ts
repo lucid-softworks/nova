@@ -11,6 +11,9 @@ import {
   retryPostImpl,
   changeToDraftImpl,
   listPostsForCalendarImpl,
+  pauseCampaignImpl,
+  cancelCampaignImpl,
+  duplicateCampaignImpl,
 } from './posts.server'
 
 export type {
@@ -97,3 +100,20 @@ export const listPostsForCalendar = createServerFn({ method: 'GET' })
   .handler(async ({ data }) =>
     listPostsForCalendarImpl(data.workspaceSlug, data.fromIso, data.toIso),
   )
+
+const campaignActionSchema = z.object({
+  workspaceSlug: z.string().min(1),
+  campaignId: z.string().uuid(),
+})
+
+export const pauseCampaign = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => campaignActionSchema.parse(d))
+  .handler(async ({ data }) => pauseCampaignImpl(data.workspaceSlug, data.campaignId))
+
+export const cancelCampaign = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => campaignActionSchema.parse(d))
+  .handler(async ({ data }) => cancelCampaignImpl(data.workspaceSlug, data.campaignId))
+
+export const duplicateCampaign = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => campaignActionSchema.parse(d))
+  .handler(async ({ data }) => duplicateCampaignImpl(data.workspaceSlug, data.campaignId))

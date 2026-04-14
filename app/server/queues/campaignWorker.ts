@@ -146,6 +146,13 @@ async function workspaceForPost(postId: string): Promise<string> {
 }
 
 async function recomputeCampaignStatus(campaignId: string) {
+  const campaign = await db.query.campaigns.findFirst({
+    where: eq(schema.campaigns.id, campaignId),
+  })
+  if (!campaign) return
+  // Paused/cancelled are terminal user states — don't let worker clobber them.
+  if (campaign.status === 'paused' || campaign.status === 'cancelled') return
+
   const steps = await db
     .select({ status: schema.campaignSteps.status })
     .from(schema.campaignSteps)

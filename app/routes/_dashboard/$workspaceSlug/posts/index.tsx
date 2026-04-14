@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { AlertTriangle, ChevronDown, ChevronRight, Search, Target, Trash2 } from 'lucide-react'
+import { AlertTriangle, ChevronDown, ChevronRight, Copy, MoreHorizontal, Pause, Search, Target, Trash2, X } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
@@ -13,6 +13,9 @@ import {
   listCampaigns,
   deletePosts,
   changeToDraft,
+  pauseCampaign,
+  cancelCampaign,
+  duplicateCampaign,
   type PostRow as Row,
   type PostsTab,
   type CampaignSummary,
@@ -414,6 +417,11 @@ function CampaignGroupRow({
             </div>
           </div>
         </div>
+        <CampaignActionsMenu
+          campaign={campaign}
+          workspaceSlug={workspaceSlug}
+          onChanged={onChanged}
+        />
       </div>
       {expanded ? (
         <div className="border-t border-neutral-100">
@@ -441,6 +449,87 @@ function CampaignGroupRow({
               </div>
             ) : null,
           )}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function CampaignActionsMenu({
+  campaign,
+  workspaceSlug,
+  onChanged,
+}: {
+  campaign: CampaignSummary
+  workspaceSlug: string
+  onChanged: () => Promise<void>
+}) {
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const terminal = campaign.status === 'published' || campaign.status === 'cancelled'
+  const pauseable = !terminal && campaign.status !== 'paused'
+
+  const run = async (action: () => Promise<unknown>) => {
+    setBusy(true)
+    try {
+      await action()
+      setOpen(false)
+      await onChanged()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="rounded p-1 text-neutral-500 hover:bg-neutral-100"
+        aria-label="Campaign actions"
+        disabled={busy}
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+      {open ? (
+        <div className="absolute right-0 top-full z-10 mt-1 w-52 rounded-md border border-neutral-200 bg-white p-1 text-sm shadow-lg">
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 disabled:opacity-50"
+            onClick={() =>
+              run(() =>
+                pauseCampaign({ data: { workspaceSlug, campaignId: campaign.id } }),
+              )
+            }
+            disabled={busy || !pauseable}
+          >
+            <Pause className="h-3 w-3" /> Pause campaign
+          </button>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-red-600 hover:bg-red-50 disabled:opacity-50"
+            onClick={() => {
+              if (!confirm(`Cancel "${campaign.name}"? Remaining steps will stop.`)) return
+              void run(() =>
+                cancelCampaign({ data: { workspaceSlug, campaignId: campaign.id } }),
+              )
+            }}
+            disabled={busy || terminal}
+          >
+            <X className="h-3 w-3" /> Cancel campaign
+          </button>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 disabled:opacity-50"
+            onClick={() =>
+              run(() =>
+                duplicateCampaign({ data: { workspaceSlug, campaignId: campaign.id } }),
+              )
+            }
+            disabled={busy}
+          >
+            <Copy className="h-3 w-3" /> Duplicate campaign
+          </button>
         </div>
       ) : null}
     </div>

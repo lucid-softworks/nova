@@ -637,6 +637,139 @@ export async function changeToDraftImpl(slug: string, postIds: string[]) {
   return { ok: true }
 }
 
+// Campaign actions
+
+async function setActiveStepsTo(
+  campaignId: string,
+  campaignStatus: 'paused' | 'cancelled',
+  stepStatus: 'waiting' | 'failed',
+) {
+  const steps = await db
+    .select()
+    .from(schema.campaignSteps)
+    .where(eq(schema.campaignSteps.campaignId, campaignId))
+  const activeSteps = steps.filter(
+    (s) => s.status !== 'published' && s.status !== 'failed',
+  )
+  if (activeSteps.length > 0) {
+    await db
+      .update(schema.campaignSteps)
+      .set({ status: stepStatus })
+      .where(
+        inArray(
+          schema.campaignSteps.id,
+          activeSteps.map((s) => s.id),
+        ),
+      )
+    const postIds = activeSteps.map((s) => s.postId).filter(Boolean) as string[]
+    if (postIds.length > 0) {
+      await db
+        .update(schema.posts)
+        .set({ status: 'draft', scheduledAt: null })
+        .where(inArray(schema.posts.id, postIds))
+    }
+  }
+  await db
+    .update(schema.campaigns)
+    .set({ status: campaignStatus, updatedAt: new Date() })
+    .where(eq(schema.campaigns.id, campaignId))
+}
+
+export async function pauseCampaignImpl(slug: string, campaignId: string) {
+  const { workspace } = await ensureWs(slug)
+  const campaign = await db.query.campaigns.findFirst({
+    where: and(
+      eq(schema.campaigns.id, campaignId),
+      eq(schema.campaigns.workspaceId, workspace.id),
+    ),
+  })
+  if (!campaign) throw new Error('Campaign not found')
+  await setActiveStepsTo(campaignId, 'paused', 'waiting')
+  return { ok: true }
+}
+
+export async function cancelCampaignImpl(slug: string, campaignId: string) {
+  const { workspace } = await ensureWs(slug)
+  const campaign = await db.query.campaigns.findFirst({
+    where: and(
+      eq(schema.campaigns.id, campaignId),
+      eq(schema.campaigns.workspaceId, workspace.id),
+    ),
+  })
+  if (!campaign) throw new Error('Campaign not found')
+  await setActiveStepsTo(campaignId, 'cancelled', 'failed')
+  return { ok: true }
+}
+
+export async function duplicateCampaignImpl(slug: string, campaignId: string) {
+  const { workspace, user } = await ensureWs(slug)
+  const source = await db.query.campaigns.findFirst({
+    where: and(
+      eq(schema.campaigns.id, campaignId),
+      eq(schema.campaigns.workspaceId, workspace.id),
+    ),
+  })
+  if (!source) throw new Error('Campaign not found')
+
+  const steps = await db
+    .select()
+    .from(schema.campaignSteps)
+    .where(eq(schema.campaignSteps.campaignId, campaignId))
+    .orderBy(asc(schema.campaignSteps.stepOrder))
+
+  const [newCampaign] = await db
+    .insert(schema.campaigns)
+    .values({
+      workspaceId: workspace.id,
+      authorId: user.id,
+      name: `${source.name} (copy)`,
+      status: 'draft',
+    })
+    .returning({ id: schema.campaigns.id })
+  if (!newCampaign) throw new Error('Failed to duplicate campaign')
+
+  // Duplicate each step's post (as draft) and rebuild dependency links with
+  // the new step ids.
+  const oldToNewStep = new Map<string, string>()
+  for (const s of steps) {
+    let newPostId: string | null = null
+    if (s.postId) {
+      const dup = await duplicatePostImpl(slug, s.postId)
+      newPostId = dup.postId
+      await db
+        .update(schema.posts)
+        .set({ campaignId: newCampaign.id })
+        .where(eq(schema.posts.id, dup.postId))
+    }
+    const [newStep] = await db
+      .insert(schema.campaignSteps)
+      .values({
+        campaignId: newCampaign.id,
+        postId: newPostId,
+        stepOrder: s.stepOrder,
+        status: 'waiting',
+        triggerType: s.triggerType,
+        triggerDelayMinutes: s.triggerDelayMinutes,
+        triggerScheduledAt: null,
+        dependsOnStepId: null,
+      })
+      .returning({ id: schema.campaignSteps.id })
+    if (newStep) oldToNewStep.set(s.id, newStep.id)
+  }
+  for (const s of steps) {
+    if (!s.dependsOnStepId) continue
+    const newId = oldToNewStep.get(s.id)
+    const newDep = oldToNewStep.get(s.dependsOnStepId)
+    if (!newId || !newDep) continue
+    await db
+      .update(schema.campaignSteps)
+      .set({ dependsOnStepId: newDep })
+      .where(eq(schema.campaignSteps.id, newId))
+  }
+
+  return { campaignId: newCampaign.id }
+}
+
 // Campaign detail
 
 export async function getCampaignDetailImpl(

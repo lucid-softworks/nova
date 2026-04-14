@@ -62,6 +62,8 @@ export type CampaignStatus =
   | 'failed'
   | 'partial'
   | 'on_hold'
+  | 'paused'
+  | 'cancelled'
 
 export type CampaignSummary = {
   id: string

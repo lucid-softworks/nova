@@ -49,6 +49,8 @@ export const campaignStatusEnum = pgEnum('campaign_status', [
   'failed',
   'partial',
   'on_hold',
+  'paused',
+  'cancelled',
 ])
 
 export const campaignStepStatusEnum = pgEnum('campaign_step_status', [
