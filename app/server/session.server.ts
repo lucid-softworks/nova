@@ -3,8 +3,10 @@ import { eq } from 'drizzle-orm'
 import { auth } from '~/lib/auth'
 import { db, schema } from './db'
 import type { SessionContext } from './types'
+import { bootQueues } from './queues/bootstrap'
 
 export async function loadSessionContext(): Promise<SessionContext> {
+  bootQueues()
   const session = await auth.api.getSession({ headers: getRequest().headers })
   if (!session?.user) return { user: null, workspaces: [] }
 

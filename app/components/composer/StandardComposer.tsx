@@ -27,6 +27,7 @@ import { MediaZone } from './MediaZone'
 import { detectMismatches, MediaMismatchBanner } from './MediaMismatchBanner'
 import { PostPreview } from './PostPreview'
 import { saveDraft } from '~/server/composer'
+import { addToQueue, publishNow, schedulePost } from '~/server/scheduling'
 
 export function StandardComposer({
   workspaceSlug,
@@ -36,8 +37,11 @@ export function StandardComposer({
   accounts: ConnectedAccount[]
 }) {
   const [state, dispatch] = useReducer(composerReducer, undefined, initialState)
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving] = useState<null | 'draft' | 'schedule' | 'queue' | 'now'>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+  const [scheduleOpen, setScheduleOpen] = useState(false)
+  const [scheduleAt, setScheduleAt] = useState<string>(defaultScheduleLocal())
   const navigate = useNavigate()
 
   const selectedPlatforms = useMemo<PlatformKey[]>(() => {
@@ -79,32 +83,88 @@ export function StandardComposer({
     return selectedPlatforms.filter((p) => !claimed.has(p))
   }, [state.versions, selectedPlatforms])
 
-  const onSave = async () => {
+  const persist = async () => {
+    const { postId } = await saveDraft({
+      data: {
+        workspaceSlug,
+        mode: state.startMode,
+        socialAccountIds: state.selectedAccountIds,
+        versions: state.versions.map((v) => ({
+          platforms: v.platforms,
+          content: v.content,
+          firstComment: v.firstCommentEnabled ? v.firstComment : null,
+          isThread: v.isThread,
+          threadParts: v.threadParts.map((p) => ({ content: p.content, mediaIds: p.mediaIds })),
+          mediaIds: v.mediaIds,
+          isDefault: v.isDefault,
+        })),
+        reddit: redditSelected ? state.reddit : null,
+      },
+    })
+    return postId
+  }
+
+  const onSaveDraft = async () => {
     setSaveError(null)
-    setSaving(true)
+    setSaving('draft')
     try {
-      await saveDraft({
-        data: {
-          workspaceSlug,
-          mode: state.startMode,
-          socialAccountIds: state.selectedAccountIds,
-          versions: state.versions.map((v) => ({
-            platforms: v.platforms,
-            content: v.content,
-            firstComment: v.firstCommentEnabled ? v.firstComment : null,
-            isThread: v.isThread,
-            threadParts: v.threadParts.map((p) => ({ content: p.content, mediaIds: p.mediaIds })),
-            mediaIds: v.mediaIds,
-            isDefault: v.isDefault,
-          })),
-          reddit: redditSelected ? state.reddit : null,
-        },
-      })
+      await persist()
       navigate({ to: '/$workspaceSlug/posts', params: { workspaceSlug } })
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'Could not save draft')
     } finally {
-      setSaving(false)
+      setSaving(null)
+    }
+  }
+
+  const onConfirmSchedule = async () => {
+    setSaveError(null)
+    setSaving('schedule')
+    try {
+      const postId = await persist()
+      const iso = new Date(scheduleAt).toISOString()
+      await schedulePost({ data: { workspaceSlug, postId, scheduledAt: iso } })
+      navigate({ to: '/$workspaceSlug/posts', params: { workspaceSlug } })
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Could not schedule')
+    } finally {
+      setSaving(null)
+      setScheduleOpen(false)
+    }
+  }
+
+  const onAddToQueue = async () => {
+    setSaveError(null)
+    setToast(null)
+    setSaving('queue')
+    try {
+      const postId = await persist()
+      const result = await addToQueue({ data: { workspaceSlug, postId } })
+      if (!result.ok) {
+        setToast(
+          'No posting schedule yet — add one in Settings → Posting Schedule, then try again.',
+        )
+        return
+      }
+      navigate({ to: '/$workspaceSlug/posts', params: { workspaceSlug } })
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Could not queue')
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  const onPublishNow = async () => {
+    setSaveError(null)
+    setSaving('now')
+    try {
+      const postId = await persist()
+      await publishNow({ data: { workspaceSlug, postId } })
+      navigate({ to: '/$workspaceSlug/posts', params: { workspaceSlug } })
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Could not publish')
+    } finally {
+      setSaving(null)
     }
   }
 
@@ -172,30 +232,87 @@ export function StandardComposer({
           <Button type="button" variant="ghost" onClick={onDiscard}>
             Discard
           </Button>
-          <div className="flex gap-2">
+          <div className="relative flex gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onSaveDraft}
+              disabled={saving !== null || state.selectedAccountIds.length === 0}
+            >
+              {saving === 'draft' ? <Spinner /> : null}
+              Save Draft
+            </Button>
             <Button
               type="button"
               variant="outline"
-              disabled={!hasMismatch ? false : false}
-              onClick={() => alert('Scheduling lands in Stage 4')}
+              onClick={onAddToQueue}
+              disabled={saving !== null || hasMismatch || state.selectedAccountIds.length === 0}
+            >
+              {saving === 'queue' ? <Spinner /> : null}
+              Add to Queue
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onPublishNow}
+              disabled={saving !== null || hasMismatch || state.selectedAccountIds.length === 0}
+            >
+              {saving === 'now' ? <Spinner /> : null}
+              Publish Now
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setScheduleOpen((o) => !o)}
+              disabled={saving !== null || hasMismatch || state.selectedAccountIds.length === 0}
             >
               Schedule
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => alert('Publish Now lands in Stage 6')}
-              disabled={hasMismatch}
-            >
-              Publish Now
-            </Button>
-            <Button type="button" onClick={onSave} disabled={saving || state.selectedAccountIds.length === 0}>
-              {saving ? <Spinner /> : null}
-              Save Draft
-            </Button>
+            {scheduleOpen ? (
+              <div className="absolute bottom-full right-0 z-20 mb-2 w-80 rounded-md border border-neutral-200 bg-white p-4 shadow-lg">
+                <div className="space-y-3">
+                  <div className="text-sm font-semibold text-neutral-900">Schedule post</div>
+                  <input
+                    type="datetime-local"
+                    value={scheduleAt}
+                    onChange={(e) => setScheduleAt(e.target.value)}
+                    className="w-full rounded border border-neutral-200 px-2 py-1.5 text-sm"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setScheduleOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={onConfirmSchedule}
+                      disabled={saving !== null || !scheduleAt}
+                    >
+                      {saving === 'schedule' ? <Spinner /> : null}
+                      Schedule Post
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
         {saveError ? <p className="text-sm text-red-600">{saveError}</p> : null}
+        {toast ? (
+          <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
+            {toast}{' '}
+            <a
+              className="underline"
+              href={`/${workspaceSlug}/settings/schedule`}
+            >
+              Open schedule
+            </a>
+          </div>
+        ) : null}
       </div>
 
       <div className="space-y-3">
@@ -218,6 +335,12 @@ export function StandardComposer({
       </div>
     </div>
   )
+}
+
+function defaultScheduleLocal(): string {
+  const d = new Date(Date.now() + 60 * 60 * 1000)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 // -- sub-components --------------------------------------------------------
