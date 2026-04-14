@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { getRequest } from '@tanstack/react-start/server'
 import { eq } from 'drizzle-orm'
 import { auth } from '~/lib/auth'
@@ -5,8 +6,21 @@ import { db, schema } from './db'
 import type { SessionContext } from './types'
 import { bootQueues } from './queues/bootstrap'
 
+const overrideStorage = new AsyncLocalStorage<SessionContext>()
+
+/**
+ * Run `fn` with a pre-resolved session context, bypassing the normal
+ * cookie-based lookup. Used by API v1 routes that authenticate via Bearer
+ * tokens so existing `requireWorkspaceAccess`-based impls just work.
+ */
+export function withSessionOverride<T>(ctx: SessionContext, fn: () => Promise<T>): Promise<T> {
+  return overrideStorage.run(ctx, fn)
+}
+
 export async function loadSessionContext(): Promise<SessionContext> {
   bootQueues()
+  const override = overrideStorage.getStore()
+  if (override) return override
   const session = await auth.api.getSession({ headers: getRequest().headers })
   if (!session?.user) return { user: null, workspaces: [] }
 

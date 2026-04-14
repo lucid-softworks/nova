@@ -1,6 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import { db, schema } from '~/server/db'
 import { getPostQueue } from './postQueue'
+import { publishWebhookEvent } from '~/server/webhooks.server'
 
 export async function onStepComplete(stepId: string, success: boolean) {
   const step = await db.query.campaignSteps.findFirst({
@@ -184,4 +185,9 @@ async function emitCampaignOnHold(campaignId: string) {
       data: { campaignId },
     })
   }
+  await publishWebhookEvent(camp.workspaceId, 'campaign.on_hold', {
+    campaignId,
+    workspaceId: camp.workspaceId,
+    name: camp.name,
+  })
 }

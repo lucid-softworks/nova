@@ -2,6 +2,7 @@ import { and, asc, eq, gte } from 'drizzle-orm'
 import { db, schema } from './db'
 import { requireWorkspaceAccess } from './session.server'
 import { notifyUser, notifyWorkspaceApprovers } from './notifications.server'
+import { publishWebhookEvent } from './webhooks.server'
 
 async function ensureWs(slug: string) {
   const r = await requireWorkspaceAccess(slug)
@@ -30,6 +31,11 @@ export async function scheduleAtImpl(slug: string, postId: string, scheduledAt: 
   await db
     .insert(schema.postActivity)
     .values({ postId, userId: user.id, action: 'scheduled' })
+  await publishWebhookEvent(workspace.id, 'post.scheduled', {
+    postId,
+    workspaceId: workspace.id,
+    scheduledAt: scheduledAt.toISOString(),
+  })
   return { postId, scheduledAt: scheduledAt.toISOString() }
 }
 
@@ -81,6 +87,12 @@ export async function approvePostImpl(slug: string, postId: string, scheduledAtI
       data: { postId },
     })
   }
+  await publishWebhookEvent(workspace.id, 'post.approved', {
+    postId,
+    workspaceId: workspace.id,
+    scheduledAt: when.toISOString(),
+    approvedBy: user.id,
+  })
   return { postId, scheduledAt: when.toISOString() }
 }
 
@@ -107,6 +119,12 @@ export async function requestChangesImpl(slug: string, postId: string, note: str
       data: { postId },
     })
   }
+  await publishWebhookEvent(workspace.id, 'post.rejected', {
+    postId,
+    workspaceId: workspace.id,
+    note,
+    rejectedBy: user.id,
+  })
   return { ok: true }
 }
 

@@ -20,6 +20,7 @@ import { onStepComplete } from './campaignWorker'
 import { buildVariableMap, substitute } from '~/server/publishing/variables'
 import { isPublishError } from '~/server/publishing/errors'
 import { notifyUser } from '~/server/notifications.server'
+import { publishWebhookEvent } from '~/server/webhooks.server'
 
 let worker: Worker<PostJobData> | null = null
 
@@ -229,6 +230,11 @@ async function processJob(job: { data: PostJobData }) {
         data: { postId },
       })
     }
+    await publishWebhookEvent(post.workspaceId, 'post.failed', {
+      postId,
+      workspaceId: post.workspaceId,
+      failureReason: firstError,
+    })
   } else {
     await db
       .update(schema.posts)
@@ -245,6 +251,14 @@ async function processJob(job: { data: PostJobData }) {
         data: { postId },
       })
     }
+    await publishWebhookEvent(post.workspaceId, 'post.published', {
+      postId,
+      workspaceId: post.workspaceId,
+      platforms: platformTargets.map((t) => ({
+        platform: t.account.platform,
+        accountHandle: t.account.accountHandle,
+      })),
+    })
   }
 
   if (post.campaignStepId) {
