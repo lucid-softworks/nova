@@ -300,13 +300,13 @@ function InviteModal({
       const res = await addMemberByEmail({
         data: { workspaceSlug, email, role },
       })
-      if (res.kind === 'no_such_user') {
-        setError("No SocialHub user with that email. Ask them to sign up first.")
-        return
-      }
       if (res.kind === 'already_member') {
         setError('That user is already in this workspace.')
         return
+      }
+      if (res.kind === 'invited') {
+        setError(null)
+        // Fall through; UI reload shows the pending invitation.
       }
       onOpenChange(false)
       setEmail('')

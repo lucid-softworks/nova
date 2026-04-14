@@ -79,13 +79,23 @@ export async function listUsersImpl(): Promise<AdminUserRow[]> {
 
 export async function listWorkspacesImpl(): Promise<AdminWorkspaceRow[]> {
   await requireAdmin()
-  const ws = await db.select().from(schema.workspaces).orderBy(desc(schema.workspaces.createdAt))
+  const ws = await db
+    .select({
+      id: schema.workspaces.id,
+      organizationId: schema.workspaces.organizationId,
+      name: schema.organization.name,
+      slug: schema.organization.slug,
+      createdAt: schema.workspaces.createdAt,
+    })
+    .from(schema.workspaces)
+    .innerJoin(schema.organization, eq(schema.organization.id, schema.workspaces.organizationId))
+    .orderBy(desc(schema.workspaces.createdAt))
   const out: AdminWorkspaceRow[] = []
   for (const w of ws) {
     const counts = await db
       .select()
-      .from(schema.workspaceMembers)
-      .where(eq(schema.workspaceMembers.workspaceId, w.id))
+      .from(schema.member)
+      .where(eq(schema.member.organizationId, w.organizationId))
     out.push({
       id: w.id,
       name: w.name,
@@ -99,7 +109,13 @@ export async function listWorkspacesImpl(): Promise<AdminWorkspaceRow[]> {
 
 export async function deleteWorkspaceImpl(workspaceId: string) {
   await requireAdmin()
-  await db.delete(schema.workspaces).where(eq(schema.workspaces.id, workspaceId))
+  // Find the org backing this workspace and cascade-delete it; that takes
+  // the workspaces satellite, members, and invitations with it.
+  const ws = await db.query.workspaces.findFirst({
+    where: eq(schema.workspaces.id, workspaceId),
+  })
+  if (!ws) return { ok: true }
+  await db.delete(schema.organization).where(eq(schema.organization.id, ws.organizationId))
   return { ok: true }
 }
 
@@ -153,11 +169,12 @@ export async function listWebhookDeliveriesImpl(): Promise<AdminWebhookDelivery[
       statusCode: schema.webhookDeliveries.statusCode,
       createdAt: schema.webhookDeliveries.createdAt,
       workspaceId: schema.workspaces.id,
-      workspaceName: schema.workspaces.name,
+      workspaceName: schema.organization.name,
     })
     .from(schema.webhookDeliveries)
     .innerJoin(schema.webhooks, eq(schema.webhooks.id, schema.webhookDeliveries.webhookId))
     .leftJoin(schema.workspaces, eq(schema.workspaces.id, schema.webhooks.workspaceId))
+    .leftJoin(schema.organization, eq(schema.organization.id, schema.workspaces.organizationId))
     .orderBy(desc(schema.webhookDeliveries.createdAt))
     .limit(100)
   return rows.map((r) => ({

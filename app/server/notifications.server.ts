@@ -62,10 +62,11 @@ export async function listMyNotificationsImpl(): Promise<NotificationRow[]> {
       data: schema.notifications.data,
       readAt: schema.notifications.readAt,
       createdAt: schema.notifications.createdAt,
-      slug: schema.workspaces.slug,
+      slug: schema.organization.slug,
     })
     .from(schema.notifications)
     .leftJoin(schema.workspaces, eq(schema.workspaces.id, schema.notifications.workspaceId))
+    .leftJoin(schema.organization, eq(schema.organization.id, schema.workspaces.organizationId))
     .where(eq(schema.notifications.userId, user.id))
     .orderBy(desc(schema.notifications.createdAt))
     .limit(50)
@@ -133,11 +134,19 @@ export async function notifyUser(params: {
   const u = await db.query.user.findFirst({ where: eq(schema.user.id, params.userId) })
   if (!u) return
   const prefs = resolvePrefs(u.notificationPreferences, params.type)
-  const ws = await db.query.workspaces.findFirst({
-    where: eq(schema.workspaces.id, params.workspaceId),
-  })
+  const wsRow = await db
+    .select({
+      appName: schema.workspaces.appName,
+      orgSlug: schema.organization.slug,
+      orgLogo: schema.organization.logo,
+    })
+    .from(schema.workspaces)
+    .innerJoin(schema.organization, eq(schema.organization.id, schema.workspaces.organizationId))
+    .where(eq(schema.workspaces.id, params.workspaceId))
+    .limit(1)
+  const ws = wsRow[0] ?? null
   const appName = ws?.appName ?? 'SocialHub'
-  const deepUrl = buildDeepLink(ws?.slug ?? null, params.type, params.data ?? {})
+  const deepUrl = buildDeepLink(ws?.orgSlug ?? null, params.type, params.data ?? {})
 
   const jobs: Array<Promise<unknown>> = []
 
@@ -162,7 +171,7 @@ export async function notifyUser(params: {
         text: `${params.body}${deepUrl ? `\n\n${deepUrl}` : ''}`,
         html: renderEmail({
           appName,
-          logoUrl: ws?.logoUrl ?? null,
+          logoUrl: ws?.orgLogo ?? null,
           title: params.title,
           body: params.body,
           deepUrl,
@@ -270,13 +279,14 @@ export async function notifyWorkspaceAdmins(params: {
   data?: NotificationData
 }) {
   const members = await db
-    .select({ userId: schema.workspaceMembers.userId })
-    .from(schema.workspaceMembers)
+    .select({ userId: schema.member.userId })
+    .from(schema.member)
+    .innerJoin(
+      schema.workspaces,
+      eq(schema.workspaces.organizationId, schema.member.organizationId),
+    )
     .where(
-      and(
-        eq(schema.workspaceMembers.workspaceId, params.workspaceId),
-        eq(schema.workspaceMembers.role, 'admin'),
-      ),
+      and(eq(schema.workspaces.id, params.workspaceId), eq(schema.member.role, 'admin')),
     )
   for (const m of members) {
     await notifyUser({ ...params, userId: m.userId })

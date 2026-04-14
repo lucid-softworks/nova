@@ -11,7 +11,9 @@ import {
   multiSession,
   captcha,
   admin,
+  organization,
 } from 'better-auth/plugins'
+import { createAccessControl } from 'better-auth/plugins/access'
 import { db, schema } from '~/server/db'
 import { sendEmail } from '~/server/mailer.server'
 
@@ -31,6 +33,40 @@ function escapeHtml(s: string): string {
 
 const captchaSiteKey = optionalEnv('CAPTCHA_SITE_KEY')
 const captchaSecretKey = optionalEnv('CAPTCHA_SECRET_KEY')
+
+// Workspace-scoped access control. Keep the four existing roles we've
+// been using (admin / manager / editor / viewer). Coarse actions for now
+// — enforcement still happens inside each *.server.ts impl where the
+// checks are richer than a simple matrix would capture.
+const workspaceStatement = {
+  post: ['create', 'read', 'update', 'delete', 'publish', 'approve'],
+  campaign: ['create', 'read', 'update', 'delete'],
+  member: ['invite', 'update', 'remove'],
+  settings: ['read', 'update'],
+} as const
+const workspaceAc = createAccessControl(workspaceStatement)
+const workspaceAdmin = workspaceAc.newRole({
+  post: ['create', 'read', 'update', 'delete', 'publish', 'approve'],
+  campaign: ['create', 'read', 'update', 'delete'],
+  member: ['invite', 'update', 'remove'],
+  settings: ['read', 'update'],
+})
+const workspaceManager = workspaceAc.newRole({
+  post: ['create', 'read', 'update', 'delete', 'publish', 'approve'],
+  campaign: ['create', 'read', 'update', 'delete'],
+  member: ['invite', 'update'],
+  settings: ['read', 'update'],
+})
+const workspaceEditor = workspaceAc.newRole({
+  post: ['create', 'read', 'update'],
+  campaign: ['create', 'read', 'update'],
+  settings: ['read'],
+})
+const workspaceViewer = workspaceAc.newRole({
+  post: ['read'],
+  campaign: ['read'],
+  settings: ['read'],
+})
 
 const plugins = [
   apiKey({
@@ -95,6 +131,35 @@ const plugins = [
     defaultRole: 'user',
     adminRoles: ['admin'],
   }),
+  organization({
+    ac: workspaceAc,
+    roles: {
+      admin: workspaceAdmin,
+      manager: workspaceManager,
+      editor: workspaceEditor,
+      viewer: workspaceViewer,
+    },
+    creatorRole: 'admin',
+    // Email invitations — plugin posts a URL; we wire through sendEmail.
+    sendInvitationEmail: async ({ email, invitation, organization, inviter }) => {
+      const inviteUrl = `${process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'}/accept-invitation?token=${invitation.id}`
+      await sendEmail({
+        to: email,
+        subject: `${inviter.user.name} invited you to "${organization.name}"`,
+        text: `You've been invited to join ${organization.name} on SocialHub.\n\nAccept: ${inviteUrl}\n\nThis invitation expires in 48 hours.`,
+        html: `
+          <div style="font-family:system-ui;max-width:480px;margin:24px auto;color:#111">
+            <h2 style="margin:0 0 12px">You've been invited</h2>
+            <p>${escapeHtml(inviter.user.name)} invited you to join <strong>${escapeHtml(organization.name)}</strong> on SocialHub as a ${escapeHtml(invitation.role ?? 'member')}.</p>
+            <p style="margin:20px 0">
+              <a href="${escapeHtml(inviteUrl)}" style="display:inline-block;background:#6366f1;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Accept invitation</a>
+            </p>
+            <p style="color:#666;font-size:12px">This invitation expires in 48 hours.</p>
+          </div>
+        `,
+      })
+    },
+  }),
   ...(captchaSiteKey && captchaSecretKey
     ? [
         captcha({
@@ -119,6 +184,9 @@ export const auth = betterAuth({
       apikey: schema.apikey,
       twoFactor: schema.twoFactor,
       passkey: schema.passkey,
+      organization: schema.organization,
+      member: schema.member,
+      invitation: schema.invitation,
       // admin plugin reuses user + session (columns added to existing tables)
     },
   }),

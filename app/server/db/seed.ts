@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import { randomUUID } from 'node:crypto'
 import { auth } from '~/lib/auth'
 import { db, schema } from './index'
 import { eq } from 'drizzle-orm'
@@ -23,31 +24,33 @@ async function main() {
   // Promote the seeded user to platform-admin for Stage 21's /admin console.
   await db.update(schema.user).set({ role: 'admin' }).where(eq(schema.user.id, userId))
 
-  const existingWorkspace = await db
+  const existingOrg = await db
     .select()
-    .from(schema.workspaces)
-    .where(eq(schema.workspaces.slug, 'acme'))
+    .from(schema.organization)
+    .where(eq(schema.organization.slug, 'acme'))
     .limit(1)
 
-  if (existingWorkspace[0]) {
+  if (existingOrg[0]) {
     console.log(`Workspace "acme" already exists`)
     return
   }
 
+  const orgId = randomUUID()
+  await db.insert(schema.organization).values({ id: orgId, name: 'Acme', slug: 'acme' })
   const [workspace] = await db
     .insert(schema.workspaces)
-    .values({ name: 'Acme', slug: 'acme', ownerId: userId })
+    .values({ organizationId: orgId })
     .returning()
   if (!workspace) throw new Error('Failed to create workspace')
 
-  await db.insert(schema.workspaceMembers).values({
-    workspaceId: workspace.id,
+  await db.insert(schema.member).values({
+    id: randomUUID(),
+    organizationId: orgId,
     userId,
     role: 'admin',
-    joinedAt: new Date(),
   })
 
-  console.log(`Created workspace "${workspace.name}" (${workspace.id}) for ${email}`)
+  console.log(`Created workspace "Acme" (${workspace.id}) for ${email}`)
 }
 
 main()

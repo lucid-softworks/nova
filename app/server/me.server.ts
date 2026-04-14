@@ -69,9 +69,12 @@ export async function testBrrrPushImpl() {
   // Find a workspace for the user so the deep link resolves
   const ws = await db
     .select({ id: schema.workspaces.id })
-    .from(schema.workspaceMembers)
-    .innerJoin(schema.workspaces, eq(schema.workspaces.id, schema.workspaceMembers.workspaceId))
-    .where(eq(schema.workspaceMembers.userId, me.id))
+    .from(schema.member)
+    .innerJoin(
+      schema.workspaces,
+      eq(schema.workspaces.organizationId, schema.member.organizationId),
+    )
+    .where(eq(schema.member.userId, me.id))
     .limit(1)
   if (!ws[0]) throw new Error('No workspace')
   // Force push on for this call by temporarily inserting a test prefs override.

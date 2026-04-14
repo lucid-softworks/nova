@@ -33,7 +33,9 @@ export const platformEnum = pgEnum('platform', [
   'reddit',
 ])
 
-export const workspaceRoleEnum = pgEnum('workspace_role', ['admin', 'manager', 'editor', 'viewer'])
+// workspaceRoleEnum retired — roles now live on Better Auth's organization
+// plugin `member.role` column as free-form strings (admin / manager / editor
+// / viewer), validated via createAccessControl in app/lib/auth.ts.
 
 export const socialAccountStatusEnum = pgEnum('social_account_status', [
   'connected',
@@ -150,6 +152,8 @@ export const session = pgTable('session', {
   userAgent: text('user_agent'),
   // Better Auth admin plugin: set when an admin is impersonating this user.
   impersonatedBy: text('impersonated_by'),
+  // Organization plugin: which org this session is "focused on".
+  activeOrganizationId: text('active_organization_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
@@ -257,43 +261,76 @@ export const apikey = pgTable(
 
 // -- Domain tables ---------------------------------------------------------
 
+// -- Better Auth Organization plugin tables ---------------------------------
+// These are owned by the plugin; we just declare them so Drizzle can talk
+// to them and so db:push reflects their shape. Identity (name/slug/logo)
+// lives here now instead of on our satellite `workspaces` row.
+
+export const organization = pgTable(
+  'organization',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    logo: text('logo'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    metadata: text('metadata'),
+  },
+  (t) => [uniqueIndex('organization_slug_idx').on(t.slug)],
+)
+
+export const member = pgTable(
+  'member',
+  {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    role: text('role').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex('member_org_user_idx').on(t.organizationId, t.userId)],
+)
+
+export const invitation = pgTable('invitation', {
+  id: text('id').primaryKey(),
+  organizationId: text('organization_id')
+    .notNull()
+    .references(() => organization.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
+  role: text('role'),
+  status: text('status').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  inviterId: text('inviter_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+})
+
+// -- Satellite for our domain-specific workspace columns --------------------
+// 1:1 with organization via organizationId. We keep the uuid PK so every
+// existing foreign key that refers to workspaceId keeps working unchanged.
+
 export const workspaces = pgTable(
   'workspaces',
   {
     id: id(),
-    name: text('name').notNull(),
-    slug: text('slug').notNull(),
-    logoUrl: text('logo_url'),
-    appName: text('app_name'),
-    ownerId: text('owner_id')
+    organizationId: text('organization_id')
       .notNull()
-      .references(() => user.id, { onDelete: 'restrict' }),
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    appName: text('app_name'),
     timezone: text('timezone').default('UTC').notNull(),
     defaultLanguage: text('default_language').default('en').notNull(),
     requireApproval: boolean('require_approval').default(false).notNull(),
     createdAt: now(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [uniqueIndex('workspaces_slug_idx').on(t.slug)],
+  (t) => [uniqueIndex('workspaces_org_idx').on(t.organizationId)],
 )
 
-export const workspaceMembers = pgTable(
-  'workspace_members',
-  {
-    id: id(),
-    workspaceId: uuid('workspace_id')
-      .notNull()
-      .references(() => workspaces.id, { onDelete: 'cascade' }),
-    userId: text('user_id')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
-    role: workspaceRoleEnum('role').notNull(),
-    invitedAt: timestamp('invited_at', { withTimezone: true }).defaultNow().notNull(),
-    joinedAt: timestamp('joined_at', { withTimezone: true }),
-  },
-  (t) => [uniqueIndex('workspace_members_ws_user_idx').on(t.workspaceId, t.userId)],
-)
-
+// Approvers still live here — no equivalent in the org plugin.
 export const workspaceApprovers = pgTable(
   'workspace_approvers',
   {

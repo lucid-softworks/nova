@@ -197,9 +197,13 @@ async function processJob(job: { data: PostJobData }) {
           .where(eq(schema.socialAccounts.id, target.account.id))
         // Notify everyone in the workspace so they can reconnect.
         const members = await db
-          .select({ userId: schema.workspaceMembers.userId })
-          .from(schema.workspaceMembers)
-          .where(eq(schema.workspaceMembers.workspaceId, target.account.workspaceId))
+          .select({ userId: schema.member.userId })
+          .from(schema.member)
+          .innerJoin(
+            schema.workspaces,
+            eq(schema.workspaces.organizationId, schema.member.organizationId),
+          )
+          .where(eq(schema.workspaces.id, target.account.workspaceId))
         for (const m of members) {
           await db.insert(schema.notifications).values({
             userId: m.userId,

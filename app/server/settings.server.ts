@@ -3,7 +3,7 @@ import { and, desc, eq } from 'drizzle-orm'
 import { getRequest } from '@tanstack/react-start/server'
 import { auth } from '~/lib/auth'
 import { db, schema } from './db'
-import { requireWorkspaceAccess } from './session.server'
+import { requireWorkspaceAccess, requireWorkspaceDetail } from './session.server'
 import type { WorkspaceRole } from './types'
 
 function isAdmin(role: WorkspaceRole): boolean {
@@ -33,20 +33,18 @@ export type WorkspaceSettings = {
 }
 
 export async function getWorkspaceSettingsImpl(slug: string): Promise<WorkspaceSettings> {
-  const { workspace } = await ensureWs(slug)
-  const ws = await db.query.workspaces.findFirst({
-    where: eq(schema.workspaces.id, workspace.id),
-  })
-  if (!ws) throw new Error('Workspace not found')
+  const r = await requireWorkspaceDetail(slug)
+  if (!r.ok) throw new Error(r.reason)
+  const d = r.detail
   return {
-    id: ws.id,
-    name: ws.name,
-    slug: ws.slug,
-    timezone: ws.timezone,
-    defaultLanguage: ws.defaultLanguage,
-    logoUrl: ws.logoUrl,
-    appName: ws.appName,
-    requireApproval: ws.requireApproval,
+    id: d.workspaceId,
+    name: d.orgName,
+    slug: d.orgSlug,
+    timezone: d.timezone,
+    defaultLanguage: d.defaultLanguage,
+    logoUrl: d.orgLogo,
+    appName: d.appName,
+    requireApproval: d.requireApproval,
   }
 }
 
@@ -56,46 +54,62 @@ export async function updateWorkspaceGeneralImpl(
     Pick<WorkspaceSettings, 'name' | 'slug' | 'timezone' | 'defaultLanguage' | 'logoUrl' | 'appName'>
   >,
 ): Promise<{ ok: true; newSlug: string }> {
-  const { workspace } = await ensureWs(slug)
-  if (!isAdmin(workspace.role)) throw new Error('Admins only')
+  const r = await requireWorkspaceDetail(slug)
+  if (!r.ok) throw new Error(r.reason)
+  if (!isAdmin(r.detail.role)) throw new Error('Admins only')
 
   if (patch.slug) {
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(patch.slug)) {
       throw new Error('Slug must be lowercase letters, numbers, and hyphens')
     }
-    const conflict = await db.query.workspaces.findFirst({
-      where: eq(schema.workspaces.slug, patch.slug),
+    const conflict = await db.query.organization.findFirst({
+      where: eq(schema.organization.slug, patch.slug),
     })
-    if (conflict && conflict.id !== workspace.id) {
+    if (conflict && conflict.id !== r.detail.organizationId) {
       throw new Error('Slug is already taken')
     }
   }
 
-  await db
-    .update(schema.workspaces)
-    .set({
-      ...(patch.name !== undefined ? { name: patch.name.trim() } : {}),
-      ...(patch.slug !== undefined ? { slug: patch.slug } : {}),
-      ...(patch.timezone !== undefined ? { timezone: patch.timezone } : {}),
-      ...(patch.defaultLanguage !== undefined ? { defaultLanguage: patch.defaultLanguage } : {}),
-      ...(patch.logoUrl !== undefined ? { logoUrl: patch.logoUrl } : {}),
-      ...(patch.appName !== undefined ? { appName: patch.appName } : {}),
-      updatedAt: new Date(),
-    })
-    .where(eq(schema.workspaces.id, workspace.id))
+  // Identity (name/slug/logo) lives on organization; domain fields on the
+  // satellite workspaces row.
+  if (patch.name !== undefined || patch.slug !== undefined || patch.logoUrl !== undefined) {
+    await db
+      .update(schema.organization)
+      .set({
+        ...(patch.name !== undefined ? { name: patch.name.trim() } : {}),
+        ...(patch.slug !== undefined ? { slug: patch.slug } : {}),
+        ...(patch.logoUrl !== undefined ? { logo: patch.logoUrl } : {}),
+      })
+      .where(eq(schema.organization.id, r.detail.organizationId))
+  }
+  if (
+    patch.timezone !== undefined ||
+    patch.defaultLanguage !== undefined ||
+    patch.appName !== undefined
+  ) {
+    await db
+      .update(schema.workspaces)
+      .set({
+        ...(patch.timezone !== undefined ? { timezone: patch.timezone } : {}),
+        ...(patch.defaultLanguage !== undefined ? { defaultLanguage: patch.defaultLanguage } : {}),
+        ...(patch.appName !== undefined ? { appName: patch.appName } : {}),
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.workspaces.id, r.detail.workspaceId))
+  }
 
-  return { ok: true, newSlug: patch.slug ?? workspace.slug }
+  return { ok: true, newSlug: patch.slug ?? r.detail.orgSlug }
 }
 
 export async function deleteWorkspaceImpl(slug: string, confirmName: string) {
-  const { workspace } = await ensureWs(slug)
-  if (!isAdmin(workspace.role)) throw new Error('Admins only')
-  const ws = await db.query.workspaces.findFirst({
-    where: eq(schema.workspaces.id, workspace.id),
-  })
-  if (!ws) throw new Error('Workspace not found')
-  if (confirmName !== ws.name) throw new Error('Confirmation text does not match workspace name')
-  await db.delete(schema.workspaces).where(eq(schema.workspaces.id, workspace.id))
+  const r = await requireWorkspaceDetail(slug)
+  if (!r.ok) throw new Error(r.reason)
+  if (!isAdmin(r.detail.role)) throw new Error('Admins only')
+  if (confirmName !== r.detail.orgName) {
+    throw new Error('Confirmation text does not match workspace name')
+  }
+  // Cascades through workspaces (FK cascade) + member + invitation.
+  await db.delete(schema.organization).where(eq(schema.organization.id, r.detail.organizationId))
   return { ok: true }
 }
 

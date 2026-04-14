@@ -127,10 +127,9 @@ function CalendarPage() {
     // Two drop-zone shapes:
     //   "YYYY-MM-DD"            — month view: keep source time, change day
     //   "YYYY-MM-DD|HH"         — week view: snap to top of the dropped hour
-    let target: Date
     const [dayPart, hourPart] = overKey.split('|')
     if (!dayPart) return
-    target = new Date(dayPart)
+    const target = new Date(dayPart)
     if (hourPart !== undefined) {
       target.setHours(Number(hourPart), 0, 0, 0)
     } else {

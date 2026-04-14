@@ -222,9 +222,13 @@ async function emitCampaignOnHold(campaignId: string) {
   })
   if (!camp) return
   const members = await db
-    .select({ userId: schema.workspaceMembers.userId })
-    .from(schema.workspaceMembers)
-    .where(eq(schema.workspaceMembers.workspaceId, camp.workspaceId))
+    .select({ userId: schema.member.userId })
+    .from(schema.member)
+    .innerJoin(
+      schema.workspaces,
+      eq(schema.workspaces.organizationId, schema.member.organizationId),
+    )
+    .where(eq(schema.workspaces.id, camp.workspaceId))
   for (const m of members) {
     await db.insert(schema.notifications).values({
       userId: m.userId,

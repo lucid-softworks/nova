@@ -73,12 +73,16 @@ export async function authenticateApiRequest(
   const memberships = await db
     .select({
       id: schema.workspaces.id,
-      slug: schema.workspaces.slug,
-      role: schema.workspaceMembers.role,
+      slug: schema.organization.slug,
+      role: schema.member.role,
     })
-    .from(schema.workspaceMembers)
-    .innerJoin(schema.workspaces, eq(schema.workspaces.id, schema.workspaceMembers.workspaceId))
-    .where(eq(schema.workspaceMembers.userId, userId))
+    .from(schema.member)
+    .innerJoin(schema.organization, eq(schema.organization.id, schema.member.organizationId))
+    .innerJoin(
+      schema.workspaces,
+      eq(schema.workspaces.organizationId, schema.organization.id),
+    )
+    .where(eq(schema.member.userId, userId))
 
   let target: (typeof memberships)[number] | null = null
   if (slug) target = memberships.find((m) => m.slug === slug) ?? null
@@ -97,7 +101,7 @@ export async function authenticateApiRequest(
       userId,
       workspaceId: target.id,
       workspaceSlug: target.slug,
-      role: target.role,
+      role: target.role as WorkspaceRole,
       viaApiKey,
     },
   }
