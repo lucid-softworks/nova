@@ -1,40 +1,11 @@
-import { and, eq } from 'drizzle-orm'
+import { and, asc, eq, gte } from 'drizzle-orm'
 import { db, schema } from './db'
 import { decrypt } from '~/lib/encryption'
 import { requireWorkspaceAccess } from './session.server'
 import type { PlatformKey } from '~/lib/platforms'
+import type { BrowseResult, ReshareSource, ResharePlatform } from './reshare-types'
 
-export type ReshareSource = {
-  sourcePostId: string
-  sourcePostUrl: string
-  sourceAuthorHandle: string
-  sourceAuthorName: string
-  sourceContent: string
-  sourceMediaUrls: string[]
-  postedAt: string | null
-  stats: { likes?: number; reposts?: number; replies?: number }
-  // Platform-specific metadata kept for publishing (e.g. Bluesky cid).
-  // Values are JSON-safe strings so the whole record can cross the wire.
-  platformExtra: Record<string, string>
-}
-
-export type BrowseResult = {
-  kind: 'ok'
-  items: ReshareSource[]
-} | { kind: 'unsupported'; message: string }
-
-export const RESHARE_PLATFORMS = [
-  'x',
-  'tumblr',
-  'facebook',
-  'linkedin',
-  'threads',
-  'bluesky',
-  'mastodon',
-  'reddit',
-] as const
-
-export type ResharePlatform = (typeof RESHARE_PLATFORMS)[number]
+export type { BrowseResult, ReshareSource, ResharePlatform }
 
 async function ensureWs(slug: string) {
   const r = await requireWorkspaceAccess(slug)
@@ -209,12 +180,48 @@ export async function queueResharesImpl(input: QueuedReshareInput) {
     throw new Error('Target account does not match selected platform')
   }
 
-  const scheduledAt = input.scheduledAt ? new Date(input.scheduledAt) : null
-  const scheduled = scheduledAt && scheduledAt.getTime() > Date.now()
+  const explicit = input.scheduledAt ? new Date(input.scheduledAt) : null
+  const useQueue = explicit === null
+
+  // Queue mode: find N free slots in the workspace's posting schedule,
+  // skipping slots already taken by other queued posts. If no schedule is
+  // configured, fail with a clear signal the UI can surface.
+  let queueSlots: Date[] = []
+  if (useQueue) {
+    const schedules = await db
+      .select()
+      .from(schema.postingSchedules)
+      .where(eq(schema.postingSchedules.workspaceId, workspace.id))
+    if (schedules.length === 0 || schedules.every((s) => s.times.length === 0)) {
+      return { kind: 'no_schedule' as const, count: 0 }
+    }
+    const now = new Date()
+    const queued = await db
+      .select({ scheduledAt: schema.posts.scheduledAt })
+      .from(schema.posts)
+      .where(
+        and(
+          eq(schema.posts.workspaceId, workspace.id),
+          eq(schema.posts.isQueue, true),
+          eq(schema.posts.status, 'scheduled'),
+          gte(schema.posts.scheduledAt, now),
+        ),
+      )
+      .orderBy(asc(schema.posts.scheduledAt))
+    const taken = new Set(
+      queued.map((q) => q.scheduledAt?.toISOString()).filter(Boolean) as string[],
+    )
+    queueSlots = pickNSlots(now, schedules, taken, input.items.length)
+    if (queueSlots.length < input.items.length) {
+      return { kind: 'no_schedule' as const, count: 0 }
+    }
+  }
 
   const createdIds: string[] = []
 
-  for (const item of input.items) {
+  for (let i = 0; i < input.items.length; i++) {
+    const item = input.items[i]!
+    const when = useQueue ? queueSlots[i]! : explicit
     await db.transaction(async (tx) => {
       const [post] = await tx
         .insert(schema.posts)
@@ -222,9 +229,9 @@ export async function queueResharesImpl(input: QueuedReshareInput) {
           workspaceId: workspace.id,
           authorId: user.id,
           type: 'reshare',
-          status: scheduled ? 'scheduled' : 'draft',
-          scheduledAt: scheduled ? scheduledAt : null,
-          isQueue: !scheduled,
+          status: 'scheduled',
+          scheduledAt: when,
+          isQueue: useQueue,
         })
         .returning({ id: schema.posts.id })
       if (!post) throw new Error('Failed to create post')
@@ -268,5 +275,38 @@ export async function queueResharesImpl(input: QueuedReshareInput) {
     })
   }
 
-  return { count: createdIds.length, postIds: createdIds }
+  return { kind: 'ok' as const, count: createdIds.length, postIds: createdIds }
+}
+
+function pickNSlots(
+  from: Date,
+  schedules: { dayOfWeek: number; times: string[] }[],
+  taken: Set<string>,
+  n: number,
+): Date[] {
+  const byDow = new Map<number, string[]>()
+  for (const s of schedules) {
+    byDow.set(s.dayOfWeek, [...(byDow.get(s.dayOfWeek) ?? []), ...s.times].sort())
+  }
+  const slots: Date[] = []
+  for (let d = 0; d < 90 && slots.length < n; d++) {
+    const day = new Date(from)
+    day.setDate(day.getDate() + d)
+    const times = byDow.get(day.getDay())
+    if (!times) continue
+    for (const t of times) {
+      const parts = t.split(':')
+      const hh = Number(parts[0] ?? 0)
+      const mm = Number(parts[1] ?? 0)
+      const slot = new Date(day)
+      slot.setHours(hh, mm, 0, 0)
+      const iso = slot.toISOString()
+      if (slot.getTime() <= from.getTime()) continue
+      if (taken.has(iso)) continue
+      slots.push(slot)
+      taken.add(iso)
+      if (slots.length === n) break
+    }
+  }
+  return slots
 }

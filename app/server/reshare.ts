@@ -1,16 +1,10 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
-import {
-  RESHARE_PLATFORMS,
-  browseAccountImpl,
-  searchPostsImpl,
-  queueResharesImpl,
-  type BrowseResult,
-  type ReshareSource,
-} from './reshare.server'
+import { browseAccountImpl, searchPostsImpl, queueResharesImpl } from './reshare.server'
+import { RESHARE_PLATFORMS } from './reshare-types'
 
-export type { BrowseResult, ReshareSource }
-export { RESHARE_PLATFORMS }
+export type { BrowseResult, ReshareSource } from './reshare-types'
+export { RESHARE_PLATFORMS } from './reshare-types'
 
 const platformSchema = z.enum(RESHARE_PLATFORMS)
 

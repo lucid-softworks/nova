@@ -161,7 +161,7 @@ export function ReshareBrowser({
     setSubmitting(true)
     setToast(null)
     try {
-      const { count } = await queueReshares({
+      const r = await queueReshares({
         data: {
           workspaceSlug,
           targetSocialAccountId: targetAccountId,
@@ -181,7 +181,11 @@ export function ReshareBrowser({
           })),
         },
       })
-      setToast(`${count} reshare${count === 1 ? '' : 's'} added to queue.`)
+      if (r.kind === 'no_schedule') {
+        setToast('No posting schedule — add one in Settings → Posting Schedule, then try again.')
+        return
+      }
+      setToast(`${r.count} reshare${r.count === 1 ? '' : 's'} added to queue.`)
       setSelectedBySource({})
     } catch (e) {
       setToast(e instanceof Error ? e.message : 'Failed to queue')
