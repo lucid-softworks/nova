@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Card, CardContent } from '~/components/ui/card'
 import { cn } from '~/lib/utils'
 import { StandardComposer } from './StandardComposer'
+import { CampaignComposer } from './CampaignComposer'
 import type { ConnectedAccount } from './types'
 
 export function ComposerPage({
@@ -39,11 +39,7 @@ export function ComposerPage({
       {mode === 'standard' ? (
         <StandardComposer workspaceSlug={workspaceSlug} accounts={accounts} />
       ) : (
-        <Card>
-          <CardContent className="py-10 text-center text-sm text-neutral-500">
-            Campaign mode lands in Stage 5.
-          </CardContent>
-        </Card>
+        <CampaignComposer workspaceSlug={workspaceSlug} accounts={accounts} />
       )}
     </div>
   )

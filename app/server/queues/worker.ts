@@ -16,6 +16,7 @@ import {
 import type { PlatformKey } from '~/lib/platforms'
 import { getRedis } from './connection'
 import type { PostJobData } from './postQueue'
+import { onStepComplete } from './campaignWorker'
 
 let worker: Worker<PostJobData> | null = null
 
@@ -177,6 +178,10 @@ async function processJob(job: { data: PostJobData }) {
       .set({ status: 'published', publishedAt: new Date() })
       .where(eq(schema.posts.id, postId))
     await db.insert(schema.postActivity).values({ postId, action: 'published' })
+  }
+
+  if (post.campaignStepId) {
+    await onStepComplete(post.campaignStepId, !anyFailed)
   }
 }
 
