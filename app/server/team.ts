@@ -2,17 +2,20 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import {
   listMembersImpl,
+  listInvitationsImpl,
   updateMemberRoleImpl,
   removeMemberImpl,
   addMemberByEmailImpl,
+  cancelInvitationImpl,
   getWorkspaceApprovalImpl,
   setRequireApprovalImpl,
   setApproversImpl,
   type MemberRow,
+  type InvitationRow,
   type AddMemberResult,
 } from './team.server'
 
-export type { MemberRow, AddMemberResult }
+export type { MemberRow, InvitationRow, AddMemberResult }
 
 const roleEnum = z.enum(['admin', 'manager', 'editor', 'viewer'])
 
@@ -21,6 +24,19 @@ const wsOnly = z.object({ workspaceSlug: z.string().min(1) })
 export const listMembers = createServerFn({ method: 'GET' })
   .inputValidator((d: unknown) => wsOnly.parse(d))
   .handler(async ({ data }) => listMembersImpl(data.workspaceSlug))
+
+export const listInvitations = createServerFn({ method: 'GET' })
+  .inputValidator((d: unknown) => wsOnly.parse(d))
+  .handler(async ({ data }) => listInvitationsImpl(data.workspaceSlug))
+
+const cancelInvitationSchema = z.object({
+  workspaceSlug: z.string().min(1),
+  invitationId: z.string().min(1),
+})
+
+export const cancelInvitation = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => cancelInvitationSchema.parse(d))
+  .handler(async ({ data }) => cancelInvitationImpl(data.workspaceSlug, data.invitationId))
 
 export const getWorkspaceApproval = createServerFn({ method: 'GET' })
   .inputValidator((d: unknown) => wsOnly.parse(d))

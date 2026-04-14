@@ -15,13 +15,16 @@ import {
 } from '~/components/ui/dialog'
 import {
   listMembers,
+  listInvitations,
   updateMemberRole,
   removeMember,
   addMemberByEmail,
+  cancelInvitation,
   getWorkspaceApproval,
   setRequireApproval,
   setApprovers,
   type MemberRow,
+  type InvitationRow,
 } from '~/server/team'
 import type { WorkspaceRole } from '~/server/types'
 import { cn } from '~/lib/utils'
@@ -43,11 +46,14 @@ const ROLE_COLORS: Record<Role, string> = {
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/team')({
   loader: async ({ params }) => {
-    const [members, approval] = await Promise.all([
+    const [members, invitations, approval] = await Promise.all([
       listMembers({ data: { workspaceSlug: params.workspaceSlug } }),
+      listInvitations({ data: { workspaceSlug: params.workspaceSlug } }).catch(
+        () => [] as InvitationRow[],
+      ),
       getWorkspaceApproval({ data: { workspaceSlug: params.workspaceSlug } }),
     ])
-    return { members, approval }
+    return { members, invitations, approval }
   },
   component: TeamPage,
 })
@@ -57,6 +63,7 @@ function TeamPage() {
   const { session, workspace } = Route.useRouteContext()
   const initial = Route.useLoaderData()
   const [members, setMembers] = useState<MemberRow[]>(initial.members)
+  const [invitations, setInvitations] = useState<InvitationRow[]>(initial.invitations)
   const [requireApproval, setRequireApprovalState] = useState(initial.approval.requireApproval)
   const [approverUserIds, setApproverUserIds] = useState<string[]>(initial.approval.approverUserIds)
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -71,13 +78,25 @@ function TeamPage() {
   )
 
   const reload = async () => {
-    const [m, a] = await Promise.all([
+    const [m, i, a] = await Promise.all([
       listMembers({ data: { workspaceSlug } }),
+      listInvitations({ data: { workspaceSlug } }).catch(() => [] as InvitationRow[]),
       getWorkspaceApproval({ data: { workspaceSlug } }),
     ])
     setMembers(m)
+    setInvitations(i)
     setRequireApprovalState(a.requireApproval)
     setApproverUserIds(a.approverUserIds)
+  }
+
+  const handleCancelInvitation = async (inv: InvitationRow) => {
+    if (!confirm(`Cancel invitation to ${inv.email}?`)) return
+    try {
+      await cancelInvitation({ data: { workspaceSlug, invitationId: inv.id } })
+      await reload()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed')
+    }
   }
 
   const handleRoleChange = async (member: MemberRow, newRole: Role) => {
@@ -213,6 +232,46 @@ function TeamPage() {
           </table>
         </div>
       </Card>
+
+      {canManage && invitations.length > 0 ? (
+        <Card>
+          <div className="p-4">
+            <h3 className="mb-2 text-sm font-semibold text-neutral-900">Pending invitations</h3>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                  <th className="py-1">Email</th>
+                  <th className="py-1">Role</th>
+                  <th className="py-1">Invited by</th>
+                  <th className="py-1">Expires</th>
+                  <th className="py-1" />
+                </tr>
+              </thead>
+              <tbody>
+                {invitations.map((inv) => (
+                  <tr key={inv.id} className="border-t border-neutral-100">
+                    <td className="py-1.5">{inv.email}</td>
+                    <td className="py-1.5">
+                      <span className={cn('rounded-full px-2 py-0.5 text-xs', ROLE_COLORS[inv.role])}>
+                        {ROLE_LABELS[inv.role]}
+                      </span>
+                    </td>
+                    <td className="py-1.5 text-xs text-neutral-500">{inv.inviterName ?? '—'}</td>
+                    <td className="py-1.5 text-xs text-neutral-500">
+                      {new Date(inv.expiresAt).toLocaleDateString()}
+                    </td>
+                    <td className="py-1.5 text-right">
+                      <Button size="sm" variant="ghost" onClick={() => handleCancelInvitation(inv)}>
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : null}
 
       {isAdmin ? (
         <Card>
