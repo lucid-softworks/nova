@@ -97,7 +97,15 @@ export function hydrateStateFromPost(post: LoadedPost): ComposerState {
     versions,
     activeVersionId: defaultV.id,
     mediaById,
-    reddit: defaultRedditFields(),
+    reddit: post.reddit
+      ? {
+          title: post.reddit.title,
+          subreddit: post.reddit.subreddit,
+          postType: post.reddit.postType,
+          nsfw: post.reddit.nsfw,
+          spoiler: post.reddit.spoiler,
+        }
+      : defaultRedditFields(),
   }
 }
 

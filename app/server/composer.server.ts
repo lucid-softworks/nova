@@ -158,7 +158,21 @@ export async function saveDraftImpl(input: SaveDraftInput) {
       postId = row!.id
     }
 
+    // Fold Reddit per-post fields onto the default version's
+    // platformVariables so round-trips + the publisher can read them.
+    const redditVars: Record<string, string> = input.reddit
+      ? {
+          reddit_title: input.reddit.title,
+          reddit_subreddit: input.reddit.subreddit,
+          reddit_post_type: input.reddit.postType,
+          reddit_nsfw: input.reddit.nsfw ? 'true' : 'false',
+          reddit_spoiler: input.reddit.spoiler ? 'true' : 'false',
+        }
+      : {}
+
     for (const version of input.versions) {
+      const platformVariables =
+        version.isDefault && Object.keys(redditVars).length > 0 ? redditVars : {}
       const [v] = await tx
         .insert(schema.postVersions)
         .values({
@@ -169,6 +183,7 @@ export async function saveDraftImpl(input: SaveDraftInput) {
           isThread: version.isThread,
           threadParts: version.threadParts,
           isDefault: version.isDefault,
+          platformVariables,
         })
         .returning({ id: schema.postVersions.id })
       if (!v) throw new Error('Failed to create version')
@@ -233,6 +248,13 @@ export type LoadedPost = {
   versions: LoadedPostVersion[]
   mediaById: Record<string, LoadedPostMedia>
   mode: 'shared' | 'independent'
+  reddit: {
+    title: string
+    subreddit: string
+    postType: 'text' | 'link' | 'image' | 'video'
+    nsfw: boolean
+    spoiler: boolean
+  } | null
 }
 
 export async function loadPostForComposerImpl(
@@ -313,6 +335,27 @@ export async function loadPostForComposerImpl(
     isDefault: v.isDefault,
   }))
 
+  // Pull Reddit per-post fields off the default version's platformVariables.
+  const defaultVersionRow = versionRows.find((v) => v.isDefault)
+  const vars = (defaultVersionRow?.platformVariables as Record<string, string> | null) ?? {}
+  const redditTitle = vars.reddit_title
+  const postType: 'text' | 'link' | 'image' | 'video' =
+    vars.reddit_post_type === 'link' ||
+    vars.reddit_post_type === 'image' ||
+    vars.reddit_post_type === 'video'
+      ? vars.reddit_post_type
+      : 'text'
+  const reddit =
+    redditTitle !== undefined || vars.reddit_subreddit
+      ? {
+          title: vars.reddit_title ?? '',
+          subreddit: vars.reddit_subreddit ?? '',
+          postType,
+          nsfw: vars.reddit_nsfw === 'true',
+          spoiler: vars.reddit_spoiler === 'true',
+        }
+      : null
+
   return {
     id: post.id,
     status: post.status,
@@ -321,5 +364,6 @@ export async function loadPostForComposerImpl(
     versions,
     mediaById,
     mode,
+    reddit,
   }
 }
