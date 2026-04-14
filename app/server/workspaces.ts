@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
-import { loadSessionContext } from './session'
+import { loadSessionContext } from './session.server'
 import { db, schema } from './db'
 import { slugify } from '~/lib/utils'
 

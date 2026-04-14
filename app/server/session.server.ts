@@ -2,27 +2,7 @@ import { getRequest } from '@tanstack/react-start/server'
 import { eq } from 'drizzle-orm'
 import { auth } from '~/lib/auth'
 import { db, schema } from './db'
-
-export type SessionUser = {
-  id: string
-  email: string
-  name: string
-  image: string | null
-}
-
-export type WorkspaceSummary = {
-  id: string
-  name: string
-  slug: string
-  role: (typeof schema.workspaceRoleEnum.enumValues)[number]
-  logoUrl: string | null
-  appName: string | null
-}
-
-export type SessionContext = {
-  user: SessionUser | null
-  workspaces: WorkspaceSummary[]
-}
+import type { SessionContext } from './types'
 
 export async function loadSessionContext(): Promise<SessionContext> {
   const session = await auth.api.getSession({ headers: getRequest().headers })
