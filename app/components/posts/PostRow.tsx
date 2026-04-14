@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Check, Copy, ExternalLink, MoreHorizontal, RotateCw, Target, Trash2, CalendarClock, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { Check, Copy, ExternalLink, MoreHorizontal, Pencil, RotateCw, Target, Trash2, CalendarClock, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -234,6 +234,17 @@ export function PostRow({
             >
               <CalendarClock className="h-3 w-3" /> Reschedule
             </button>
+            {post.status !== 'published' ? (
+              <Link
+                to="/$workspaceSlug/compose"
+                params={{ workspaceSlug }}
+                search={{ postId: post.id }}
+                className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100"
+                onClick={() => setMenuOpen(false)}
+              >
+                <Pencil className="h-3 w-3" /> Edit
+              </Link>
+            ) : null}
             <button
               type="button"
               className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100"

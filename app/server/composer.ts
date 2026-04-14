@@ -1,7 +1,9 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { PLATFORM_KEYS } from '~/lib/platforms'
-import { saveDraftImpl } from './composer.server'
+import { saveDraftImpl, loadPostForComposerImpl, type LoadedPost } from './composer.server'
+
+export type { LoadedPost, LoadedPostVersion, LoadedPostMedia } from './composer.server'
 
 const platformKeySchema = z.enum(PLATFORM_KEYS)
 
@@ -38,3 +40,14 @@ const saveDraftSchema = z.object({
 export const saveDraft = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => saveDraftSchema.parse(d))
   .handler(async ({ data }) => saveDraftImpl(data))
+
+const loadSchema = z.object({
+  workspaceSlug: z.string().min(1),
+  postId: z.string().uuid(),
+})
+
+export const loadPostForComposer = createServerFn({ method: 'GET' })
+  .inputValidator((d: unknown) => loadSchema.parse(d))
+  .handler(async ({ data }): Promise<LoadedPost> =>
+    loadPostForComposerImpl(data.workspaceSlug, data.postId),
+  )

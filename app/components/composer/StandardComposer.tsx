@@ -21,7 +21,8 @@ import { Spinner } from '~/components/ui/spinner'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { cn } from '~/lib/utils'
 import { composerReducer } from './state'
-import { initialState, type ConnectedAccount, type Version } from './types'
+import { hydrateStateFromPost, initialState, type ConnectedAccount, type Version } from './types'
+import type { LoadedPost } from '~/server/composer'
 import { MediaZone } from './MediaZone'
 import { detectMismatches, MediaMismatchBanner } from './MediaMismatchBanner'
 import { PostPreview } from './PostPreview'
@@ -36,19 +37,30 @@ export function StandardComposer({
   accounts,
   userRole,
   requireApproval,
+  existing,
+  initialScheduledAt,
 }: {
   workspaceSlug: string
   accounts: ConnectedAccount[]
   userRole: WorkspaceRole
   requireApproval: boolean
+  existing: LoadedPost | null
+  initialScheduledAt: string | null
 }) {
   const needsApproval = requireApproval && userRole === 'editor'
-  const [state, dispatch] = useReducer(composerReducer, undefined, initialState)
+  const [state, dispatch] = useReducer(
+    composerReducer,
+    undefined,
+    () => (existing ? hydrateStateFromPost(existing) : initialState()),
+  )
   const [saving, setSaving] = useState<null | 'draft' | 'schedule' | 'queue' | 'now' | 'approval'>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [scheduleOpen, setScheduleOpen] = useState(false)
-  const [scheduleAt, setScheduleAt] = useState<string>(defaultScheduleLocal())
+  const [scheduleAt, setScheduleAt] = useState<string>(() => {
+    const preset = initialScheduledAt ?? existing?.scheduledAt ?? null
+    return preset ? toLocalInputValue(preset) : defaultScheduleLocal()
+  })
   const [aiOpen, setAiOpen] = useState(false)
   const navigate = useNavigate()
 
@@ -57,6 +69,7 @@ export function StandardComposer({
   // single-account-per-platform matches.
   useEffect(() => {
     if (typeof window === 'undefined') return
+    if (existing) return
     let payload: { content?: string; platforms?: string[] } | null = null
     try {
       const raw = sessionStorage.getItem('nova:template:next')
@@ -126,6 +139,7 @@ export function StandardComposer({
     const { postId } = await saveDraft({
       data: {
         workspaceSlug,
+        postId: existing?.id,
         mode: state.startMode,
         socialAccountIds: state.selectedAccountIds,
         versions: state.versions.map((v) => ({
@@ -419,7 +433,12 @@ export function StandardComposer({
 }
 
 function defaultScheduleLocal(): string {
-  const d = new Date(Date.now() + 60 * 60 * 1000)
+  return toLocalInputValue(new Date(Date.now() + 60 * 60 * 1000).toISOString())
+}
+
+function toLocalInputValue(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return defaultScheduleLocal()
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }

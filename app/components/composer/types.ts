@@ -1,4 +1,5 @@
 import type { PlatformKey } from '~/lib/platforms'
+import type { LoadedPost } from '~/server/composer'
 
 export type MediaAsset = {
   id: string
@@ -60,6 +61,44 @@ export function makeId() {
 
 export function defaultRedditFields(): RedditFields {
   return { title: '', subreddit: '', postType: 'text', nsfw: false, spoiler: false }
+}
+
+export function hydrateStateFromPost(post: LoadedPost): ComposerState {
+  const versions: Version[] = post.versions.map((v) => ({
+    id: v.id,
+    label: v.isDefault ? 'Default' : v.platforms.map((p) => p).join(' + ') || 'Version',
+    platforms: v.platforms,
+    content: v.content,
+    firstCommentEnabled: v.firstCommentEnabled,
+    firstComment: v.firstComment ?? '',
+    isThread: v.isThread,
+    threadParts:
+      v.threadParts.length > 0
+        ? v.threadParts.map((p) => ({ id: makeId(), content: p.content, mediaIds: p.mediaIds }))
+        : [{ id: makeId(), content: '', mediaIds: [] }],
+    mediaIds: v.mediaIds,
+    isDefault: v.isDefault,
+  }))
+  if (versions.length === 0) return initialState()
+  const mediaById: Record<string, MediaAsset> = {}
+  for (const [id, m] of Object.entries(post.mediaById)) {
+    mediaById[id] = {
+      id: m.id,
+      url: m.url,
+      originalName: m.originalName,
+      mimeType: m.mimeType,
+      size: m.size,
+    }
+  }
+  const defaultV = versions.find((v) => v.isDefault) ?? versions[0]!
+  return {
+    startMode: post.mode,
+    selectedAccountIds: post.selectedAccountIds,
+    versions,
+    activeVersionId: defaultV.id,
+    mediaById,
+    reddit: defaultRedditFields(),
+  }
 }
 
 export function initialState(): ComposerState {

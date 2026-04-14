@@ -202,3 +202,124 @@ export async function saveDraftImpl(input: SaveDraftInput) {
 
   return result
 }
+
+// ---------- Edit-existing loader -----------------------------------------
+
+export type LoadedPostMedia = {
+  id: string
+  url: string
+  originalName: string
+  mimeType: string
+  size: number
+}
+
+export type LoadedPostVersion = {
+  id: string
+  platforms: PlatformKey[]
+  content: string
+  firstComment: string | null
+  firstCommentEnabled: boolean
+  isThread: boolean
+  threadParts: { content: string; mediaIds: string[] }[]
+  mediaIds: string[]
+  isDefault: boolean
+}
+
+export type LoadedPost = {
+  id: string
+  status: 'draft' | 'scheduled' | 'publishing' | 'published' | 'failed' | 'pending_approval'
+  scheduledAt: string | null
+  selectedAccountIds: string[]
+  versions: LoadedPostVersion[]
+  mediaById: Record<string, LoadedPostMedia>
+  mode: 'shared' | 'independent'
+}
+
+export async function loadPostForComposerImpl(
+  slug: string,
+  postId: string,
+): Promise<LoadedPost> {
+  const { workspace } = await ensureWs(slug)
+  const post = await db.query.posts.findFirst({
+    where: and(eq(schema.posts.id, postId), eq(schema.posts.workspaceId, workspace.id)),
+  })
+  if (!post) throw new Error('Post not found')
+  if (post.status === 'published') {
+    throw new Error('Published posts cannot be edited')
+  }
+
+  const versionRows = await db
+    .select()
+    .from(schema.postVersions)
+    .where(eq(schema.postVersions.postId, postId))
+
+  const targets = await db
+    .select({ socialAccountId: schema.postPlatforms.socialAccountId })
+    .from(schema.postPlatforms)
+    .where(eq(schema.postPlatforms.postId, postId))
+
+  const mediaRows = await db
+    .select({
+      versionId: schema.postMedia.postVersionId,
+      sortOrder: schema.postMedia.sortOrder,
+      id: schema.mediaAssets.id,
+      url: schema.mediaAssets.url,
+      originalName: schema.mediaAssets.originalName,
+      mimeType: schema.mediaAssets.mimeType,
+      size: schema.mediaAssets.size,
+    })
+    .from(schema.postMedia)
+    .innerJoin(schema.postVersions, eq(schema.postVersions.id, schema.postMedia.postVersionId))
+    .innerJoin(schema.mediaAssets, eq(schema.mediaAssets.id, schema.postMedia.mediaId))
+    .where(inArray(schema.postVersions.id, versionRows.map((v) => v.id)))
+    .orderBy(schema.postMedia.sortOrder)
+
+  const mediaById: Record<string, LoadedPostMedia> = {}
+  const mediaByVersion = new Map<string, string[]>()
+  for (const m of mediaRows) {
+    mediaById[m.id] = {
+      id: m.id,
+      url: m.url,
+      originalName: m.originalName,
+      mimeType: m.mimeType,
+      size: m.size,
+    }
+    const arr = mediaByVersion.get(m.versionId) ?? []
+    arr.push(m.id)
+    mediaByVersion.set(m.versionId, arr)
+  }
+
+  // Decide mode: if any non-default version exists and covers a single
+  // platform, treat as independent; otherwise shared. Good heuristic for
+  // the common case.
+  const nonDefault = versionRows.filter((v) => !v.isDefault)
+  const mode: 'shared' | 'independent' =
+    nonDefault.length > 0 && nonDefault.every((v) => (v.platforms as string[]).length === 1)
+      ? 'independent'
+      : 'shared'
+
+  const versions: LoadedPostVersion[] = versionRows.map((v) => ({
+    id: v.id,
+    platforms: (v.platforms as PlatformKey[]) ?? [],
+    content: v.content,
+    firstComment: v.firstComment,
+    firstCommentEnabled: !!v.firstComment,
+    isThread: v.isThread,
+    threadParts: ((v.threadParts as { content: string; mediaIds: string[] }[]) ?? []).map((p) => ({
+      content: p.content,
+      mediaIds: p.mediaIds ?? [],
+    })),
+    mediaIds: mediaByVersion.get(v.id) ?? [],
+    isDefault: v.isDefault,
+  }))
+
+  return {
+    id: post.id,
+    status: post.status,
+    scheduledAt: post.scheduledAt?.toISOString() ?? null,
+    selectedAccountIds: targets.map((t) => t.socialAccountId),
+    versions,
+    mediaById,
+    mode,
+  }
+}

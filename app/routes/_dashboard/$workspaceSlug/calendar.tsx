@@ -170,8 +170,11 @@ function CalendarPage() {
       : `${startOfWeek(anchor).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${endOfWeek(anchor).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
 
   const openComposerForDate = (d: Date) => {
-    navigate({ to: '/$workspaceSlug/compose', params: { workspaceSlug } })
-    void d
+    navigate({
+      to: '/$workspaceSlug/compose',
+      params: { workspaceSlug },
+      search: { scheduledAt: d.toISOString() },
+    })
   }
 
   return (

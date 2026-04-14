@@ -1,17 +1,41 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { listAccounts } from '~/server/accounts'
 import { getWorkspaceApproval } from '~/server/team'
+import { loadPostForComposer, type LoadedPost } from '~/server/composer'
 import { ComposerPage } from '~/components/composer/ComposerPage'
 
+type ComposeSearch = {
+  postId?: string
+  scheduledAt?: string
+}
+
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/compose')({
-  loader: async ({ params }) => {
+  validateSearch: (s: Record<string, unknown>): ComposeSearch => {
+    const out: ComposeSearch = {}
+    if (typeof s.postId === 'string') out.postId = s.postId
+    if (typeof s.scheduledAt === 'string') out.scheduledAt = s.scheduledAt
+    return out
+  },
+  loaderDeps: ({ search }) => ({ postId: search.postId }),
+  loader: async ({ params, deps }) => {
     const [accounts, approval] = await Promise.all([
       listAccounts({ data: { workspaceSlug: params.workspaceSlug } }),
       getWorkspaceApproval({ data: { workspaceSlug: params.workspaceSlug } }),
     ])
+    let existing: LoadedPost | null = null
+    if (deps.postId) {
+      try {
+        existing = await loadPostForComposer({
+          data: { workspaceSlug: params.workspaceSlug, postId: deps.postId },
+        })
+      } catch {
+        existing = null
+      }
+    }
     return {
       accounts: accounts.filter((a) => a.status === 'connected'),
       requireApproval: approval.requireApproval,
+      existing,
     }
   },
   component: ComposeRoute,
@@ -20,7 +44,8 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/compose')({
 function ComposeRoute() {
   const { workspaceSlug } = Route.useParams()
   const { workspace } = Route.useRouteContext()
-  const { accounts, requireApproval } = Route.useLoaderData()
+  const { accounts, requireApproval, existing } = Route.useLoaderData()
+  const { scheduledAt } = Route.useSearch()
   return (
     <ComposerPage
       workspaceSlug={workspaceSlug}
@@ -33,6 +58,8 @@ function ComposeRoute() {
       }))}
       userRole={workspace.role}
       requireApproval={requireApproval}
+      existing={existing}
+      initialScheduledAt={scheduledAt ?? null}
     />
   )
 }
