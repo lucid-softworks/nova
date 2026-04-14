@@ -18,6 +18,7 @@ import {
   type CampaignSummary,
   type CountsByStatus,
 } from '~/server/posts'
+import { listMembers, type MemberRow } from '~/server/team'
 import { PLATFORM_KEYS, PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { cn } from '~/lib/utils'
 
@@ -33,7 +34,7 @@ const TABS: { key: PostsTab; label: string }[] = [
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/posts/')({
   loader: async ({ params }) => {
-    const [rows, counts, campaigns] = await Promise.all([
+    const [rows, counts, campaigns, members] = await Promise.all([
       listPosts({
         data: {
           workspaceSlug: params.workspaceSlug,
@@ -48,8 +49,9 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/posts/')({
       }),
       countsByStatus({ data: { workspaceSlug: params.workspaceSlug } }),
       listCampaigns({ data: { workspaceSlug: params.workspaceSlug } }),
+      listMembers({ data: { workspaceSlug: params.workspaceSlug } }),
     ])
-    return { rows, counts, campaigns }
+    return { rows, counts, campaigns, members }
   },
   component: PostsPage,
 })
@@ -62,11 +64,15 @@ function PostsPage() {
   const [rows, setRows] = useState<Row[]>(initial.rows)
   const [counts, setCounts] = useState<CountsByStatus>(initial.counts)
   const [campaigns, setCampaigns] = useState<CampaignSummary[]>(initial.campaigns)
+  const members: MemberRow[] = initial.members
   const [tab, setTab] = useState<PostsTab>('all')
   const [view, setView] = useState<'flat' | 'grouped'>('flat')
   const [search, setSearch] = useState('')
   const [type, setType] = useState<'all' | 'original' | 'reshare'>('all')
   const [platforms, setPlatforms] = useState<PlatformKey[]>([])
+  const [authorId, setAuthorId] = useState<string>('')
+  const [fromDate, setFromDate] = useState<string>('')
+  const [toDate, setToDate] = useState<string>('')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
 
@@ -81,9 +87,9 @@ function PostsPage() {
             search: search || null,
             platforms,
             type,
-            authorId: null,
-            fromIso: null,
-            toIso: null,
+            authorId: authorId || null,
+            fromIso: fromDate ? new Date(fromDate).toISOString() : null,
+            toIso: toDate ? new Date(`${toDate}T23:59:59`).toISOString() : null,
           },
         }),
         countsByStatus({ data: { workspaceSlug } }),
@@ -100,7 +106,7 @@ function PostsPage() {
   useEffect(() => {
     void reload()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, type, platforms, search])
+  }, [tab, type, platforms, search, authorId, fromDate, toDate])
 
   const togglePlatform = (p: PlatformKey) =>
     setPlatforms((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]))
@@ -238,6 +244,48 @@ function PostsPage() {
               <PlatformIcon platform={p} size={18} />
             </button>
           ))}
+        </div>
+        <select
+          value={authorId}
+          onChange={(e) => setAuthorId(e.target.value)}
+          className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs"
+          title="Filter by author"
+        >
+          <option value="">All authors</option>
+          {members.map((m) => (
+            <option key={m.userId} value={m.userId}>
+              {m.name || m.email}
+            </option>
+          ))}
+        </select>
+        <div className="flex items-center gap-1 text-xs text-neutral-600">
+          <span>From</span>
+          <Input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="h-7 w-[140px] text-xs"
+          />
+          <span>to</span>
+          <Input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className="h-7 w-[140px] text-xs"
+          />
+          {fromDate || toDate ? (
+            <button
+              type="button"
+              onClick={() => {
+                setFromDate('')
+                setToDate('')
+              }}
+              className="rounded px-1 text-neutral-500 hover:bg-neutral-100"
+              title="Clear dates"
+            >
+              ×
+            </button>
+          ) : null}
         </div>
         {loading ? <Spinner /> : null}
       </div>
