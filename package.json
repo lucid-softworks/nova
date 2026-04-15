@@ -14,7 +14,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:seed": "tsx app/server/db/seed.ts"
+    "db:seed": "tsx app/server/db/seed.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",
@@ -86,7 +88,8 @@
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.2",
     "vite": "^6.4.2",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.1.4"
   },
   "packageManager": "pnpm@10.12.2"
 }
