@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { getBillingProvider, currentBillingProviderName } from '~/lib/billing'
 import { getSubscription } from '~/lib/billing/persist'
+import { limitsFor, usageFor, type PlanLimits } from '~/lib/billing/limits'
 import { requireWorkspaceAccess } from './session.server'
 
 const checkoutInput = z.object({
@@ -55,6 +56,12 @@ export type BillingSummary = {
   plan: string | null
   status: string
   currentPeriodEnd: string | null
+  limits: PlanLimits
+  usage: {
+    members: number
+    connectedAccounts: number
+    scheduledPostsThisPeriod: number
+  }
 }
 
 export const getBillingSummary = createServerFn({ method: 'GET' })
@@ -62,11 +69,21 @@ export const getBillingSummary = createServerFn({ method: 'GET' })
   .handler(async ({ data }): Promise<BillingSummary> => {
     const r = await requireWorkspaceAccess(data.workspaceSlug)
     if (!r.ok) throw new Error(r.reason)
-    const sub = await getSubscription(r.workspace.id)
+    const [sub, limits, usage] = await Promise.all([
+      getSubscription(r.workspace.id),
+      limitsFor(r.workspace.id),
+      usageFor(r.workspace.id),
+    ])
     return {
       provider: currentBillingProviderName(),
       plan: sub?.plan ?? null,
       status: sub?.status ?? 'none',
       currentPeriodEnd: sub?.currentPeriodEnd?.toISOString() ?? null,
+      limits,
+      usage: {
+        members: usage.members,
+        connectedAccounts: usage.connectedAccounts,
+        scheduledPostsThisPeriod: usage.scheduledPostsThisPeriod,
+      },
     }
   })

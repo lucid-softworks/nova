@@ -5,6 +5,7 @@ import { auth } from '~/lib/auth'
 import { db, schema } from './db'
 import { requireWorkspaceDetail } from './session.server'
 import { notifyWorkspaceAdmins } from './notifications.server'
+import { assertWithinLimit } from '~/lib/billing/limits'
 import type { WorkspaceRole } from './types'
 
 export type MemberRow = {
@@ -183,6 +184,7 @@ export async function addMemberByEmailImpl(
   if (role === 'admin' && detail.role !== 'admin') {
     throw new Error('Only admins can invite admins')
   }
+  await assertWithinLimit(detail.workspaceId, 'member')
 
   const normalizedEmail = email.trim().toLowerCase()
   const target = await db.query.user.findFirst({

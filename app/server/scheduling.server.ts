@@ -3,6 +3,7 @@ import { db, schema } from './db'
 import { requireWorkspaceAccess } from './session.server'
 import { notifyUser, notifyWorkspaceApprovers } from './notifications.server'
 import { publishWebhookEvent } from './webhooks.server'
+import { assertWithinLimit } from '~/lib/billing/limits'
 
 async function ensureWs(slug: string) {
   const r = await requireWorkspaceAccess(slug)
@@ -20,9 +21,14 @@ async function ensurePostInWorkspace(workspaceId: string, postId: string) {
 
 export async function scheduleAtImpl(slug: string, postId: string, scheduledAt: Date) {
   const { workspace, user } = await ensureWs(slug)
-  await ensurePostInWorkspace(workspace.id, postId)
+  const existing = await ensurePostInWorkspace(workspace.id, postId)
   if (scheduledAt.getTime() < Date.now() - 60_000) {
     throw new Error('Scheduled time is in the past')
+  }
+  // Only count against quota on the first schedule — moving an already-
+  // scheduled post shouldn't re-consume budget.
+  if (existing.status !== 'scheduled' && existing.status !== 'published') {
+    await assertWithinLimit(workspace.id, 'post')
   }
   await db
     .update(schema.posts)

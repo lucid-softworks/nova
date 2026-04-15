@@ -21,6 +21,27 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/billin
 const PLANS = ['starter', 'pro', 'business'] as const
 type Plan = (typeof PLANS)[number]
 
+function UsageBar({ label, used, limit }: { label: string; used: number; limit: number }) {
+  const pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0
+  const danger = pct >= 90
+  return (
+    <div className="rounded-md border border-neutral-200 p-2">
+      <div className="flex items-baseline justify-between">
+        <div className="text-xs text-neutral-600">{label}</div>
+        <div className="text-xs font-medium text-neutral-900">
+          {used}/{limit}
+        </div>
+      </div>
+      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-neutral-100">
+        <div
+          className={danger ? 'h-full bg-red-500' : 'h-full bg-indigo-500'}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
 function BillingSettings() {
   const { workspaceSlug } = Route.useParams()
   const { workspace } = Route.useRouteContext()
@@ -78,6 +99,24 @@ function BillingSettings() {
                 Renews on {new Date(summary.currentPeriodEnd).toLocaleDateString()}
               </div>
             ) : null}
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-3">
+            <UsageBar
+              label="Members"
+              used={summary.usage.members}
+              limit={summary.limits.maxMembers}
+            />
+            <UsageBar
+              label="Connected accounts"
+              used={summary.usage.connectedAccounts}
+              limit={summary.limits.maxConnectedAccounts}
+            />
+            <UsageBar
+              label="Scheduled posts (this month)"
+              used={summary.usage.scheduledPostsThisPeriod}
+              limit={summary.limits.maxScheduledPostsPerMonth}
+            />
           </div>
 
           {disabled ? (

@@ -6,6 +6,7 @@ import { requireWorkspaceAccess } from './session.server'
 import { encrypt } from '~/lib/encryption'
 import type { PlatformKey } from '~/lib/platforms'
 import { buildAuthorizeUrl, getProvider, makePkce, saveSocialAccount } from './oauth/flow.server'
+import { assertWithinLimit } from '~/lib/billing/limits'
 
 export type AccountSummary = {
   id: string
@@ -77,6 +78,7 @@ export async function disconnectAccountImpl(slug: string, accountId: string) {
 
 export async function connectBlueskyImpl(slug: string, identifier: string, password: string) {
   const { workspace } = await ensureWs(slug)
+  await assertWithinLimit(workspace.id, 'account')
 
   const res = await fetch('https://bsky.social/xrpc/com.atproto.server.createSession', {
     method: 'POST',
@@ -137,6 +139,7 @@ const MASTODON_SCOPES = 'read write follow push'
 
 export async function startMastodonOAuthImpl(slug: string, instanceRaw: string) {
   const { workspace } = await ensureWs(slug)
+  await assertWithinLimit(workspace.id, 'account')
   const instance = normalizeInstance(instanceRaw)
   const baseUrl = process.env.APP_URL ?? process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'
   const redirectUri = `${baseUrl}/api/oauth/callback/mastodon`
@@ -195,6 +198,7 @@ export async function startOAuthImpl(
   platform: Exclude<PlatformKey, 'bluesky' | 'mastodon'>,
 ) {
   const { workspace } = await ensureWs(slug)
+  await assertWithinLimit(workspace.id, 'account')
   const provider = getProvider(platform)
   if (!provider) {
     throw new Error(
