@@ -12,6 +12,7 @@ import { getAnalyticsQueue } from './server/queues/analyticsQueue'
 import { getAnalyticsWorker } from './server/queues/analyticsWorker'
 import { startScheduler, stopScheduler } from './server/queues/scheduler'
 import { startAnalyticsSync } from './server/queues/analyticsSync'
+import { getRssQueue, getRssWorker, startRssPolling } from './server/rss/schedule'
 import { logger } from './lib/logger'
 import { initSentry } from './lib/sentry'
 
@@ -26,23 +27,28 @@ const postQueue = getPostQueue()
 const postWorker = getPostWorker()
 const analyticsQueue = getAnalyticsQueue()
 const analyticsWorker = getAnalyticsWorker()
+const rssQueue = getRssQueue()
+const rssWorker = getRssWorker()
 startScheduler()
-// Scheduling the repeatable is idempotent — BullMQ dedupes on the jobId.
-// Running this on every worker boot (possibly many replicas) is safe.
+// Scheduling the repeatables is idempotent — BullMQ dedupes on the jobId,
+// so running this on every worker boot (any replica count) is safe.
 startAnalyticsSync().catch((e) =>
   logger.error({ err: e instanceof Error ? e.message : String(e) }, 'analytics schedule failed'),
 )
+startRssPolling().catch((e) =>
+  logger.error({ err: e instanceof Error ? e.message : String(e) }, 'rss schedule failed'),
+)
 logger.info(
   { replicaId: process.env.HOSTNAME ?? 'local' },
-  'worker online: posts + analytics + scheduler',
+  'worker online: posts + analytics + rss + scheduler',
 )
 
 const shutdown = async (signal: string) => {
   logger.info({ signal }, 'worker draining')
   stopScheduler()
   try {
-    await Promise.all([postWorker.close(), analyticsWorker.close()])
-    await Promise.all([postQueue.close(), analyticsQueue.close()])
+    await Promise.all([postWorker.close(), analyticsWorker.close(), rssWorker.close()])
+    await Promise.all([postQueue.close(), analyticsQueue.close(), rssQueue.close()])
   } catch (e) {
     logger.error({ err: e instanceof Error ? e.message : String(e) }, 'worker drain error')
   }

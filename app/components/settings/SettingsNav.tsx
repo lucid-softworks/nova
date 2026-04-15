@@ -8,6 +8,7 @@ const TABS = [
   { key: 'api', label: 'API & Webhooks', to: '/$workspaceSlug/settings/api' as const },
   { key: 'security', label: 'Security', to: '/$workspaceSlug/settings/security' as const },
   { key: 'white-label', label: 'White Label', to: '/$workspaceSlug/settings/white-label' as const },
+  { key: 'rss', label: 'RSS Feeds', to: '/$workspaceSlug/settings/rss' as const },
   { key: 'billing', label: 'Billing', to: '/$workspaceSlug/settings/billing' as const },
 ] as const
 

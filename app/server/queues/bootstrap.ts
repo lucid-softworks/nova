@@ -4,6 +4,12 @@ import { startScheduler, stopScheduler } from './scheduler'
 import { startAnalyticsSync } from './analyticsSync'
 import { getAnalyticsQueue, resetAnalyticsQueue } from './analyticsQueue'
 import { getAnalyticsWorker, resetAnalyticsWorker } from './analyticsWorker'
+import {
+  getRssQueue,
+  getRssWorker,
+  resetRss,
+  startRssPolling,
+} from '~/server/rss/schedule'
 import { logger } from '~/lib/logger'
 import { initSentry } from '~/lib/sentry'
 
@@ -29,20 +35,28 @@ export function bootQueues() {
   const worker = getPostWorker()
   const analyticsQueue = getAnalyticsQueue()
   const analyticsWorker = getAnalyticsWorker()
+  const rssQueue = getRssQueue()
+  const rssWorker = getRssWorker()
   startScheduler()
   startAnalyticsSync().catch((e) =>
     logger.error({ err: e instanceof Error ? e.message : String(e) }, 'analytics schedule failed'),
   )
-  logger.info('queues online: posts + analytics workers + scheduler')
+  startRssPolling().catch((e) =>
+    logger.error({ err: e instanceof Error ? e.message : String(e) }, 'rss schedule failed'),
+  )
+  logger.info('queues online: posts + analytics + rss workers + scheduler')
+  void rssQueue
+  void rssWorker
 
   globalThis.__socialhubQueueCleanup = async () => {
     stopScheduler()
-    await Promise.all([worker.close(), analyticsWorker.close()])
-    await Promise.all([queue.close(), analyticsQueue.close()])
+    await Promise.all([worker.close(), analyticsWorker.close(), rssWorker.close()])
+    await Promise.all([queue.close(), analyticsQueue.close(), rssQueue.close()])
     resetPostWorker()
     resetPostQueue()
     resetAnalyticsWorker()
     resetAnalyticsQueue()
+    resetRss()
     globalThis.__socialhubQueuesBooted = false
   }
 }

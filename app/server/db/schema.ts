@@ -596,6 +596,54 @@ export const analyticsSnapshots = pgTable('analytics_snapshots', {
   createdAt: now(),
 })
 
+export const rssFeeds = pgTable(
+  'rss_feeds',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    createdById: text('created_by_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'restrict' }),
+    url: text('url').notNull(),
+    title: text('title'),
+    lastPolledAt: timestamp('last_polled_at', { withTimezone: true }),
+    autoPublish: boolean('auto_publish').default(false).notNull(),
+    defaultAccountIds: jsonb('default_account_ids')
+      .$type<string[]>()
+      .default([])
+      .notNull(),
+    contentTemplate: text('content_template')
+      .default('{{title}}\n\n{{link}}')
+      .notNull(),
+    active: boolean('active').default(true).notNull(),
+    createdAt: now(),
+  },
+  (t) => ({
+    workspaceIdx: index('rss_feeds_workspace_idx').on(t.workspaceId),
+  }),
+)
+
+export const rssFeedItems = pgTable(
+  'rss_feed_items',
+  {
+    id: id(),
+    feedId: uuid('feed_id')
+      .notNull()
+      .references(() => rssFeeds.id, { onDelete: 'cascade' }),
+    guid: text('guid').notNull(),
+    link: text('link'),
+    title: text('title'),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    postId: uuid('post_id').references(() => posts.id, { onDelete: 'set null' }),
+    createdAt: now(),
+  },
+  (t) => ({
+    feedGuidUnq: uniqueIndex('rss_feed_items_feed_guid_unq').on(t.feedId, t.guid),
+  }),
+)
+
 export const shortLinks = pgTable(
   'short_links',
   {
