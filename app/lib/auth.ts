@@ -17,6 +17,7 @@ import { createAccessControl } from 'better-auth/plugins/access'
 import { db, schema } from '~/server/db'
 import { sendEmail } from '~/server/mailer.server'
 import { getBillingProvider } from '~/lib/billing'
+import { getShortener } from '~/lib/shortener'
 
 const requireEnv = (key: string): string => {
   const v = process.env[key]
@@ -175,6 +176,12 @@ const plugins = [
   // are driven entirely from the BillingProvider abstraction instead.
   ...(() => {
     const plugin = getBillingProvider().betterAuthPlugin?.()
+    return plugin ? [plugin as ReturnType<typeof apiKey>] : []
+  })(),
+  // Link shortener: Dub's Better Auth plugin tags sign-ups with their
+  // workspace for attribution; local provider contributes nothing.
+  ...(() => {
+    const plugin = getShortener().betterAuthPlugin?.()
     return plugin ? [plugin as ReturnType<typeof apiKey>] : []
   })(),
   tanstackStartCookies(),

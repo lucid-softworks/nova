@@ -691,6 +691,7 @@ export const shortLinks = pgTable(
     targetUrl: text('target_url').notNull(),
     createdById: text('created_by_id').references(() => user.id, { onDelete: 'set null' }),
     clickCount: integer('click_count').default(0).notNull(),
+    externalId: text('external_id'),
     createdAt: now(),
   },
   (t) => ({
