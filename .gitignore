@@ -10,6 +10,6 @@ build
 .env.*.local
 .DS_Store
 *.log
-storage
+/storage
 app/routeTree.gen.ts
 drizzle/

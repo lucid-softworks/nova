@@ -1,4 +1,3 @@
-import { loadMediaBuffer } from '../helpers'
 import { PublishError } from '../errors'
 import type { PublishContext, PublishMedia, PublishResult } from '../index'
 
@@ -6,17 +5,7 @@ const BASE = 'https://api.pinterest.com/v5'
 
 type PinResponse = { id: string; url?: string }
 
-async function buildMediaSource(
-  media: PublishMedia,
-): Promise<Record<string, unknown>> {
-  if (media.url.startsWith('/media/')) {
-    const { buf, mime } = await loadMediaBuffer(media)
-    return {
-      source_type: 'image_base64',
-      content_type: mime,
-      data: buf.toString('base64'),
-    }
-  }
+function buildMediaSource(media: PublishMedia): Record<string, unknown> {
   return { source_type: 'image_url', url: media.url }
 }
 
@@ -75,7 +64,7 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
     })
   }
 
-  const mediaSource = await buildMediaSource(image)
+  const mediaSource = buildMediaSource(image)
   const title =
     ctx.version.platformVariables.pinterest_title ?? ctx.version.content.slice(0, 100)
   const body: Record<string, unknown> = {

@@ -84,17 +84,6 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
       retryable: false,
     })
   }
-  for (const m of ctx.media) {
-    if (m.url.startsWith('/media/')) {
-      throw new PublishError({
-        code: 'INVALID_FORMAT',
-        message: `Instagram media at local path ${m.url}`,
-        userMessage:
-          'Instagram requires media stored at a public URL — upload via a CDN first.',
-        retryable: false,
-      })
-    }
-  }
   const videos = ctx.media.filter((m) => m.mimeType.startsWith('video/'))
   if (videos.length > 0) {
     throw new PublishError({

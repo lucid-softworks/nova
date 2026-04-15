@@ -71,17 +71,6 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
   const accessToken = ctx.account.accessToken
   const text = ctx.version.content
 
-  for (const m of ctx.media) {
-    if (m.url.startsWith('/media/')) {
-      throw new PublishError({
-        code: 'INVALID_FORMAT',
-        message: `Threads media at local path ${m.url}`,
-        userMessage: 'Threads requires media at a public URL.',
-        retryable: false,
-      })
-    }
-  }
-
   const images = ctx.media.filter((m) => m.mimeType.startsWith('image/'))
   const videos = ctx.media.filter((m) => m.mimeType.startsWith('video/'))
 
