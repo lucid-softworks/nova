@@ -26,6 +26,7 @@ export type PublishMedia = {
   url: string
   mimeType: string
   originalName: string
+  size: number
 }
 
 export type PublishRedditFields = {

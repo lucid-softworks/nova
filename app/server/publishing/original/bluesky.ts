@@ -1,9 +1,8 @@
-import { readFile } from 'node:fs/promises'
-import path from 'node:path'
 import { eq } from 'drizzle-orm'
 import { db, schema } from '~/server/db'
 import { encrypt } from '~/lib/encryption'
 import { PublishError } from '../errors'
+import { loadMediaBuffer } from '../helpers'
 import type { PublishContext, PublishMedia, PublishResult } from '../index'
 
 const SERVICE = 'https://bsky.social'
@@ -69,20 +68,6 @@ async function xrpc<T>(
     })
   }
   return (await res.json()) as T
-}
-
-async function loadMediaBuffer(media: PublishMedia): Promise<{ buf: Buffer; mime: string }> {
-  if (media.url.startsWith('/media/')) {
-    const dir = process.env.STORAGE_LOCAL_PATH ?? './storage'
-    const filename = media.url.slice('/media/'.length)
-    const abs = path.join(dir, filename)
-    const buf = await readFile(abs)
-    return { buf, mime: media.mimeType }
-  }
-  const res = await fetch(media.url)
-  if (!res.ok) throw new Error(`fetch media ${media.url} failed (${res.status})`)
-  const buf = Buffer.from(await res.arrayBuffer())
-  return { buf, mime: media.mimeType }
 }
 
 type BlobRef = { $type: 'blob'; ref: { $link: string }; mimeType: string; size: number }

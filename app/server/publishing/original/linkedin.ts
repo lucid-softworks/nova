@@ -1,4 +1,4 @@
-import { loadMediaBuffer, persistRefreshedTokens } from '../helpers'
+import { loadMediaBuffer, loadMediaRange, persistRefreshedTokens } from '../helpers'
 import { PublishError } from '../errors'
 import type { PublishContext, PublishMedia, PublishResult } from '../index'
 
@@ -133,6 +133,86 @@ async function refreshTokens(refreshToken: string): Promise<Tokens> {
   }
 }
 
+type VideoInitResponse = {
+  value: {
+    uploadUrlsExpireAt?: number
+    video: string
+    uploadInstructions: Array<{ uploadUrl: string; firstByte: number; lastByte: number }>
+    uploadToken?: string
+  }
+}
+
+async function uploadVideo(
+  tokens: Tokens,
+  authorUrn: string,
+  media: PublishMedia,
+): Promise<string> {
+  if (media.size <= 0) {
+    throw new PublishError({
+      code: 'INVALID_FORMAT',
+      message: 'LinkedIn video has zero size',
+      userMessage: 'Video file appears to be empty.',
+      retryable: false,
+    })
+  }
+  const { json: init } = await liRest<VideoInitResponse>(
+    'POST',
+    '/videos?action=initializeUpload',
+    tokens,
+    {
+      initializeUploadRequest: {
+        owner: authorUrn,
+        fileSizeBytes: media.size,
+        uploadCaptions: false,
+        uploadThumbnail: false,
+      },
+    },
+  )
+  const { video, uploadInstructions, uploadToken } = init.value
+  if (!uploadInstructions?.length) {
+    throw new PublishError({
+      code: 'UNKNOWN',
+      message: 'LinkedIn video init returned no uploadInstructions',
+      userMessage: 'LinkedIn publish failed.',
+    })
+  }
+
+  const uploadedPartIds: string[] = []
+  for (const part of uploadInstructions) {
+    const chunk = await loadMediaRange(media, part.firstByte, part.lastByte)
+    const res = await fetch(part.uploadUrl, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${tokens.accessToken}`,
+        'Content-Type': 'application/octet-stream',
+      },
+      body: new Uint8Array(chunk),
+    })
+    if (!res.ok) {
+      const txt = await res.text()
+      throw mapRestError(res.status, txt, 'video chunk')
+    }
+    const etag = res.headers.get('etag')
+    if (!etag) {
+      throw new PublishError({
+        code: 'UNKNOWN',
+        message: 'LinkedIn video chunk returned no ETag',
+        userMessage: 'LinkedIn publish failed.',
+      })
+    }
+    uploadedPartIds.push(etag.replace(/^"|"$/g, ''))
+  }
+
+  await liRest('POST', '/videos?action=finalizeUpload', tokens, {
+    finalizeUploadRequest: {
+      video,
+      uploadToken: uploadToken ?? '',
+      uploadedPartIds,
+    },
+  })
+  return video
+}
+
 async function uploadImage(
   tokens: Tokens,
   authorUrn: string,
@@ -241,30 +321,26 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
   }
 
   const firstMedia = ctx.media[0]
-  if (firstMedia && firstMedia.mimeType.startsWith('video/')) {
-    throw new PublishError({
-      code: 'NOT_IMPLEMENTED',
-      message: 'LinkedIn video requires multipart upload not yet wired',
-      userMessage: 'LinkedIn video posting not yet supported.',
-      retryable: false,
-    })
-  }
-
-  const imageMedia = ctx.media.filter((m) => m.mimeType.startsWith('image/')).slice(0, MAX_IMAGES)
-  const imageUrns: string[] = []
-  for (const m of imageMedia) {
-    const urn = await withRefresh(() => uploadImage(tokens, authorUrn, m))
-    imageUrns.push(urn)
-  }
-
   const body = baseBody(authorUrn, ctx.version.content)
-  if (imageUrns.length === 1) {
-    body.content = { media: { id: imageUrns[0], altText: imageMedia[0]?.originalName ?? '' } }
-  } else if (imageUrns.length > 1) {
-    body.content = {
-      multiImage: {
-        images: imageUrns.map((id, i) => ({ id, altText: imageMedia[i]?.originalName ?? '' })),
-      },
+
+  if (firstMedia && firstMedia.mimeType.startsWith('video/')) {
+    const videoUrn = await withRefresh(() => uploadVideo(tokens, authorUrn, firstMedia))
+    body.content = { media: { id: videoUrn, altText: firstMedia.originalName } }
+  } else {
+    const imageMedia = ctx.media.filter((m) => m.mimeType.startsWith('image/')).slice(0, MAX_IMAGES)
+    const imageUrns: string[] = []
+    for (const m of imageMedia) {
+      const urn = await withRefresh(() => uploadImage(tokens, authorUrn, m))
+      imageUrns.push(urn)
+    }
+    if (imageUrns.length === 1) {
+      body.content = { media: { id: imageUrns[0], altText: imageMedia[0]?.originalName ?? '' } }
+    } else if (imageUrns.length > 1) {
+      body.content = {
+        multiImage: {
+          images: imageUrns.map((id, i) => ({ id, altText: imageMedia[i]?.originalName ?? '' })),
+        },
+      }
     }
   }
 

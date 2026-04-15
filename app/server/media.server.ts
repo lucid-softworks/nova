@@ -1,8 +1,7 @@
-import { unlink } from 'node:fs/promises'
-import path from 'node:path'
 import { and, asc, desc, eq, inArray, like, or } from 'drizzle-orm'
 import { db, schema } from './db'
 import { requireWorkspaceAccess } from './session.server'
+import { getStorage } from './storage'
 
 export type FolderNode = {
   id: string
@@ -262,10 +261,10 @@ export async function deleteAssetsImpl(slug: string, assetIds: string[]) {
       ),
     )
 
-  // Only unlink the file if no other row in this workspace still references
+  // Only delete the blob if no other row in this workspace still references
   // the same contentHash. Rows without a hash fall back to filename
-  // uniqueness and can be unlinked directly.
-  const dir = process.env.STORAGE_LOCAL_PATH ?? './storage'
+  // uniqueness and can be removed directly.
+  const storage = getStorage()
   for (const r of rows) {
     if (r.contentHash) {
       const stillReferenced = await db.query.mediaAssets.findFirst({
@@ -276,7 +275,7 @@ export async function deleteAssetsImpl(slug: string, assetIds: string[]) {
       })
       if (stillReferenced) continue
     }
-    await unlink(path.join(dir, r.filename)).catch(() => {})
+    await storage.delete(r.filename).catch(() => {})
   }
   return { ok: true }
 }

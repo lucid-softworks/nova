@@ -14,7 +14,7 @@ import { Field } from '~/components/ui/field'
 import { Spinner } from '~/components/ui/spinner'
 import { PlatformIcon } from './PlatformIcon'
 import { PLATFORM_LIST, type PlatformKey, connectionModeFor } from '~/lib/platforms'
-import { connectBluesky, startOAuth } from '~/server/accounts'
+import { connectBluesky, connectMastodon, startOAuth } from '~/server/accounts'
 
 type Mode = { kind: 'grid' } | { kind: 'bluesky' } | { kind: 'mastodon' }
 
@@ -118,7 +118,10 @@ export function AddAccountDialog({
             }}
           />
         ) : (
-          <MastodonForm onBack={() => setMode({ kind: 'grid' })} />
+          <MastodonForm
+            workspaceSlug={workspaceSlug}
+            onBack={() => setMode({ kind: 'grid' })}
+          />
         )}
       </DialogContent>
     </Dialog>
@@ -202,8 +205,30 @@ function BlueskyForm({
   )
 }
 
-function MastodonForm({ onBack }: { onBack: () => void }) {
+function MastodonForm({
+  workspaceSlug,
+  onBack,
+}: {
+  workspaceSlug: string
+  onBack: () => void
+}) {
   const [instance, setInstance] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setSubmitting(true)
+    try {
+      const { url } = await connectMastodon({ data: { workspaceSlug, instance } })
+      window.location.href = url
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not start Mastodon connection')
+      setSubmitting(false)
+    }
+  }
+
   return (
     <>
       <DialogHeader>
@@ -217,29 +242,27 @@ function MastodonForm({ onBack }: { onBack: () => void }) {
           </div>
         </div>
       </DialogHeader>
-      <div className="space-y-4">
+      <form className="space-y-4" onSubmit={submit}>
         <Field label="Instance URL" htmlFor="mastodon-instance">
           <Input
             id="mastodon-instance"
             value={instance}
             onChange={(e) => setInstance(e.target.value)}
-            placeholder="https://mastodon.social"
+            placeholder="mastodon.social"
+            autoComplete="off"
           />
         </Field>
-        <p className="text-sm text-neutral-500">
-          Mastodon connection requires dynamic app registration per instance. This flow will ship in
-          a later update; for now, import a token manually from your instance&apos;s developer
-          settings.
-        </p>
+        {error ? <p className="text-sm text-red-600">{error}</p> : null}
         <div className="flex justify-between">
           <Button type="button" variant="ghost" onClick={onBack}>
             Back
           </Button>
-          <Button type="button" disabled>
+          <Button type="submit" disabled={submitting || !instance.trim()}>
+            {submitting ? <Spinner /> : null}
             Continue
           </Button>
         </div>
-      </div>
+      </form>
     </>
   )
 }

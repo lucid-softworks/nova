@@ -1,12 +1,16 @@
-import { loadMediaBuffer, persistRefreshedTokens } from '../helpers'
+import { loadMediaRange, persistRefreshedTokens } from '../helpers'
 import { PublishError } from '../errors'
-import type { PublishContext, PublishResult } from '../index'
+import type { PublishContext, PublishMedia, PublishResult } from '../index'
 
 const TOKEN_ENDPOINT = 'https://open.tiktokapis.com/v2/oauth/token/'
 const INIT_ENDPOINT = 'https://open.tiktokapis.com/v2/post/publish/video/init/'
 const STATUS_ENDPOINT = 'https://open.tiktokapis.com/v2/post/publish/status/fetch/'
 const POLL_TIMEOUT_MS = 30_000
 const POLL_INTERVAL_MS = 2_000
+// TikTok mandates 5 MiB minimum per chunk (except a sub-5MB whole file) and
+// 64 MiB maximum. 10 MiB keeps us comfortably inside both limits.
+const CHUNK_SIZE = 10 * 1024 * 1024
+const SINGLE_CHUNK_MAX = 64 * 1024 * 1024
 
 type Tokens = { accessToken: string; refreshToken: string }
 
@@ -127,9 +131,20 @@ type StatusResponse = {
   error?: { code: string; message: string }
 }
 
+function planChunks(totalSize: number): { chunkSize: number; totalChunks: number } {
+  if (totalSize <= SINGLE_CHUNK_MAX) {
+    return { chunkSize: totalSize, totalChunks: 1 }
+  }
+  const chunkSize = CHUNK_SIZE
+  const totalChunks = Math.ceil(totalSize / chunkSize)
+  return { chunkSize, totalChunks }
+}
+
 function buildInitBody(
   content: string,
   size: number,
+  chunkSize: number,
+  totalChunks: number,
   platformVariables: Record<string, string>,
 ): Record<string, unknown> {
   return {
@@ -143,24 +158,36 @@ function buildInitBody(
     source_info: {
       source: 'FILE_UPLOAD',
       video_size: size,
-      chunk_size: size,
-      total_chunk_count: 1,
+      chunk_size: chunkSize,
+      total_chunk_count: totalChunks,
     },
   }
 }
 
-async function uploadBytes(uploadUrl: string, buf: Buffer, mime: string): Promise<void> {
-  const res = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': mime,
-      'Content-Range': `bytes 0-${buf.length - 1}/${buf.length}`,
-    },
-    body: new Uint8Array(buf),
-  })
-  if (!res.ok) {
+async function uploadChunks(
+  uploadUrl: string,
+  media: PublishMedia,
+  totalSize: number,
+  mime: string,
+  chunkSize: number,
+  totalChunks: number,
+): Promise<void> {
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * chunkSize
+    const end = Math.min(start + chunkSize, totalSize) - 1
+    const chunk = await loadMediaRange(media, start, end)
+    const res = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': mime,
+        'Content-Range': `bytes ${start}-${end}/${totalSize}`,
+      },
+      body: new Uint8Array(chunk),
+    })
+    // Intermediate chunks return 206; final returns 201.
+    if (res.status === 206 || res.status === 201 || res.ok) continue
     const txt = await res.text()
-    throw mapError(res.status, txt, 'upload bytes')
+    throw mapError(res.status, txt, 'upload chunk')
   }
 }
 
@@ -201,7 +228,17 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
     })
   }
 
-  const { buf, mime } = await loadMediaBuffer(firstMedia)
+  const mime = firstMedia.mimeType
+  const totalSize = firstMedia.size
+  if (totalSize <= 0) {
+    throw new PublishError({
+      code: 'INVALID_FORMAT',
+      message: 'TikTok media has zero size',
+      userMessage: 'Video file appears to be empty.',
+      retryable: false,
+    })
+  }
+  const { chunkSize, totalChunks } = planChunks(totalSize)
 
   let tokens: Tokens = {
     accessToken: ctx.account.accessToken,
@@ -224,13 +261,19 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
     }
   }
 
-  const initBody = buildInitBody(ctx.version.content, buf.length, ctx.version.platformVariables)
+  const initBody = buildInitBody(
+    ctx.version.content,
+    totalSize,
+    chunkSize,
+    totalChunks,
+    ctx.version.platformVariables,
+  )
   const init = await withRefresh(() =>
     ttPost<InitResponse>(INIT_ENDPOINT, tokens, initBody, 'init upload'),
   )
   const { publish_id, upload_url } = init.data
 
-  await uploadBytes(upload_url, buf, mime)
+  await uploadChunks(upload_url, firstMedia, totalSize, mime, chunkSize, totalChunks)
 
   const status = await withRefresh(() => pollStatus(tokens, publish_id))
   const handle = ctx.account.accountHandle

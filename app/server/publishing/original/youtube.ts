@@ -1,11 +1,13 @@
-import { loadMediaBuffer, persistRefreshedTokens } from '../helpers'
+import { loadMediaRange, persistRefreshedTokens } from '../helpers'
 import { PublishError } from '../errors'
 import type { PublishContext, PublishResult } from '../index'
 
 const UPLOAD_ENDPOINT =
   'https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status'
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
-const MAX_BYTES = 256 * 1024 * 1024
+// YouTube requires chunks to be multiples of 256 KiB. 8 MiB is a good
+// balance between roundtrips and keeping per-chunk memory bounded.
+const CHUNK_SIZE = 8 * 1024 * 1024
 
 type Tokens = { accessToken: string; refreshToken: string }
 
@@ -129,24 +131,46 @@ type VideoResource = {
   status?: { privacyStatus?: string }
 }
 
-async function uploadBytes(
+async function uploadChunks(
   location: string,
-  buf: Buffer,
+  media: import('../index').PublishMedia,
+  totalSize: number,
   mime: string,
 ): Promise<VideoResource> {
-  const res = await fetch(location, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': mime,
-      'Content-Length': String(buf.length),
-    },
-    body: new Uint8Array(buf),
-  })
-  if (!res.ok) {
+  let offset = 0
+  while (offset < totalSize) {
+    const end = Math.min(offset + CHUNK_SIZE, totalSize) - 1
+    const chunk = await loadMediaRange(media, offset, end)
+    const res = await fetch(location, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': mime,
+        'Content-Length': String(chunk.length),
+        'Content-Range': `bytes ${offset}-${end}/${totalSize}`,
+      },
+      body: new Uint8Array(chunk),
+    })
+    if (res.status === 308) {
+      // Resume Incomplete — server tells us the next byte it wants via the
+      // Range header (inclusive end). If missing, assume it accepted all.
+      const range = res.headers.get('range')
+      if (range) {
+        const m = /bytes=\d+-(\d+)/.exec(range)
+        offset = m ? Number(m[1]) + 1 : end + 1
+      } else {
+        offset = end + 1
+      }
+      continue
+    }
+    if (res.ok) return (await res.json()) as VideoResource
     const txt = await res.text()
-    throw mapError(res.status, txt, 'upload bytes')
+    throw mapError(res.status, txt, 'upload chunk')
   }
-  return (await res.json()) as VideoResource
+  throw new PublishError({
+    code: 'UNKNOWN',
+    message: 'YouTube upload finished without terminal 200 response',
+    userMessage: 'YouTube publish failed.',
+  })
 }
 
 function buildMetadata(
@@ -191,12 +215,13 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
     })
   }
 
-  const { buf, mime } = await loadMediaBuffer(firstMedia)
-  if (buf.length > MAX_BYTES) {
+  const mime = firstMedia.mimeType
+  const totalSize = firstMedia.size
+  if (totalSize <= 0) {
     throw new PublishError({
-      code: 'MEDIA_TOO_LARGE',
-      message: `YouTube video ${buf.length} bytes exceeds single-PUT limit`,
-      userMessage: 'Video exceeds 256MB — chunked upload not yet supported.',
+      code: 'INVALID_FORMAT',
+      message: 'YouTube media has zero size',
+      userMessage: 'Video file appears to be empty.',
       retryable: false,
     })
   }
@@ -223,8 +248,8 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
   }
 
   const metadata = buildMetadata(ctx.version.content, ctx.version.platformVariables)
-  const { location } = await withRefresh(() => initiateUpload(tokens, metadata, mime, buf.length))
-  const video = await withRefresh(() => uploadBytes(location, buf, mime))
+  const { location } = await withRefresh(() => initiateUpload(tokens, metadata, mime, totalSize))
+  const video = await withRefresh(() => uploadChunks(location, firstMedia, totalSize, mime))
 
   return {
     platformPostId: video.id,

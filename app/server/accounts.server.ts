@@ -125,6 +125,71 @@ export async function connectBlueskyImpl(slug: string, identifier: string, passw
 
 const OAUTH_COOKIE = 'socialhub_oauth_state'
 
+function normalizeInstance(raw: string): string {
+  const trimmed = raw.trim().replace(/^https?:\/\//, '').replace(/\/+$/, '')
+  if (!trimmed || !/^[a-z0-9.-]+$/i.test(trimmed)) {
+    throw new Error('Invalid Mastodon instance hostname')
+  }
+  return `https://${trimmed}`
+}
+
+const MASTODON_SCOPES = 'read write follow push'
+
+export async function startMastodonOAuthImpl(slug: string, instanceRaw: string) {
+  const { workspace } = await ensureWs(slug)
+  const instance = normalizeInstance(instanceRaw)
+  const baseUrl = process.env.APP_URL ?? process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'
+  const redirectUri = `${baseUrl}/api/oauth/callback/mastodon`
+
+  // Dynamic app registration — Mastodon's open federation means there's no
+  // central directory of client credentials; every instance requires us to
+  // register before the OAuth dance.
+  const regRes = await fetch(`${instance}/api/v1/apps`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      client_name: 'SocialHub',
+      redirect_uris: redirectUri,
+      scopes: MASTODON_SCOPES,
+      website: baseUrl,
+    }),
+  })
+  if (!regRes.ok) {
+    const txt = await regRes.text()
+    throw new Error(`Mastodon app registration failed (${regRes.status}): ${txt.slice(0, 300)}`)
+  }
+  const reg = (await regRes.json()) as { client_id?: string; client_secret?: string }
+  if (!reg.client_id || !reg.client_secret) {
+    throw new Error('Mastodon registration returned no client credentials')
+  }
+
+  const state = randomBytes(24).toString('hex')
+  const payload = JSON.stringify({
+    workspaceId: workspace.id,
+    workspaceSlug: slug,
+    platform: 'mastodon' as const,
+    instance,
+    clientId: reg.client_id,
+    clientSecret: reg.client_secret,
+    state,
+  })
+  setCookie(OAUTH_COOKIE, encrypt(payload), {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 60 * 10,
+  })
+
+  const u = new URL(`${instance}/oauth/authorize`)
+  u.searchParams.set('client_id', reg.client_id)
+  u.searchParams.set('redirect_uri', redirectUri)
+  u.searchParams.set('response_type', 'code')
+  u.searchParams.set('scope', MASTODON_SCOPES)
+  u.searchParams.set('state', state)
+  return { url: u.toString() }
+}
+
 export async function startOAuthImpl(
   slug: string,
   platform: Exclude<PlatformKey, 'bluesky' | 'mastodon'>,

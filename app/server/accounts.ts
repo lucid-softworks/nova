@@ -5,6 +5,7 @@ import {
   disconnectAccountImpl,
   connectBlueskyImpl,
   startOAuthImpl,
+  startMastodonOAuthImpl,
   type AccountSummary,
 } from './accounts.server'
 
@@ -56,3 +57,12 @@ const startOAuthSchema = z.object({
 export const startOAuth = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => startOAuthSchema.parse(d))
   .handler(async ({ data }) => startOAuthImpl(data.workspaceSlug, data.platform))
+
+const mastodonInput = z.object({
+  workspaceSlug: z.string().min(1),
+  instance: z.string().min(1),
+})
+
+export const connectMastodon = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => mastodonInput.parse(d))
+  .handler(async ({ data }) => startMastodonOAuthImpl(data.workspaceSlug, data.instance))

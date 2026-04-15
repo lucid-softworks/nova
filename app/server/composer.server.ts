@@ -1,18 +1,10 @@
-import { mkdir, writeFile } from 'node:fs/promises'
 import { createHash, randomUUID } from 'node:crypto'
 import path from 'node:path'
 import { and, eq, inArray } from 'drizzle-orm'
 import { db, schema } from './db'
 import { requireWorkspaceAccess } from './session.server'
+import { getStorage } from './storage'
 import type { PlatformKey } from '~/lib/platforms'
-
-function storagePath(): string {
-  return process.env.STORAGE_LOCAL_PATH ?? './storage'
-}
-
-function publicUrlFor(filename: string): string {
-  return `/media/${filename}`
-}
 
 async function ensureWs(slug: string) {
   const r = await requireWorkspaceAccess(slug)
@@ -59,17 +51,15 @@ export async function uploadMediaImpl(slug: string, file: File, folderId: string
 
   const ext = path.extname(file.name) || ''
   const filename = `${randomUUID()}${ext}`
-  const dir = storagePath()
-  await mkdir(dir, { recursive: true })
-  const abs = path.join(dir, filename)
-  await writeFile(abs, buf)
+  const mime = file.type || 'application/octet-stream'
+  const storage = getStorage()
+  await storage.put(filename, buf, { contentType: mime, cacheControl: 'public, max-age=31536000, immutable' })
 
   // Images: probe dimensions + generate a 320px max-edge webp thumbnail.
   // Videos: deferred (ffmpeg first-frame) — plan item calls it out.
   let width: number | null = null
   let height: number | null = null
   let thumbnailUrl: string | null = null
-  const mime = file.type || 'application/octet-stream'
   if (mime.startsWith('image/')) {
     try {
       const { default: sharp } = await import('sharp')
@@ -77,12 +67,15 @@ export async function uploadMediaImpl(slug: string, file: File, folderId: string
       width = meta.width ?? null
       height = meta.height ?? null
       const thumbName = `${path.parse(filename).name}.thumb.webp`
-      const thumbAbs = path.join(dir, thumbName)
-      await sharp(buf)
+      const thumbBuf = await sharp(buf)
         .resize({ width: 320, height: 320, fit: 'inside', withoutEnlargement: true })
         .webp({ quality: 80 })
-        .toFile(thumbAbs)
-      thumbnailUrl = publicUrlFor(thumbName)
+        .toBuffer()
+      await storage.put(thumbName, thumbBuf, {
+        contentType: 'image/webp',
+        cacheControl: 'public, max-age=31536000, immutable',
+      })
+      thumbnailUrl = storage.publicUrl(thumbName)
     } catch (e) {
       console.warn('[media] thumbnail generation failed', e)
     }
@@ -97,7 +90,7 @@ export async function uploadMediaImpl(slug: string, file: File, folderId: string
       originalName: file.name,
       mimeType: mime,
       size: buf.length,
-      url: publicUrlFor(filename),
+      url: storage.publicUrl(filename),
       width,
       height,
       thumbnailUrl,

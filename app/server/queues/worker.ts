@@ -91,6 +91,7 @@ async function processJob(job: { data: PostJobData }) {
         url: schema.mediaAssets.url,
         mimeType: schema.mediaAssets.mimeType,
         originalName: schema.mediaAssets.originalName,
+        size: schema.mediaAssets.size,
         sortOrder: schema.postMedia.sortOrder,
       })
       .from(schema.postMedia)
@@ -100,7 +101,13 @@ async function processJob(job: { data: PostJobData }) {
       v.id,
       rows
         .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map((r) => ({ id: r.id, url: r.url, mimeType: r.mimeType, originalName: r.originalName })),
+        .map((r) => ({
+          id: r.id,
+          url: r.url,
+          mimeType: r.mimeType,
+          originalName: r.originalName,
+          size: r.size,
+        })),
     )
   }
 
