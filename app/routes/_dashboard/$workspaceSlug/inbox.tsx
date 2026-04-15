@@ -1,6 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { RefreshCw, ExternalLink, Check } from 'lucide-react'
+import { RefreshCw, ExternalLink, Check, Reply } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
@@ -25,13 +25,39 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/inbox')({
   component: InboxPage,
 })
 
+const REPLY_THREAD_PLATFORMS = new Set(['bluesky', 'mastodon', 'x', 'threads'])
+
+function canReplyInApp(item: InboxRow): boolean {
+  if (!REPLY_THREAD_PLATFORMS.has(item.platform)) return false
+  return item.kind === 'mention' || item.kind === 'reply'
+}
+
 function InboxPage() {
   const { workspaceSlug } = Route.useParams()
+  const navigate = useNavigate()
   const initial = Route.useLoaderData() as { items: InboxRow[] }
   const [items, setItems] = useState<InboxRow[]>(initial.items)
   const [kind, setKind] = useState<Kind>('all')
   const [unreadOnly, setUnreadOnly] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  const reply = (item: InboxRow) => {
+    // Bluesky platformItemId is `<at-uri>:<reason>` — strip the reason
+    // suffix so the publisher gets a clean status id to thread against.
+    const replyTo =
+      item.platform === 'bluesky'
+        ? item.platformItemId.replace(/:(mention|reply|like|repost|follow|quote)$/, '')
+        : item.platformItemId
+    navigate({
+      to: '/$workspaceSlug/compose',
+      params: { workspaceSlug },
+      search: {
+        replyTo,
+        replyHandle: item.actorHandle ?? '',
+        replyAccountId: item.socialAccountId,
+      } as never,
+    })
+  }
 
   const reload = async () => {
     setLoading(true)
@@ -155,6 +181,15 @@ function InboxPage() {
                   ) : null}
                   <div className="mt-1 flex items-center gap-3 text-xs text-neutral-400 dark:text-neutral-500">
                     <time>{new Date(i.itemCreatedAt).toLocaleString()}</time>
+                    {canReplyInApp(i) ? (
+                      <button
+                        type="button"
+                        onClick={() => reply(i)}
+                        className="inline-flex items-center gap-0.5 font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+                      >
+                        <Reply className="h-3 w-3" /> Reply
+                      </button>
+                    ) : null}
                     {i.permalink ? (
                       <a
                         href={i.permalink}

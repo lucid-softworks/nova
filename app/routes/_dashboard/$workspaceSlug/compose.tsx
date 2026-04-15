@@ -7,6 +7,9 @@ import { ComposerPage } from '~/components/composer/ComposerPage'
 type ComposeSearch = {
   postId?: string
   scheduledAt?: string
+  replyTo?: string
+  replyHandle?: string
+  replyAccountId?: string
 }
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/compose')({
@@ -14,6 +17,9 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/compose')({
     const out: ComposeSearch = {}
     if (typeof s.postId === 'string') out.postId = s.postId
     if (typeof s.scheduledAt === 'string') out.scheduledAt = s.scheduledAt
+    if (typeof s.replyTo === 'string') out.replyTo = s.replyTo
+    if (typeof s.replyHandle === 'string') out.replyHandle = s.replyHandle
+    if (typeof s.replyAccountId === 'string') out.replyAccountId = s.replyAccountId
     return out
   },
   loaderDeps: ({ search }) => ({ postId: search.postId }),
@@ -45,7 +51,7 @@ function ComposeRoute() {
   const { workspaceSlug } = Route.useParams()
   const { workspace } = Route.useRouteContext()
   const { accounts, requireApproval, existing } = Route.useLoaderData()
-  const { scheduledAt } = Route.useSearch()
+  const { scheduledAt, replyTo, replyHandle, replyAccountId } = Route.useSearch()
   return (
     <ComposerPage
       workspaceSlug={workspaceSlug}
@@ -60,6 +66,15 @@ function ComposeRoute() {
       requireApproval={requireApproval}
       existing={existing}
       initialScheduledAt={scheduledAt ?? null}
+      reply={
+        replyTo
+          ? {
+              replyTo,
+              handle: replyHandle ?? '',
+              accountId: replyAccountId ?? null,
+            }
+          : null
+      }
     />
   )
 }

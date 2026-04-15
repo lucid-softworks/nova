@@ -47,6 +47,9 @@ export type ComposerState = {
   activeVersionId: string
   mediaById: Record<string, MediaAsset>
   reddit: RedditFields
+  /** When set, publishers that thread (Bluesky / Mastodon / X / Threads)
+   * will emit this post as a reply to the given platform post id. */
+  replyToPostId: string | null
 }
 
 export type ConnectedAccount = {
@@ -110,6 +113,7 @@ export function hydrateStateFromPost(post: LoadedPost): ComposerState {
           spoiler: post.reddit.spoiler,
         }
       : defaultRedditFields(),
+    replyToPostId: null,
   }
 }
 
@@ -135,5 +139,6 @@ export function initialState(): ComposerState {
     activeVersionId: defaultId,
     mediaById: {},
     reddit: defaultRedditFields(),
+    replyToPostId: null,
   }
 }

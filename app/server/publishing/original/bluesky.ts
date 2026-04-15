@@ -157,6 +157,27 @@ function graphemeCount(s: string): number {
   }
 }
 
+async function resolveAtUriToRef(
+  session: Session,
+  atUri: string,
+): Promise<{ uri: string; cid: string } | null> {
+  // Parse at://<did>/<collection>/<rkey>
+  const m = /^at:\/\/([^/]+)\/([^/]+)\/([^/]+)$/.exec(atUri)
+  if (!m) return null
+  const [, repo, collection, rkey] = m
+  const url = new URL(`${SERVICE}/xrpc/com.atproto.repo.getRecord`)
+  url.searchParams.set('repo', repo!)
+  url.searchParams.set('collection', collection!)
+  url.searchParams.set('rkey', rkey!)
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${session.accessJwt}` },
+  })
+  if (!res.ok) return null
+  const json = (await res.json()) as { uri?: string; cid?: string }
+  if (!json.uri || !json.cid) return null
+  return { uri: json.uri, cid: json.cid }
+}
+
 function aturiToPublicUrl(did: string, uri: string): string {
   const rkey = uri.split('/').pop()
   return `https://bsky.app/profile/${did}/post/${rkey}`
@@ -203,7 +224,27 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
   }
 
   const images = await withRefresh(() => uploadImages(session, ctx.media))
-  const first = await withRefresh(() => createPost(session, ctx.version.content, images))
+
+  // Reply threading: if the user started this post from an inbox item,
+  // fetch the parent record so we can emit a properly-rooted reply.
+  // For threads on the AT protocol, `root` must point at the top of
+  // the conversation — we approximate by treating the direct parent
+  // as root for single-level replies (good enough for mention replies).
+  let replyRef:
+    | { root: { uri: string; cid: string }; parent: { uri: string; cid: string } }
+    | undefined
+  const replyTarget = ctx.version.platformVariables.replyToPostId
+  if (replyTarget) {
+    try {
+      const ref = await resolveAtUriToRef(session, replyTarget)
+      if (ref) replyRef = { root: ref, parent: ref }
+    } catch {
+      // Non-fatal: publish as a regular post if the parent lookup fails.
+    }
+  }
+  const first = await withRefresh(() =>
+    createPost(session, ctx.version.content, images, replyRef),
+  )
 
   if (ctx.version.isThread && ctx.version.threadParts.length > 1) {
     let parent = { uri: first.uri, cid: first.cid }

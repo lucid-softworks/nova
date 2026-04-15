@@ -13,6 +13,7 @@ export function ComposerPage({
   requireApproval,
   existing,
   initialScheduledAt,
+  reply,
 }: {
   workspaceSlug: string
   accounts: ConnectedAccount[]
@@ -20,6 +21,7 @@ export function ComposerPage({
   requireApproval: boolean
   existing?: LoadedPost | null
   initialScheduledAt?: string | null
+  reply?: { replyTo: string; handle: string; accountId: string | null } | null
 }) {
   const [mode, setMode] = useState<'standard' | 'campaign'>('standard')
   return (
@@ -61,6 +63,7 @@ export function ComposerPage({
           requireApproval={requireApproval}
           existing={existing ?? null}
           initialScheduledAt={initialScheduledAt ?? null}
+          reply={reply ?? null}
         />
       ) : (
         <CampaignComposer workspaceSlug={workspaceSlug} accounts={accounts} />

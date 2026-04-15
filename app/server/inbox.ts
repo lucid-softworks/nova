@@ -7,6 +7,7 @@ import { requireWorkspaceAccess } from './session.server'
 export type InboxRow = {
   id: string
   platform: string
+  platformItemId: string
   kind: string
   actorHandle: string | null
   actorName: string | null
@@ -50,6 +51,7 @@ export const listInbox = createServerFn({ method: 'GET' })
       .select({
         id: schema.inboxItems.id,
         platform: schema.inboxItems.platform,
+        platformItemId: schema.inboxItems.platformItemId,
         kind: schema.inboxItems.kind,
         actorHandle: schema.inboxItems.actorHandle,
         actorName: schema.inboxItems.actorName,

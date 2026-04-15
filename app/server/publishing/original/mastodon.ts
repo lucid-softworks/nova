@@ -102,6 +102,8 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
   if (attachmentIds.length > 0) body.media_ids = attachmentIds
   if (sensitive) body.sensitive = true
   if (spoiler) body.spoiler_text = spoiler
+  const replyTarget = ctx.version.platformVariables.replyToPostId
+  if (replyTarget) body.in_reply_to_id = replyTarget
 
   const res = await mastodonFetch(base, token, '/api/v1/statuses', {
     method: 'POST',

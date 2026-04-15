@@ -39,6 +39,7 @@ export function StandardComposer({
   requireApproval,
   existing,
   initialScheduledAt,
+  reply,
 }: {
   workspaceSlug: string
   accounts: ConnectedAccount[]
@@ -46,12 +47,25 @@ export function StandardComposer({
   requireApproval: boolean
   existing: LoadedPost | null
   initialScheduledAt: string | null
+  reply: { replyTo: string; handle: string; accountId: string | null } | null
 }) {
   const needsApproval = requireApproval && userRole === 'editor'
   const [state, dispatch] = useReducer(
     composerReducer,
     undefined,
-    () => (existing ? hydrateStateFromPost(existing) : initialState()),
+    () => {
+      if (existing) return hydrateStateFromPost(existing)
+      const base = initialState()
+      if (reply) {
+        base.replyToPostId = reply.replyTo
+        const defaultVersion = base.versions.find((v) => v.isDefault)
+        if (defaultVersion && reply.handle) defaultVersion.content = `@${reply.handle} `
+        if (reply.accountId && accounts.some((a) => a.id === reply.accountId)) {
+          base.selectedAccountIds = [reply.accountId]
+        }
+      }
+      return base
+    },
   )
   const [saving, setSaving] = useState<null | 'draft' | 'schedule' | 'queue' | 'now' | 'approval'>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -152,6 +166,7 @@ export function StandardComposer({
           isDefault: v.isDefault,
         })),
         reddit: redditSelected ? state.reddit : null,
+        replyToPostId: state.replyToPostId,
       },
     })
     return postId

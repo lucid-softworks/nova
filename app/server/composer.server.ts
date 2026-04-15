@@ -135,6 +135,7 @@ export type SaveDraftInput = {
     nsfw: boolean
     spoiler: boolean
   } | null
+  replyToPostId?: string | null
 }
 
 export async function saveDraftImpl(input: SaveDraftInput) {
@@ -197,8 +198,12 @@ export async function saveDraftImpl(input: SaveDraftInput) {
       : {}
 
     for (const version of input.versions) {
-      const platformVariables =
-        version.isDefault && Object.keys(redditVars).length > 0 ? redditVars : {}
+      const extras: Record<string, string> = {}
+      if (version.isDefault) {
+        Object.assign(extras, redditVars)
+        if (input.replyToPostId) extras.replyToPostId = input.replyToPostId
+      }
+      const platformVariables = Object.keys(extras).length > 0 ? extras : {}
       const [v] = await tx
         .insert(schema.postVersions)
         .values({

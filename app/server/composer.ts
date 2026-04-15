@@ -35,6 +35,7 @@ const saveDraftSchema = z.object({
     })
     .nullable()
     .default(null),
+  replyToPostId: z.string().nullable().default(null),
 })
 
 export const saveDraft = createServerFn({ method: 'POST' })

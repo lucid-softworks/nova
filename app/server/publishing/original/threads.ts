@@ -117,6 +117,8 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
     if (text) createParams.set('text', text)
   }
   createParams.set('access_token', accessToken)
+  const replyTarget = ctx.version.platformVariables.replyToPostId
+  if (replyTarget) createParams.set('reply_to_id', replyTarget)
 
   const container = await graphRequest<{ id: string }>(`/${userId}/threads`, createParams)
 
