@@ -19,11 +19,17 @@ export type InboxFetchItem = {
 
 export type InboxAccountCtx = {
   id: string
-  platform: 'bluesky' | 'mastodon'
+  platform: string
   accessToken: string
   refreshToken: string | null
   metadata: Record<string, unknown>
   accountHandle: string
+  /**
+   * Platform post ids for posts we've already published via this account.
+   * The comment-based adapters (FB, IG, Threads, LinkedIn, Tumblr, YT)
+   * poll comments on these rather than hitting a notifications endpoint.
+   */
+  publishedPlatformPostIds: string[]
 }
 
 export type InboxAdapter = {

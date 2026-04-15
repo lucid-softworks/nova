@@ -1,12 +1,31 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, isNotNull } from 'drizzle-orm'
 import { db, schema } from '~/server/db'
 import { decrypt } from '~/lib/encryption'
 import { logger } from '~/lib/logger'
 import * as bluesky from './bluesky'
 import * as mastodon from './mastodon'
+import * as x from './x'
+import * as reddit from './reddit'
+import * as youtube from './youtube'
+import * as tumblr from './tumblr'
+import * as facebook from './facebook'
+import * as instagram from './instagram'
+import * as threads from './threads'
+import * as linkedin from './linkedin'
 import type { InboxAccountCtx, InboxAdapter } from './types'
 
-const ADAPTERS: Record<string, InboxAdapter> = { bluesky, mastodon }
+const ADAPTERS: Record<string, InboxAdapter> = {
+  bluesky,
+  mastodon,
+  x,
+  reddit,
+  youtube,
+  tumblr,
+  facebook,
+  instagram,
+  threads,
+  linkedin,
+}
 
 function safeDecrypt(v: string | null | undefined): string {
   if (!v) return ''
@@ -42,13 +61,27 @@ async function pollAccount(account: {
 }): Promise<number> {
   const adapter = ADAPTERS[account.platform]
   if (!adapter) return 0
+  const publishedRows = await db
+    .select({ platformPostId: schema.postPlatforms.platformPostId })
+    .from(schema.postPlatforms)
+    .where(
+      and(
+        eq(schema.postPlatforms.socialAccountId, account.id),
+        isNotNull(schema.postPlatforms.platformPostId),
+      ),
+    )
+    .limit(50)
+  const publishedPlatformPostIds = publishedRows
+    .map((r) => r.platformPostId)
+    .filter((v): v is string => !!v)
   const ctx: InboxAccountCtx = {
     id: account.id,
-    platform: account.platform as 'bluesky' | 'mastodon',
+    platform: account.platform,
     accessToken: safeDecrypt(account.accessToken),
     refreshToken: safeDecrypt(account.refreshToken),
     metadata: (account.metadata ?? {}) as Record<string, unknown>,
     accountHandle: account.accountHandle,
+    publishedPlatformPostIds,
   }
   const items = await adapter.fetchInbox(ctx)
   let inserted = 0
