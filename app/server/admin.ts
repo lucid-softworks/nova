@@ -33,11 +33,14 @@ export const getAdminJobStats = createServerFn({ method: 'GET' }).handler(async 
   getJobStatsImpl(),
 )
 
-const retrySchema = z.object({ jobId: z.string().min(1) })
+const retrySchema = z.object({
+  jobId: z.string().min(1),
+  queue: z.enum(['posts', 'analytics']).default('posts'),
+})
 
 export const retryAdminJob = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => retrySchema.parse(d))
-  .handler(async ({ data }) => retryJobImpl(data.jobId))
+  .handler(async ({ data }) => retryJobImpl(data.jobId, data.queue))
 
 export const listAdminWebhookDeliveries = createServerFn({ method: 'GET' }).handler(async () =>
   listWebhookDeliveriesImpl(),

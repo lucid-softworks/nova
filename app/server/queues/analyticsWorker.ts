@@ -12,6 +12,8 @@ import {
 } from '~/server/analyticsAdapters/persist'
 import type { AnalyticsAccountCtx } from '~/server/analyticsAdapters'
 import type { AnalyticsJobData } from './analyticsQueue'
+import { logger } from '~/lib/logger'
+import { captureError } from '~/lib/sentry'
 
 let worker: Worker<AnalyticsJobData> | null = null
 
@@ -74,7 +76,10 @@ async function syncOne(account: {
   } catch (err) {
     if (isAuthExpired(err)) {
       await markAccountExpired(account.id)
-      console.warn(`[analytics] ${account.platform}:${account.id} marked expired`)
+      logger.warn(
+        { platform: account.platform, socialAccountId: account.id },
+        'marked account expired',
+      )
       return
     }
     throw err
@@ -120,7 +125,11 @@ export function getAnalyticsWorker(): Worker<AnalyticsJobData> {
             date,
           )
         } catch (err) {
-          console.error(`[analytics] ${a.platform}:${a.id} failed`, err)
+          logger.error(
+            { platform: a.platform, socialAccountId: a.id, err: err instanceof Error ? err.message : String(err) },
+            'analytics sync failed',
+          )
+          captureError(err, { platform: a.platform, socialAccountId: a.id })
         }
         // Stagger so we don't blast every platform in one hot second.
         await new Promise((r) => setTimeout(r, 250))

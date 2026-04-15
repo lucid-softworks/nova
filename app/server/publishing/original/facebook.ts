@@ -1,8 +1,10 @@
-import { loadMediaBuffer } from '../helpers'
+import { loadMediaBuffer, loadMediaRange } from '../helpers'
 import { PublishError } from '../errors'
 import type { PublishContext, PublishMedia, PublishResult } from '../index'
 
 const GRAPH = 'https://graph.facebook.com/v19.0'
+const GRAPH_VIDEO = 'https://graph-video.facebook.com/v19.0'
+const RESUMABLE_THRESHOLD = 250 * 1024 * 1024
 
 type GraphError = {
   error?: {
@@ -15,8 +17,9 @@ type GraphError = {
 async function graphRequest<T>(
   path: string,
   body: FormData | URLSearchParams,
+  base: string = GRAPH,
 ): Promise<T> {
-  const res = await fetch(`${GRAPH}${path}`, { method: 'POST', body })
+  const res = await fetch(`${base}${path}`, { method: 'POST', body })
   if (!res.ok) {
     const txt = await res.text()
     let parsed: GraphError = {}
@@ -80,6 +83,73 @@ async function uploadPhoto(
   return graphRequest<{ id: string; post_id?: string }>(`/${pageId}/photos`, form)
 }
 
+type VideoStart = {
+  upload_session_id: string
+  video_id: string
+  start_offset: string
+  end_offset: string
+}
+type VideoTransfer = { start_offset: string; end_offset: string }
+
+async function uploadVideoNonResumable(
+  pageId: string,
+  accessToken: string,
+  media: PublishMedia,
+  title: string,
+  description: string,
+): Promise<string> {
+  const { buf, mime } = await loadMediaBuffer(media)
+  const form = new FormData()
+  form.append('source', new Blob([new Uint8Array(buf)], { type: mime }), media.originalName)
+  form.append('title', title)
+  form.append('description', description)
+  form.append('access_token', accessToken)
+  const r = await graphRequest<{ id: string }>(`/${pageId}/videos`, form, GRAPH_VIDEO)
+  return r.id
+}
+
+async function uploadVideoResumable(
+  pageId: string,
+  accessToken: string,
+  media: PublishMedia,
+  title: string,
+  description: string,
+): Promise<string> {
+  const startForm = new FormData()
+  startForm.append('upload_phase', 'start')
+  startForm.append('file_size', String(media.size))
+  startForm.append('access_token', accessToken)
+  const started = await graphRequest<VideoStart>(`/${pageId}/videos`, startForm, GRAPH_VIDEO)
+
+  let start = Number(started.start_offset)
+  let end = Number(started.end_offset)
+  while (start < end) {
+    const chunk = await loadMediaRange(media, start, end - 1)
+    const form = new FormData()
+    form.append('upload_phase', 'transfer')
+    form.append('upload_session_id', started.upload_session_id)
+    form.append('start_offset', String(start))
+    form.append('access_token', accessToken)
+    form.append(
+      'video_file_chunk',
+      new Blob([new Uint8Array(chunk)], { type: media.mimeType }),
+      media.originalName,
+    )
+    const next = await graphRequest<VideoTransfer>(`/${pageId}/videos`, form, GRAPH_VIDEO)
+    start = Number(next.start_offset)
+    end = Number(next.end_offset)
+  }
+
+  const finish = new FormData()
+  finish.append('upload_phase', 'finish')
+  finish.append('upload_session_id', started.upload_session_id)
+  finish.append('title', title)
+  finish.append('description', description)
+  finish.append('access_token', accessToken)
+  await graphRequest<{ success: boolean }>(`/${pageId}/videos`, finish, GRAPH_VIDEO)
+  return started.video_id
+}
+
 export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
   const pageId = ctx.account.metadata.pageId as string | undefined
   if (!pageId) {
@@ -95,18 +165,19 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
   const images = ctx.media.filter((m) => m.mimeType.startsWith('image/'))
   const videos = ctx.media.filter((m) => m.mimeType.startsWith('video/'))
 
-  if (videos.length > 0) {
-    throw new PublishError({
-      code: 'NOT_IMPLEMENTED',
-      message: 'Facebook video posting not implemented',
-      userMessage: "Facebook video posting isn't supported yet.",
-      retryable: false,
-    })
-  }
-
   let platformPostId: string
 
-  if (images.length === 1) {
+  if (videos.length > 0) {
+    const video = videos[0]!
+    const description = ctx.version.platformVariables.fb_video_description ?? content
+    const title =
+      ctx.version.platformVariables.fb_video_title ?? content.slice(0, 100)
+    const videoId =
+      video.size > RESUMABLE_THRESHOLD
+        ? await uploadVideoResumable(pageId, accessToken, video, title, description)
+        : await uploadVideoNonResumable(pageId, accessToken, video, title, description)
+    platformPostId = videoId
+  } else if (images.length === 1) {
     const photo = await uploadPhoto(pageId, accessToken, images[0]!, content, true)
     platformPostId = photo.post_id ?? photo.id
   } else if (images.length > 1) {

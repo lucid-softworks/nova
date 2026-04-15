@@ -85,15 +85,10 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
     })
   }
   const videos = ctx.media.filter((m) => m.mimeType.startsWith('video/'))
-  if (videos.length > 0) {
-    throw new PublishError({
-      code: 'NOT_IMPLEMENTED',
-      message: 'Instagram video/reels not implemented',
-      userMessage: "Instagram video posting isn't supported yet.",
-      retryable: false,
-    })
-  }
   const images = ctx.media.filter((m) => m.mimeType.startsWith('image/'))
+  if (videos.length > 0 && images.length === 0) {
+    return await publishReel({ ctx, igUserId, accessToken, caption, videoUrl: videos[0]!.url })
+  }
   if (images.length === 0) {
     throw new PublishError({
       code: 'INVALID_FORMAT',
@@ -156,5 +151,80 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
     // fall back to placeholder
   }
 
+  return { platformPostId: postId, url, publishedAt: new Date() }
+}
+
+async function fetchPermalink(postId: string, accessToken: string): Promise<string> {
+  const fallback = `https://www.instagram.com/reel/${postId}/`
+  try {
+    const q = new URLSearchParams()
+    q.set('fields', 'permalink')
+    q.set('access_token', accessToken)
+    const info = await graphRequest<{ permalink?: string }>(`/${postId}`, q, 'GET')
+    return info.permalink ?? fallback
+  } catch {
+    return fallback
+  }
+}
+
+async function publishReel(args: {
+  ctx: PublishContext
+  igUserId: string
+  accessToken: string
+  caption: string
+  videoUrl: string
+}): Promise<PublishResult> {
+  const { ctx, igUserId, accessToken, caption, videoUrl } = args
+  const pv = ctx.version.platformVariables
+  const shareToFeed = pv.ig_share_to_feed !== 'false'
+
+  const create = new URLSearchParams()
+  create.set('media_type', 'REELS')
+  create.set('video_url', videoUrl)
+  create.set('caption', caption)
+  create.set('share_to_feed', shareToFeed ? 'true' : 'false')
+  if (pv.ig_cover_url) create.set('cover_url', pv.ig_cover_url)
+  create.set('access_token', accessToken)
+  const created = await graphRequest<{ id: string }>(`/${igUserId}/media`, create)
+  const containerId = created.id
+
+  const deadline = Date.now() + 120_000
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 2_000))
+    const q = new URLSearchParams()
+    q.set('fields', 'status_code,status')
+    q.set('access_token', accessToken)
+    const s = await graphRequest<{ status_code?: string; status?: string }>(`/${containerId}`, q, 'GET')
+    if (s.status_code === 'FINISHED') break
+    if (s.status_code === 'ERROR' || s.status_code === 'EXPIRED') {
+      throw new PublishError({
+        code: 'INVALID_FORMAT',
+        message: `Instagram reel container ${s.status_code}: ${s.status ?? 'unknown'}`,
+        userMessage: `Instagram couldn't process the video: ${s.status ?? 'unknown error'}`,
+        retryable: false,
+      })
+    }
+  }
+  const finalCheck = await (async () => {
+    const q = new URLSearchParams()
+    q.set('fields', 'status_code')
+    q.set('access_token', accessToken)
+    return graphRequest<{ status_code?: string }>(`/${containerId}`, q, 'GET')
+  })()
+  if (finalCheck.status_code !== 'FINISHED') {
+    throw new PublishError({
+      code: 'UNKNOWN',
+      message: `Instagram reel container still ${finalCheck.status_code ?? 'unknown'} after 120s`,
+      userMessage: 'Instagram is still processing the video — check back in a minute.',
+      retryable: true,
+    })
+  }
+
+  const pub = new URLSearchParams()
+  pub.set('creation_id', containerId)
+  pub.set('access_token', accessToken)
+  const published = await graphRequest<{ id: string }>(`/${igUserId}/media_publish`, pub)
+  const postId = published.id
+  const url = await fetchPermalink(postId, accessToken)
   return { platformPostId: postId, url, publishedAt: new Date() }
 }

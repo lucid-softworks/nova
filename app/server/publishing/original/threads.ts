@@ -58,6 +58,35 @@ async function graphRequest<T>(
   return (await res.json()) as T
 }
 
+async function waitForContainer(containerId: string, accessToken: string): Promise<void> {
+  const deadline = Date.now() + 120_000
+  while (Date.now() < deadline) {
+    const q = new URLSearchParams()
+    q.set('fields', 'status,error_message')
+    q.set('access_token', accessToken)
+    const info = await graphRequest<{ status?: string; error_message?: string }>(
+      `/${containerId}`,
+      q,
+      'GET',
+    )
+    if (info.status === 'FINISHED') return
+    if (info.status === 'ERROR' || info.status === 'EXPIRED') {
+      throw new PublishError({
+        code: 'INVALID_FORMAT',
+        message: `Threads container ${info.status}: ${info.error_message ?? 'unknown'}`,
+        userMessage: info.error_message ?? 'Threads rejected the video.',
+        retryable: false,
+      })
+    }
+    await new Promise((r) => setTimeout(r, 2000))
+  }
+  throw new PublishError({
+    code: 'UNKNOWN',
+    message: `Threads container ${containerId} timed out`,
+    userMessage: 'Threads took too long to process the video.',
+  })
+}
+
 export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
   const userId = ctx.account.metadata.userId as string | undefined
   if (!userId) {
@@ -74,17 +103,12 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
   const images = ctx.media.filter((m) => m.mimeType.startsWith('image/'))
   const videos = ctx.media.filter((m) => m.mimeType.startsWith('video/'))
 
-  if (videos.length > 0) {
-    throw new PublishError({
-      code: 'NOT_IMPLEMENTED',
-      message: 'Threads video posting not implemented',
-      userMessage: "Threads video posting isn't supported yet.",
-      retryable: false,
-    })
-  }
-
   const createParams = new URLSearchParams()
-  if (images.length === 0) {
+  if (videos.length > 0) {
+    createParams.set('media_type', 'VIDEO')
+    createParams.set('video_url', videos[0]!.url)
+    if (text) createParams.set('text', text)
+  } else if (images.length === 0) {
     createParams.set('media_type', 'TEXT')
     createParams.set('text', text)
   } else {
@@ -95,6 +119,10 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
   createParams.set('access_token', accessToken)
 
   const container = await graphRequest<{ id: string }>(`/${userId}/threads`, createParams)
+
+  if (videos.length > 0) {
+    await waitForContainer(container.id, accessToken)
+  }
 
   const pub = new URLSearchParams()
   pub.set('creation_id', container.id)

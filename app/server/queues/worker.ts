@@ -21,6 +21,8 @@ import { buildVariableMap, substitute } from '~/server/publishing/variables'
 import { isPublishError } from '~/server/publishing/errors'
 import { notifyUser } from '~/server/notifications.server'
 import { publishWebhookEvent } from '~/server/webhooks.server'
+import { logger } from '~/lib/logger'
+import { captureError } from '~/lib/sentry'
 
 let worker: Worker<PostJobData> | null = null
 
@@ -31,10 +33,14 @@ export function getPostWorker(): Worker<PostJobData> {
     concurrency: 4,
   })
   worker.on('failed', (job, err) => {
-    console.error(`[worker] job ${job?.id} failed:`, err.message)
+    logger.error(
+      { queue: 'posts', jobId: job?.id, postId: job?.data.postId, err: err.message },
+      'job failed',
+    )
+    captureError(err, { jobId: job?.id, postId: job?.data.postId })
   })
   worker.on('completed', (job) => {
-    console.log(`[worker] job ${job.id} completed`)
+    logger.info({ queue: 'posts', jobId: job.id, postId: job.data.postId }, 'job completed')
   })
   return worker
 }

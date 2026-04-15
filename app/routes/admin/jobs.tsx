@@ -17,38 +17,49 @@ function JobsPage() {
 
   const reload = async () => setStats(await getAdminJobStats())
 
-  const onRetry = async (jobId: string) => {
+  const onRetry = async (jobId: string, queue: 'posts' | 'analytics') => {
     setBusy(jobId)
     try {
-      await retryAdminJob({ data: { jobId } })
+      await retryAdminJob({ data: { jobId, queue } })
       await reload()
     } finally {
       setBusy(null)
     }
   }
 
-  const counters = [
-    { label: 'Waiting', value: stats.waiting },
-    { label: 'Active', value: stats.active },
-    { label: 'Delayed', value: stats.delayed },
-    { label: 'Completed', value: stats.completed },
-    { label: 'Failed', value: stats.failed },
-  ]
-
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-5">
-        {counters.map((c) => (
-          <Card key={c.label}>
-            <div className="space-y-1 p-3">
-              <div className="text-[11px] uppercase tracking-wider text-neutral-500">
-                {c.label}
-              </div>
-              <div className="text-xl font-semibold text-neutral-900">{c.value}</div>
-            </div>
-          </Card>
-        ))}
-      </div>
+      {stats.queues.map((q) => (
+        <div key={q.queue}>
+          <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+            {q.queue} queue
+          </div>
+          <div className="grid gap-3 sm:grid-cols-5">
+            {(['Waiting', 'Active', 'Delayed', 'Completed', 'Failed'] as const).map((label) => {
+              const value =
+                label === 'Waiting'
+                  ? q.waiting
+                  : label === 'Active'
+                    ? q.active
+                    : label === 'Delayed'
+                      ? q.delayed
+                      : label === 'Completed'
+                        ? q.completed
+                        : q.failed
+              return (
+                <Card key={label}>
+                  <div className="space-y-1 p-3">
+                    <div className="text-[11px] uppercase tracking-wider text-neutral-500">
+                      {label}
+                    </div>
+                    <div className="text-xl font-semibold text-neutral-900">{value}</div>
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+        </div>
+      ))}
       <Card>
         <div className="p-3">
           <h3 className="mb-2 text-sm font-semibold text-neutral-900">Failed jobs</h3>
@@ -58,11 +69,13 @@ function JobsPage() {
             <div className="space-y-2">
               {stats.failedJobs.map((j) => (
                 <div
-                  key={j.id}
+                  key={`${j.queue}:${j.id}`}
                   className="flex items-start justify-between gap-3 rounded-md border border-neutral-200 p-2 text-sm"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="font-mono text-xs text-neutral-700">{j.name} · {j.id}</div>
+                    <div className="font-mono text-xs text-neutral-700">
+                      [{j.queue}] {j.name} · {j.id}
+                    </div>
                     <div className="mt-0.5 break-all text-[11px] text-neutral-500">
                       {j.dataJson}
                     </div>
@@ -74,7 +87,7 @@ function JobsPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => onRetry(j.id)}
+                    onClick={() => onRetry(j.id, j.queue)}
                     disabled={busy === j.id}
                   >
                     <RotateCw className="h-3 w-3" /> Retry

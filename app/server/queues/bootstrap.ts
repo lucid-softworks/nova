@@ -4,6 +4,8 @@ import { startScheduler, stopScheduler } from './scheduler'
 import { startAnalyticsSync } from './analyticsSync'
 import { getAnalyticsQueue, resetAnalyticsQueue } from './analyticsQueue'
 import { getAnalyticsWorker, resetAnalyticsWorker } from './analyticsWorker'
+import { logger } from '~/lib/logger'
+import { initSentry } from '~/lib/sentry'
 
 declare global {
   var __socialhubQueuesBooted: boolean | undefined
@@ -18,17 +20,20 @@ export function bootQueues() {
     return
   }
   if (!process.env.REDIS_URL) {
-    console.warn('[queues] REDIS_URL missing — scheduler and worker disabled')
+    logger.warn('REDIS_URL missing — scheduler and worker disabled')
     return
   }
+  initSentry()
   globalThis.__socialhubQueuesBooted = true
   const queue = getPostQueue()
   const worker = getPostWorker()
   const analyticsQueue = getAnalyticsQueue()
   const analyticsWorker = getAnalyticsWorker()
   startScheduler()
-  startAnalyticsSync().catch((e) => console.error('[analytics] schedule failed', e))
-  console.log('[queues] scheduler + worker online')
+  startAnalyticsSync().catch((e) =>
+    logger.error({ err: e instanceof Error ? e.message : String(e) }, 'analytics schedule failed'),
+  )
+  logger.info('queues online: posts + analytics workers + scheduler')
 
   globalThis.__socialhubQueueCleanup = async () => {
     stopScheduler()
@@ -50,9 +55,9 @@ if (import.meta.hot) {
     if (cleanup) {
       try {
         await cleanup()
-        console.log('[queues] disposed for HMR')
+        logger.info('queues disposed for HMR')
       } catch (e) {
-        console.error('[queues] dispose error', e)
+        logger.error({ err: e instanceof Error ? e.message : String(e) }, 'queues dispose error')
       }
     }
   })

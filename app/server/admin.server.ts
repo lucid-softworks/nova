@@ -2,6 +2,8 @@ import { desc, eq } from 'drizzle-orm'
 import { db, schema } from './db'
 import { loadSessionContext } from './session.server'
 import { getPostQueue } from './queues/postQueue'
+import { getAnalyticsQueue } from './queues/analyticsQueue'
+import type { Queue } from 'bullmq'
 
 export type AdminUserRow = {
   id: string
@@ -29,20 +31,35 @@ export type AdminWebhookDelivery = {
   workspaceName: string | null
 }
 
+export type QueueName = 'posts' | 'analytics'
+
+export type AdminJobFailure = {
+  id: string
+  queue: QueueName
+  name: string
+  dataJson: string
+  failedReason: string
+  attemptsMade: number
+  timestamp: number
+}
+
+export type AdminJobQueueStats = {
+  queue: QueueName
+  waiting: number
+  active: number
+  completed: number
+  failed: number
+  delayed: number
+}
+
 export type AdminJobStats = {
   waiting: number
   active: number
   completed: number
   failed: number
   delayed: number
-  failedJobs: Array<{
-    id: string
-    name: string
-    dataJson: string
-    failedReason: string
-    attemptsMade: number
-    timestamp: number
-  }>
+  queues: AdminJobQueueStats[]
+  failedJobs: AdminJobFailure[]
 }
 
 async function requireAdmin() {
@@ -119,12 +136,10 @@ export async function deleteWorkspaceImpl(workspaceId: string) {
   return { ok: true }
 }
 
-export async function getJobStatsImpl(): Promise<AdminJobStats> {
-  await requireAdmin()
-  if (!process.env.REDIS_URL) {
-    return { waiting: 0, active: 0, completed: 0, failed: 0, delayed: 0, failedJobs: [] }
-  }
-  const queue = getPostQueue()
+async function queueStats<T>(
+  name: QueueName,
+  queue: Queue<T>,
+): Promise<{ stats: AdminJobQueueStats; failed: AdminJobFailure[] }> {
   const [waiting, active, completed, failed, delayed] = await Promise.all([
     queue.getWaitingCount(),
     queue.getActiveCount(),
@@ -132,15 +147,12 @@ export async function getJobStatsImpl(): Promise<AdminJobStats> {
     queue.getFailedCount(),
     queue.getDelayedCount(),
   ])
-  const jobs = await queue.getFailed(0, 50)
+  const jobs = await queue.getFailed(0, 25)
   return {
-    waiting,
-    active,
-    completed,
-    failed,
-    delayed,
-    failedJobs: jobs.map((j) => ({
+    stats: { queue: name, waiting, active, completed, failed, delayed },
+    failed: jobs.map((j) => ({
       id: String(j.id),
+      queue: name,
       name: j.name,
       dataJson: JSON.stringify(j.data ?? {}),
       failedReason: j.failedReason ?? '',
@@ -150,9 +162,45 @@ export async function getJobStatsImpl(): Promise<AdminJobStats> {
   }
 }
 
-export async function retryJobImpl(jobId: string) {
+export async function getJobStatsImpl(): Promise<AdminJobStats> {
   await requireAdmin()
-  const queue = getPostQueue()
+  if (!process.env.REDIS_URL) {
+    return {
+      waiting: 0,
+      active: 0,
+      completed: 0,
+      failed: 0,
+      delayed: 0,
+      queues: [],
+      failedJobs: [],
+    }
+  }
+  const [posts, analytics] = await Promise.all([
+    queueStats('posts', getPostQueue()),
+    queueStats('analytics', getAnalyticsQueue()),
+  ])
+  const queues = [posts.stats, analytics.stats]
+  const totals = queues.reduce(
+    (acc, q) => {
+      acc.waiting += q.waiting
+      acc.active += q.active
+      acc.completed += q.completed
+      acc.failed += q.failed
+      acc.delayed += q.delayed
+      return acc
+    },
+    { waiting: 0, active: 0, completed: 0, failed: 0, delayed: 0 },
+  )
+  return {
+    ...totals,
+    queues,
+    failedJobs: [...posts.failed, ...analytics.failed].sort((a, b) => b.timestamp - a.timestamp),
+  }
+}
+
+export async function retryJobImpl(jobId: string, queueName: QueueName = 'posts') {
+  await requireAdmin()
+  const queue = queueName === 'analytics' ? getAnalyticsQueue() : getPostQueue()
   const job = await queue.getJob(jobId)
   if (!job) throw new Error('Job not found')
   await job.retry()
