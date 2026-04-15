@@ -1,0 +1,78 @@
+# Production / self-host compose. For local dev keep using docker-compose.yml
+# (postgres + redis only) and `pnpm dev`. This file adds web + worker
+# services, requires real env vars, and is what you'd run on a VPS.
+#
+# Usage:
+#   cp .env.example .env && fill in
+#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml up -d --scale worker=3
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nova}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-nova}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  web:
+    image: nova:latest
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      # Web must not run queues inline — workers do.
+      DISABLE_INLINE_WORKER: "1"
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/healthz | grep -q '\"ok\":true'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Scale with `docker compose -f docker-compose.prod.yml up -d --scale worker=N`.
+  # BullMQ coordinates via Redis so every replica pulls from the same queue
+  # without duplicating work.
+  worker:
+    image: nova:latest
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file: .env
+    command: ["pnpm", "worker"]
+    deploy:
+      replicas: 1
+
+volumes:
+  pg-data:
+  redis-data:

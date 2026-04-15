@@ -1,0 +1,38 @@
+# Fly config for the web service. The worker runs as a separate app — see
+# fly.worker.toml. Postgres + Redis should be provisioned via `fly pg create`
+# and `fly redis create` (or Upstash via `fly ext redis create`).
+#
+# Deploy:
+#   fly launch --name nova-web --no-deploy
+#   fly secrets set DATABASE_URL=... REDIS_URL=... BETTER_AUTH_SECRET=... ENCRYPTION_KEY=... AWS_BUCKET=... (etc)
+#   fly deploy
+
+app = "nova-web"
+primary_region = "lhr"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+  # Queues run on the dedicated worker app.
+  DISABLE_INLINE_WORKER = "1"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/healthz"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

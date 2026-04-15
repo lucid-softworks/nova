@@ -1,0 +1,31 @@
+# Fly config for the BullMQ worker. Shares the same Dockerfile as the web
+# app; a different process entry keeps them decoupled so we can scale the
+# worker horizontally without touching web capacity.
+#
+# Deploy:
+#   fly launch --name nova-worker --no-deploy --copy-config --config fly.worker.toml
+#   fly secrets set --config fly.worker.toml DATABASE_URL=... REDIS_URL=... ENCRYPTION_KEY=... (same secrets as web)
+#   fly deploy --config fly.worker.toml
+#
+# Scale:
+#   fly scale count 3 --config fly.worker.toml
+
+app = "nova-worker"
+primary_region = "lhr"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+
+[processes]
+  worker = "pnpm worker"
+
+# No [http_service] — this app has no inbound traffic. Fly's default
+# machine-based health check (TCP / process alive) is sufficient.
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
+  processes = ["worker"]

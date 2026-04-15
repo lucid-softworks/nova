@@ -1,0 +1,16 @@
+node_modules
+.pnpm-store
+.git
+.github
+dist
+.output
+.vinxi
+.nitro
+.tanstack
+.env
+.env.*
+!.env.example
+storage
+*.log
+.DS_Store
+coverage
