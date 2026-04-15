@@ -11,6 +11,10 @@ import {
   setPostingSchedule,
   type PostingSchedule,
 } from '~/server/settings'
+import {
+  ensureCalendarFeedToken,
+  regenerateCalendarFeedToken,
+} from '~/server/calendarFeed'
 import { cn } from '~/lib/utils'
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -70,6 +74,7 @@ function SchedulePage() {
   return (
     <div className="space-y-4">
       <SettingsNav workspaceSlug={workspaceSlug} active="schedule" />
+      <CalendarFeedCard workspaceSlug={workspaceSlug} />
       <Card>
         <div className="space-y-3 p-4">
           <div className="flex items-center justify-between">
@@ -185,4 +190,73 @@ function previewNextSlots(schedule: PostingSchedule[], n: number): Date[] {
     }
   }
   return out
+}
+
+
+function CalendarFeedCard({ workspaceSlug }: { workspaceSlug: string }) {
+  const [url, setUrl] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const generate = async () => {
+    setBusy(true)
+    try {
+      const res = await ensureCalendarFeedToken({ data: { workspaceSlug } })
+      setUrl(res.url)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const rotate = async () => {
+    if (!confirm("This invalidates the current URL. Existing subscribers stop syncing. Continue?")) return
+    setBusy(true)
+    try {
+      const res = await regenerateCalendarFeedToken({ data: { workspaceSlug } })
+      setUrl(res.url)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const copy = async () => {
+    if (!url) return
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // ignore
+    }
+  }
+
+  return (
+    <Card>
+      <div className="space-y-3 p-4">
+        <div>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Calendar feed</h3>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            Subscribe from Google / Apple / Outlook to see scheduled posts as calendar events.
+          </p>
+        </div>
+        {url ? (
+          <>
+            <Input readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={copy}>
+                {copied ? "Copied" : "Copy URL"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={rotate} disabled={busy}>
+                Regenerate
+              </Button>
+            </div>
+          </>
+        ) : (
+          <Button size="sm" onClick={generate} disabled={busy}>
+            {busy ? <Spinner /> : null} Generate feed URL
+          </Button>
+        )}
+      </div>
+    </Card>
+  )
 }
