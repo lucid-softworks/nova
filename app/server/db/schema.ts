@@ -131,6 +131,7 @@ export const user = pgTable('user', {
   avatarUrl: text('avatar_url'),
   twoFactorEnabled: boolean('two_factor_enabled').default(false).notNull(),
   notificationPreferences: jsonb('notification_preferences').default({}).notNull(),
+  digestOptIn: boolean('digest_opt_in').default(false).notNull(),
   brrrWebhookSecret: text('brrr_webhook_secret'),
   // Better Auth admin plugin
   role: text('role'),

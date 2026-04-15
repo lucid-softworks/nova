@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Check, Send } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
@@ -14,6 +14,7 @@ import {
   testBrrrPush,
   type MeSettings,
 } from '~/server/me'
+import { getDigestOptIn, setDigestOptIn } from '~/server/digests'
 
 const TYPES: Array<{
   key:
@@ -112,6 +113,7 @@ function NotificationsSettings() {
   return (
     <div className="space-y-4">
       <SettingsNav workspaceSlug={workspaceSlug} active="notifications" />
+      <DigestCard />
 
       <Card>
         <div className="space-y-3 p-4">
@@ -216,5 +218,44 @@ function NotificationsSettings() {
         </div>
       ) : null}
     </div>
+  )
+}
+
+
+function DigestCard() {
+  const [optIn, setOptIn] = useState<boolean | null>(null)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    getDigestOptIn().then((r) => setOptIn(r.optIn))
+  }, [])
+  const toggle = async (v: boolean) => {
+    setBusy(true)
+    setOptIn(v)
+    try {
+      await setDigestOptIn({ data: { optIn: v } })
+    } catch {
+      setOptIn(!v)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Card>
+      <div className="space-y-2 p-4">
+        <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Weekly digest</h3>
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          A Monday-morning email summarising what was published, upcoming posts, and unread inbox.
+        </p>
+        <label className="inline-flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={optIn ?? false}
+            disabled={optIn === null || busy}
+            onChange={(e) => toggle(e.target.checked)}
+          />
+          Send me the weekly digest
+        </label>
+      </div>
+    </Card>
   )
 }
