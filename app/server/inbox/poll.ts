@@ -12,6 +12,7 @@ import * as facebook from './facebook'
 import * as instagram from './instagram'
 import * as threads from './threads'
 import * as linkedin from './linkedin'
+import * as tiktok from './tiktok'
 import type { InboxAccountCtx, InboxAdapter } from './types'
 
 const ADAPTERS: Record<string, InboxAdapter> = {
@@ -25,6 +26,7 @@ const ADAPTERS: Record<string, InboxAdapter> = {
   instagram,
   threads,
   linkedin,
+  tiktok,
 }
 
 function safeDecrypt(v: string | null | undefined): string {
