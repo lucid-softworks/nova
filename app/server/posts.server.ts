@@ -745,6 +745,57 @@ export async function getCampaignAnalyticsImpl(
 
 // Activity timeline
 
+export type WorkspaceActivityRow = {
+  id: string
+  postId: string
+  action: (typeof schema.postActivityEnum.enumValues)[number]
+  note: string | null
+  createdAt: string
+  userName: string | null
+  postContent: string | null
+}
+
+export async function listWorkspaceActivityImpl(
+  slug: string,
+  limit = 100,
+): Promise<WorkspaceActivityRow[]> {
+  const { workspace } = await ensureWs(slug)
+  const rows = await db
+    .select({
+      id: schema.postActivity.id,
+      postId: schema.postActivity.postId,
+      action: schema.postActivity.action,
+      note: schema.postActivity.note,
+      createdAt: schema.postActivity.createdAt,
+      userName: schema.user.name,
+      postContent: schema.postVersions.content,
+    })
+    .from(schema.postActivity)
+    .innerJoin(schema.posts, eq(schema.posts.id, schema.postActivity.postId))
+    .leftJoin(schema.user, eq(schema.user.id, schema.postActivity.userId))
+    .leftJoin(schema.postVersions, eq(schema.postVersions.postId, schema.posts.id))
+    .where(eq(schema.posts.workspaceId, workspace.id))
+    .orderBy(desc(schema.postActivity.createdAt))
+    .limit(limit)
+
+  const seen = new Set<string>()
+  const out: WorkspaceActivityRow[] = []
+  for (const r of rows) {
+    if (seen.has(r.id)) continue
+    seen.add(r.id)
+    out.push({
+      id: r.id,
+      postId: r.postId,
+      action: r.action,
+      note: r.note,
+      createdAt: r.createdAt.toISOString(),
+      userName: r.userName,
+      postContent: r.postContent ? r.postContent.slice(0, 120) : null,
+    })
+  }
+  return out
+}
+
 export type PostActivityRow = {
   id: string
   action: (typeof schema.postActivityEnum.enumValues)[number]

@@ -6,6 +6,7 @@ import {
   Image as ImageIcon,
   FileText,
   BarChart2,
+  History,
   Link as LinkIcon,
   Users,
   Settings,
@@ -37,7 +38,10 @@ const sections: NavSection[] = [
   },
   {
     label: 'Insights',
-    items: [{ label: 'Analytics', to: '/$workspaceSlug/analytics', icon: BarChart2 }],
+    items: [
+      { label: 'Analytics', to: '/$workspaceSlug/analytics', icon: BarChart2 },
+      { label: 'Activity', to: '/$workspaceSlug/activity', icon: History },
+    ],
   },
   {
     label: 'Management',

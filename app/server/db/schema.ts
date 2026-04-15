@@ -596,6 +596,25 @@ export const analyticsSnapshots = pgTable('analytics_snapshots', {
   createdAt: now(),
 })
 
+export const shortLinks = pgTable(
+  'short_links',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    slug: text('slug').notNull(),
+    targetUrl: text('target_url').notNull(),
+    createdById: text('created_by_id').references(() => user.id, { onDelete: 'set null' }),
+    clickCount: integer('click_count').default(0).notNull(),
+    createdAt: now(),
+  },
+  (t) => ({
+    slugUnq: uniqueIndex('short_links_slug_unq').on(t.slug),
+    workspaceIdx: index('short_links_workspace_idx').on(t.workspaceId),
+  }),
+)
+
 export const workspaceSubscriptions = pgTable('workspace_subscriptions', {
   id: id(),
   workspaceId: uuid('workspace_id')
