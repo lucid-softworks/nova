@@ -1,0 +1,19 @@
+{
+  "name": "SocialHub",
+  "short_name": "SocialHub",
+  "description": "Schedule and publish social-media posts across every network.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0d12",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
