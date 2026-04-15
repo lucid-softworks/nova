@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { AlertTriangle, ChevronDown, ChevronRight, Copy, MoreHorizontal, Pause, Search, Target, Trash2, X } from 'lucide-react'
+import { AlertTriangle, ChevronDown, ChevronRight, Copy, Download, MoreHorizontal, Pause, Search, Target, Trash2, Upload, X } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
@@ -21,6 +21,7 @@ import {
   type CampaignSummary,
   type CountsByStatus,
 } from '~/server/posts'
+import { importPostsFromCsv, type ImportReport } from '~/server/csv'
 import { listMembers, type MemberRow } from '~/server/team'
 import { PLATFORM_KEYS, PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { cn } from '~/lib/utils'
@@ -144,21 +145,42 @@ function PostsPage() {
         <div>
           <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">Posts</h2>
         </div>
-        <div className="inline-flex rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0.5 text-xs">
-          <button
-            type="button"
-            onClick={() => setView('flat')}
-            className={cn('rounded px-2 py-1', view === 'flat' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
-          >
-            Flat
-          </button>
-          <button
-            type="button"
-            onClick={() => setView('grouped')}
-            className={cn('rounded px-2 py-1', view === 'grouped' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
-          >
-            Grouped
-          </button>
+        <div className="flex items-center gap-2">
+          <CsvButtons
+            workspaceSlug={workspaceSlug}
+            onImported={reload}
+            exportParams={{
+              tab,
+              search,
+              platforms,
+              type,
+              authorId,
+              fromDate,
+              toDate,
+            }}
+          />
+          <div className="inline-flex rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setView('flat')}
+              className={cn(
+                'rounded px-2 py-1',
+                view === 'flat' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300',
+              )}
+            >
+              Flat
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('grouped')}
+              className={cn(
+                'rounded px-2 py-1',
+                view === 'grouped' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300',
+              )}
+            >
+              Grouped
+            </button>
+          </div>
         </div>
       </div>
 
@@ -531,6 +553,93 @@ function CampaignActionsMenu({
             <Copy className="h-3 w-3" /> Duplicate campaign
           </button>
         </div>
+      ) : null}
+    </div>
+  )
+}
+
+function CsvButtons({
+  workspaceSlug,
+  onImported,
+  exportParams,
+}: {
+  workspaceSlug: string
+  onImported: () => void
+  exportParams: {
+    tab: PostsTab
+    search: string
+    platforms: PlatformKey[]
+    type: 'all' | 'original' | 'reshare'
+    authorId: string
+    fromDate: string
+    toDate: string
+  }
+}) {
+  const [busy, setBusy] = useState<'import' | 'export' | null>(null)
+  const [report, setReport] = useState<ImportReport | null>(null)
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    e.target.value = ''
+    if (!f) return
+    setBusy('import')
+    try {
+      const csvText = await f.text()
+      const r = await importPostsFromCsv({ data: { workspaceSlug, csvText } })
+      setReport(r)
+      onImported()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Import failed')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const exportNow = () => {
+    setBusy('export')
+    const params = new URLSearchParams({
+      workspaceSlug,
+      tab: exportParams.tab,
+      search: exportParams.search ?? '',
+      platforms: exportParams.platforms.join(','),
+      type: exportParams.type,
+    })
+    if (exportParams.authorId) params.set('authorId', exportParams.authorId)
+    if (exportParams.fromDate) {
+      params.set('fromIso', new Date(`${exportParams.fromDate}T00:00:00`).toISOString())
+    }
+    if (exportParams.toDate) {
+      params.set('toIso', new Date(`${exportParams.toDate}T23:59:59`).toISOString())
+    }
+    window.location.href = `/api/posts/export?${params.toString()}`
+    setTimeout(() => setBusy(null), 1500)
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <label
+        className={cn(
+          'inline-flex h-8 cursor-pointer items-center gap-2 rounded-md border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-900 hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800',
+          busy !== null && 'pointer-events-none opacity-50',
+        )}
+        title="Import posts from CSV"
+      >
+        {busy === 'import' ? <Spinner /> : <Upload className="h-3 w-3" />} Import
+        <input type="file" accept=".csv,text/csv" className="hidden" onChange={onFile} />
+      </label>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={exportNow}
+        disabled={busy !== null}
+        title="Export current list"
+      >
+        {busy === 'export' ? <Spinner /> : <Download className="h-3 w-3" />} Export
+      </Button>
+      {report ? (
+        <span className="ml-2 text-xs text-neutral-500 dark:text-neutral-400">
+          {report.created} created · {report.skipped} skipped
+        </span>
       ) : null}
     </div>
   )
