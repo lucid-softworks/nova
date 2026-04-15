@@ -6,6 +6,7 @@ import {
   Image as ImageIcon,
   FileText,
   BarChart2,
+  CheckCircle,
   History,
   Inbox,
   Link as LinkIcon,
@@ -19,7 +20,11 @@ import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 import { authClient } from '~/lib/auth-client'
 
 type NavItem = { label: string; to: string; icon: ComponentType<SVGProps<SVGSVGElement>> }
-type NavSection = { label: string; items: NavItem[] }
+type NavSection = {
+  label: string
+  items: NavItem[]
+  requiresRole?: readonly ('admin' | 'manager' | 'editor' | 'viewer')[]
+}
 
 const sections: NavSection[] = [
   {
@@ -29,6 +34,11 @@ const sections: NavSection[] = [
       { label: 'Posts', to: '/$workspaceSlug/posts', icon: LayoutList },
       { label: 'Calendar', to: '/$workspaceSlug/calendar', icon: CalendarDays },
     ],
+  },
+  {
+    label: 'Review',
+    items: [{ label: 'Approvals', to: '/$workspaceSlug/approvals', icon: CheckCircle }],
+    requiresRole: ['admin', 'manager'] as const,
   },
   {
     label: 'Library',
@@ -94,7 +104,11 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-4">
-        {sections.map((section) => (
+        {sections
+          .filter(
+            (s) => !s.requiresRole || s.requiresRole.includes(workspace.role),
+          )
+          .map((section) => (
           <div key={section.label}>
             <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">
               {section.label}
