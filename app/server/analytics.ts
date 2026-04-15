@@ -104,3 +104,23 @@ export const listAccountsForAnalytics = createServerFn({ method: 'GET' })
     z.object({ workspaceSlug: z.string().min(1) }).parse(d),
   )
   .handler(async ({ data }) => listAccountsForAnalyticsImpl(data.workspaceSlug))
+
+const syncNowInput = z.object({
+  workspaceSlug: z.string().min(1),
+  socialAccountId: z.string().uuid().optional(),
+})
+
+export const syncAnalyticsNow = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => syncNowInput.parse(d))
+  .handler(async ({ data }) => {
+    const { loadSessionContext } = await import('./session.server')
+    const ctx = await loadSessionContext()
+    const ws = ctx.workspaces.find((w) => w.slug === data.workspaceSlug)
+    if (!ws) throw new Error('Workspace not found')
+    if (ws.role !== 'admin' && ws.role !== 'manager') {
+      throw new Error('Only admins or managers can trigger a sync')
+    }
+    const { enqueueManualSync } = await import('./queues/analyticsSync')
+    await enqueueManualSync({ workspaceId: ws.id, socialAccountId: data.socialAccountId })
+    return { ok: true as const }
+  })

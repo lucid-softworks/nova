@@ -2,6 +2,8 @@ import { getPostQueue, resetPostQueue } from './postQueue'
 import { getPostWorker, resetPostWorker } from './worker'
 import { startScheduler, stopScheduler } from './scheduler'
 import { startAnalyticsSync } from './analyticsSync'
+import { getAnalyticsQueue, resetAnalyticsQueue } from './analyticsQueue'
+import { getAnalyticsWorker, resetAnalyticsWorker } from './analyticsWorker'
 
 declare global {
   var __socialhubQueuesBooted: boolean | undefined
@@ -22,16 +24,20 @@ export function bootQueues() {
   globalThis.__socialhubQueuesBooted = true
   const queue = getPostQueue()
   const worker = getPostWorker()
+  const analyticsQueue = getAnalyticsQueue()
+  const analyticsWorker = getAnalyticsWorker()
   startScheduler()
-  startAnalyticsSync()
+  startAnalyticsSync().catch((e) => console.error('[analytics] schedule failed', e))
   console.log('[queues] scheduler + worker online')
 
   globalThis.__socialhubQueueCleanup = async () => {
     stopScheduler()
-    await worker.close()
-    await queue.close()
+    await Promise.all([worker.close(), analyticsWorker.close()])
+    await Promise.all([queue.close(), analyticsQueue.close()])
     resetPostWorker()
     resetPostQueue()
+    resetAnalyticsWorker()
+    resetAnalyticsQueue()
     globalThis.__socialhubQueuesBooted = false
   }
 }

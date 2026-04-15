@@ -433,6 +433,9 @@ export async function getTopPostsImpl(
   // estimate engagement from matching-date analytics_snapshots on that account.
   // For now, rank by a synthetic score of published order within range so we
   // always return something when snapshots are sparse.
+  // Pull every post + platform fanout in the window, plus the latest
+  // per-post metric snapshot. We pick the *max* snapshot per postPlatform
+  // (metrics are cumulative, so the latest row is the truth).
   const rows = await db
     .select({
       id: schema.posts.id,
@@ -440,6 +443,7 @@ export async function getTopPostsImpl(
       publishedAt: schema.posts.publishedAt,
       platform: schema.socialAccounts.platform,
       publishedUrl: schema.postPlatforms.publishedUrl,
+      postPlatformId: schema.postPlatforms.id,
     })
     .from(schema.posts)
     .leftJoin(schema.postVersions, eq(schema.postVersions.postId, schema.posts.id))
@@ -455,34 +459,74 @@ export async function getTopPostsImpl(
         lte(schema.posts.publishedAt, end),
       ),
     )
-    .orderBy(desc(schema.posts.publishedAt))
-    .limit(limit * 4)
+
+  const postPlatformIds = rows
+    .map((r) => r.postPlatformId)
+    .filter((v): v is string => !!v)
+  const metricsByPP = new Map<
+    string,
+    { likes: number; comments: number; shares: number; clicks: number; engagements: number }
+  >()
+  if (postPlatformIds.length > 0) {
+    const metrics = await db
+      .select({
+        postPlatformId: schema.postMetricsSnapshots.postPlatformId,
+        date: schema.postMetricsSnapshots.date,
+        likes: schema.postMetricsSnapshots.likes,
+        comments: schema.postMetricsSnapshots.comments,
+        shares: schema.postMetricsSnapshots.shares,
+        clicks: schema.postMetricsSnapshots.clicks,
+        engagements: schema.postMetricsSnapshots.engagements,
+      })
+      .from(schema.postMetricsSnapshots)
+      .where(inArray(schema.postMetricsSnapshots.postPlatformId, postPlatformIds))
+      .orderBy(desc(schema.postMetricsSnapshots.date))
+    for (const m of metrics) {
+      if (metricsByPP.has(m.postPlatformId)) continue
+      metricsByPP.set(m.postPlatformId, {
+        likes: m.likes,
+        comments: m.comments,
+        shares: m.shares,
+        clicks: m.clicks,
+        engagements: m.engagements || m.likes + m.comments + m.shares + m.clicks,
+      })
+    }
+  }
 
   const byPost = new Map<string, TopPostRow>()
   for (const r of rows) {
+    const m = r.postPlatformId ? metricsByPP.get(r.postPlatformId) : null
     const existing = byPost.get(r.id)
     if (existing) {
       if (r.platform && !existing.platforms.includes(r.platform as PlatformKey)) {
         existing.platforms.push(r.platform as PlatformKey)
       }
       if (r.publishedUrl && !existing.publishedUrl) existing.publishedUrl = r.publishedUrl
+      if (m) {
+        existing.likes += m.likes
+        existing.comments += m.comments
+        existing.shares += m.shares
+        existing.clicks += m.clicks
+        existing.engagements += m.engagements
+      }
     } else {
       byPost.set(r.id, {
         id: r.id,
         content: r.content ?? '',
         platforms: r.platform ? [r.platform as PlatformKey] : [],
         thumbnailUrl: null,
-        likes: 0,
-        comments: 0,
-        shares: 0,
-        clicks: 0,
-        engagements: 0,
+        likes: m?.likes ?? 0,
+        comments: m?.comments ?? 0,
+        shares: m?.shares ?? 0,
+        clicks: m?.clicks ?? 0,
+        engagements: m?.engagements ?? 0,
         publishedAt: r.publishedAt?.toISOString() ?? null,
         publishedUrl: r.publishedUrl,
       })
     }
   }
-  return [...byPost.values()].slice(0, limit)
+  const ranked = [...byPost.values()].sort((a, b) => b.engagements - a.engagements)
+  return ranked.slice(0, limit)
 }
 
 export async function getBestPostingTimesImpl(
@@ -495,6 +539,7 @@ export async function getBestPostingTimesImpl(
   const rows = await db
     .select({
       publishedAt: schema.postPlatforms.publishedAt,
+      postPlatformId: schema.postPlatforms.id,
     })
     .from(schema.postPlatforms)
     .innerJoin(schema.posts, eq(schema.posts.id, schema.postPlatforms.postId))
@@ -506,22 +551,50 @@ export async function getBestPostingTimesImpl(
       ),
     )
 
-  // Count posts per (dayOfWeek, hour). Without engagement attribution per
-  // post/date yet, we expose post counts as a proxy until a publisher
-  // writes per-post analytics rows.
-  const bucket = new Map<string, { posts: number; total: number }>()
+  const ppIds = rows.map((r) => r.postPlatformId)
+  const engagementsByPP = new Map<string, number>()
+  if (ppIds.length > 0) {
+    const metrics = await db
+      .select({
+        postPlatformId: schema.postMetricsSnapshots.postPlatformId,
+        date: schema.postMetricsSnapshots.date,
+        engagements: schema.postMetricsSnapshots.engagements,
+        likes: schema.postMetricsSnapshots.likes,
+        comments: schema.postMetricsSnapshots.comments,
+        shares: schema.postMetricsSnapshots.shares,
+        clicks: schema.postMetricsSnapshots.clicks,
+      })
+      .from(schema.postMetricsSnapshots)
+      .where(inArray(schema.postMetricsSnapshots.postPlatformId, ppIds))
+      .orderBy(desc(schema.postMetricsSnapshots.date))
+    for (const m of metrics) {
+      if (engagementsByPP.has(m.postPlatformId)) continue
+      engagementsByPP.set(
+        m.postPlatformId,
+        m.engagements || m.likes + m.comments + m.shares + m.clicks,
+      )
+    }
+  }
+
+  const bucket = new Map<string, { posts: number; totalEngagements: number }>()
   for (const r of rows) {
     if (!r.publishedAt) continue
     const d = new Date(r.publishedAt)
     const key = `${d.getDay()}-${d.getHours()}`
-    const entry = bucket.get(key) ?? { posts: 0, total: 0 }
+    const entry = bucket.get(key) ?? { posts: 0, totalEngagements: 0 }
     entry.posts += 1
+    entry.totalEngagements += engagementsByPP.get(r.postPlatformId) ?? 0
     bucket.set(key, entry)
   }
   const out: HeatmapRow[] = []
   for (const [key, val] of bucket) {
     const [d, h] = key.split('-').map(Number) as [number, number]
-    out.push({ dayOfWeek: d, hour: h, avgEngagements: 0, posts: val.posts })
+    out.push({
+      dayOfWeek: d,
+      hour: h,
+      avgEngagements: val.posts > 0 ? val.totalEngagements / val.posts : 0,
+      posts: val.posts,
+    })
   }
   return out
 }

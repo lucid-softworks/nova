@@ -15,7 +15,8 @@ import {
   Pie,
   Cell,
 } from 'recharts'
-import { ArrowDown, ArrowUp, ExternalLink } from 'lucide-react'
+import { ArrowDown, ArrowUp, ExternalLink, RefreshCw } from 'lucide-react'
+import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
 import { Spinner } from '~/components/ui/spinner'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
@@ -29,6 +30,7 @@ import {
   getTopPosts,
   getBestPostingTimes,
   listAccountsForAnalytics,
+  syncAnalyticsNow,
   type AnalyticsRange,
   type AnalyticsSummary,
   type FollowerPoint,
@@ -57,6 +59,29 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/analytics')({
   },
   component: AnalyticsPage,
 })
+
+function SyncNowButton({ workspaceSlug }: { workspaceSlug: string }) {
+  const [busy, setBusy] = useState(false)
+  const [done, setDone] = useState(false)
+  const trigger = async () => {
+    setBusy(true)
+    try {
+      await syncAnalyticsNow({ data: { workspaceSlug } })
+      setDone(true)
+      setTimeout(() => setDone(false), 3000)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to queue sync')
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Button size="sm" variant="ghost" onClick={trigger} disabled={busy} title="Run analytics sync now">
+      <RefreshCw className={cn('h-4 w-4', busy ? 'animate-spin' : '')} />
+      {done ? 'Queued' : 'Sync'}
+    </Button>
+  )
+}
 
 function AnalyticsPage() {
   const { workspaceSlug } = Route.useParams()
@@ -142,6 +167,7 @@ function AnalyticsPage() {
             value={accountId}
             onChange={setAccountId}
           />
+          <SyncNowButton workspaceSlug={Route.useParams().workspaceSlug} />
           {loading ? <Spinner /> : null}
         </div>
       </div>

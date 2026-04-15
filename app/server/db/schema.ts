@@ -596,6 +596,32 @@ export const analyticsSnapshots = pgTable('analytics_snapshots', {
   createdAt: now(),
 })
 
+export const postMetricsSnapshots = pgTable(
+  'post_metrics_snapshots',
+  {
+    id: id(),
+    postPlatformId: uuid('post_platform_id')
+      .notNull()
+      .references(() => postPlatforms.id, { onDelete: 'cascade' }),
+    date: date('date').notNull(),
+    likes: integer('likes').default(0).notNull(),
+    comments: integer('comments').default(0).notNull(),
+    shares: integer('shares').default(0).notNull(),
+    reach: integer('reach').default(0).notNull(),
+    impressions: integer('impressions').default(0).notNull(),
+    engagements: integer('engagements').default(0).notNull(),
+    clicks: integer('clicks').default(0).notNull(),
+    views: integer('views').default(0).notNull(),
+    createdAt: now(),
+  },
+  (t) => ({
+    uniqPlatformDate: uniqueIndex('post_metrics_snapshots_platform_date_unq').on(
+      t.postPlatformId,
+      t.date,
+    ),
+  }),
+)
+
 // The legacy per-workspace api_keys table has been replaced by Better Auth's
 // apikey table (defined above). Keys are issued to users; the API Key plugin
 // also resolves a session from the bearer header on inbound requests.
