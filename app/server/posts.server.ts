@@ -755,11 +755,23 @@ export type WorkspaceActivityRow = {
   postContent: string | null
 }
 
+export type WorkspaceActivityFilters = {
+  fromIso?: string | null
+  toIso?: string | null
+  userId?: string | null
+  limit?: number
+}
+
 export async function listWorkspaceActivityImpl(
   slug: string,
-  limit = 100,
+  filters: WorkspaceActivityFilters = {},
 ): Promise<WorkspaceActivityRow[]> {
   const { workspace } = await ensureWs(slug)
+  const where = [eq(schema.posts.workspaceId, workspace.id)]
+  if (filters.fromIso) where.push(gte(schema.postActivity.createdAt, new Date(filters.fromIso)))
+  if (filters.toIso) where.push(lte(schema.postActivity.createdAt, new Date(filters.toIso)))
+  if (filters.userId) where.push(eq(schema.postActivity.userId, filters.userId))
+
   const rows = await db
     .select({
       id: schema.postActivity.id,
@@ -774,9 +786,9 @@ export async function listWorkspaceActivityImpl(
     .innerJoin(schema.posts, eq(schema.posts.id, schema.postActivity.postId))
     .leftJoin(schema.user, eq(schema.user.id, schema.postActivity.userId))
     .leftJoin(schema.postVersions, eq(schema.postVersions.postId, schema.posts.id))
-    .where(eq(schema.posts.workspaceId, workspace.id))
+    .where(and(...where))
     .orderBy(desc(schema.postActivity.createdAt))
-    .limit(limit)
+    .limit(filters.limit ?? 1000)
 
   const seen = new Set<string>()
   const out: WorkspaceActivityRow[] = []

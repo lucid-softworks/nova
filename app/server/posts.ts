@@ -145,11 +145,24 @@ export const listPostActivity = createServerFn({ method: 'GET' })
   .inputValidator((d: unknown) => singleSchema.parse(d))
   .handler(async ({ data }) => listPostActivityImpl(data.workspaceSlug, data.postId))
 
+const activityQuery = z.object({
+  workspaceSlug: z.string().min(1),
+  fromIso: z.string().nullable().optional(),
+  toIso: z.string().nullable().optional(),
+  userId: z.string().nullable().optional(),
+  limit: z.number().int().min(1).max(5000).optional(),
+})
+
 export const listWorkspaceActivity = createServerFn({ method: 'GET' })
-  .inputValidator((d: unknown) =>
-    z.object({ workspaceSlug: z.string().min(1) }).parse(d),
+  .inputValidator((d: unknown) => activityQuery.parse(d))
+  .handler(async ({ data }) =>
+    listWorkspaceActivityImpl(data.workspaceSlug, {
+      fromIso: data.fromIso ?? null,
+      toIso: data.toIso ?? null,
+      userId: data.userId ?? null,
+      limit: data.limit,
+    }),
   )
-  .handler(async ({ data }) => listWorkspaceActivityImpl(data.workspaceSlug))
 
 export const getCampaignAnalytics = createServerFn({ method: 'GET' })
   .inputValidator((d: unknown) => campaignActionSchema.parse(d))
