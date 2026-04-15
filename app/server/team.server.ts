@@ -119,10 +119,17 @@ export async function updateMemberRoleImpl(
     throw new Error('Only admins can promote to admin')
   }
 
-  await db
-    .update(schema.member)
-    .set({ role: newRole })
-    .where(eq(schema.member.id, memberId))
+  try {
+    await auth.api.updateMemberRole({
+      headers: getRequest().headers,
+      body: { memberId, role: newRole, organizationId: detail.organizationId },
+    })
+  } catch {
+    await db
+      .update(schema.member)
+      .set({ role: newRole })
+      .where(eq(schema.member.id, memberId))
+  }
   return { ok: true }
 }
 
@@ -142,7 +149,14 @@ export async function removeMemberImpl(slug: string, memberId: string) {
     throw new Error('Only admins can remove another admin')
   }
 
-  await db.delete(schema.member).where(eq(schema.member.id, memberId))
+  try {
+    await auth.api.removeMember({
+      headers: getRequest().headers,
+      body: { memberIdOrEmail: memberId, organizationId: detail.organizationId },
+    })
+  } catch {
+    await db.delete(schema.member).where(eq(schema.member.id, memberId))
+  }
   await db
     .delete(schema.workspaceApprovers)
     .where(
@@ -185,16 +199,29 @@ export async function addMemberByEmailImpl(
     })
     if (existing) return { kind: 'already_member' }
 
-    const [row] = await db
-      .insert(schema.member)
-      .values({
-        id: randomUUID(),
-        organizationId: detail.organizationId,
-        userId: target.id,
-        role,
-      })
-      .returning({ id: schema.member.id })
-    if (!row) throw new Error('Failed to add member')
+    let memberRowId: string | null = null
+    try {
+      const res = (await auth.api.addMember({
+        headers: getRequest().headers,
+        body: { userId: target.id, role, organizationId: detail.organizationId },
+      })) as { id?: string; member?: { id: string } } | null
+      memberRowId = res?.id ?? res?.member?.id ?? null
+    } catch {
+      // Fall through to direct insert.
+    }
+    if (!memberRowId) {
+      const [row] = await db
+        .insert(schema.member)
+        .values({
+          id: randomUUID(),
+          organizationId: detail.organizationId,
+          userId: target.id,
+          role,
+        })
+        .returning({ id: schema.member.id })
+      if (!row) throw new Error('Failed to add member')
+      memberRowId = row.id
+    }
 
     await notifyWorkspaceAdmins({
       workspaceId: detail.workspaceId,
@@ -203,7 +230,7 @@ export async function addMemberByEmailImpl(
       body: `${target.name} joined as ${role}.`,
       data: { userId: target.id },
     })
-    return { kind: 'ok', memberId: row.id }
+    return { kind: 'ok', memberId: memberRowId }
   }
 
   // No user yet → create an invitation via the plugin, which posts the

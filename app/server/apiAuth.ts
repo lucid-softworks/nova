@@ -7,6 +7,7 @@ import type { SessionContext, WorkspaceRole } from './types'
 export type ApiAuthContext = {
   userId: string
   workspaceId: string
+  organizationId: string
   workspaceSlug: string
   role: WorkspaceRole
   viaApiKey: boolean
@@ -73,6 +74,7 @@ export async function authenticateApiRequest(
   const memberships = await db
     .select({
       id: schema.workspaces.id,
+      organizationId: schema.organization.id,
       slug: schema.organization.slug,
       role: schema.member.role,
     })
@@ -100,6 +102,7 @@ export async function authenticateApiRequest(
     ctx: {
       userId,
       workspaceId: target.id,
+      organizationId: target.organizationId,
       workspaceSlug: target.slug,
       role: target.role as WorkspaceRole,
       viaApiKey,
@@ -136,6 +139,7 @@ export async function withApiAuth<T>(ctx: ApiAuthContext, fn: () => Promise<T>):
     workspaces: [
       {
         id: ctx.workspaceId,
+        organizationId: ctx.organizationId,
         name: '',
         slug: ctx.workspaceSlug,
         logoUrl: null,
@@ -143,6 +147,7 @@ export async function withApiAuth<T>(ctx: ApiAuthContext, fn: () => Promise<T>):
         role: ctx.role,
       },
     ],
+    activeOrganizationId: ctx.organizationId,
   }
   return withSessionOverride(session, fn)
 }

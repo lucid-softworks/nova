@@ -22,11 +22,12 @@ export async function loadSessionContext(): Promise<SessionContext> {
   const override = overrideStorage.getStore()
   if (override) return override
   const session = await auth.api.getSession({ headers: getRequest().headers })
-  if (!session?.user) return { user: null, workspaces: [] }
+  if (!session?.user) return { user: null, workspaces: [], activeOrganizationId: null }
 
   const rows = await db
     .select({
       id: schema.workspaces.id,
+      organizationId: schema.organization.id,
       name: schema.organization.name,
       slug: schema.organization.slug,
       logoUrl: schema.organization.logo,
@@ -49,6 +50,25 @@ export async function loadSessionContext(): Promise<SessionContext> {
       image: session.user.image ?? null,
     },
     workspaces: rows.map((r) => ({ ...r, role: r.role as WorkspaceRole })),
+    activeOrganizationId:
+      (session.session as { activeOrganizationId?: string | null } | undefined)
+        ?.activeOrganizationId ?? null,
+  }
+}
+
+/**
+ * Pin Better Auth's `activeOrganizationId` to the org backing the given
+ * workspace slug. Idempotent — no-op when already active or caller is not
+ * a member. Swallows errors so navigation never breaks on a pinning failure.
+ */
+export async function setActiveWorkspaceImpl(slug: string): Promise<void> {
+  try {
+    await auth.api.setActiveOrganization({
+      headers: getRequest().headers,
+      body: { organizationSlug: slug },
+    })
+  } catch {
+    // Non-fatal: the session just keeps its previous active org.
   }
 }
 

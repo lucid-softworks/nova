@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect, useLocation } from '@tanstack/react-router'
 import { useState } from 'react'
 import { X } from 'lucide-react'
+import { setActiveWorkspace } from '~/server/auth-context'
 import type { SessionContext } from '~/server/auth-context'
 import { Sidebar } from '~/components/layout/Sidebar'
 import { TopBar } from '~/components/layout/TopBar'
@@ -9,7 +10,7 @@ import { cn } from '~/lib/utils'
 type LoaderCtx = { session: SessionContext }
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug')({
-  beforeLoad: ({ context, params }) => {
+  beforeLoad: async ({ context, params }) => {
     const { session } = context as LoaderCtx
     const ws = session.workspaces.find((w) => w.slug === params.workspaceSlug)
     if (!ws) {
@@ -18,6 +19,9 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug')({
         throw redirect({ to: '/$workspaceSlug/compose', params: { workspaceSlug: first.slug } })
       }
       throw redirect({ to: '/onboarding' })
+    }
+    if (session.activeOrganizationId !== ws.organizationId) {
+      await setActiveWorkspace({ data: { slug: ws.slug } })
     }
     return { workspace: ws, session }
   },

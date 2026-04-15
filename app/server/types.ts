@@ -9,6 +9,7 @@ export type SessionUser = {
 
 export type WorkspaceSummary = {
   id: string
+  organizationId: string
   name: string
   slug: string
   role: WorkspaceRole
@@ -19,4 +20,5 @@ export type WorkspaceSummary = {
 export type SessionContext = {
   user: SessionUser | null
   workspaces: WorkspaceSummary[]
+  activeOrganizationId: string | null
 }
