@@ -16,6 +16,7 @@ import {
 import { createAccessControl } from 'better-auth/plugins/access'
 import { db, schema } from '~/server/db'
 import { sendEmail } from '~/server/mailer.server'
+import { getBillingProvider } from '~/lib/billing'
 
 const requireEnv = (key: string): string => {
   const v = process.env[key]
@@ -168,6 +169,14 @@ const plugins = [
         }),
       ]
     : []),
+  // Billing: whichever provider is selected via BILLING_PROVIDER contributes
+  // its Better Auth plugin if it ships one (Stripe, Polar, Dodo today).
+  // Providers without a BA plugin (Autumn, Creem, Chargebee) return null and
+  // are driven entirely from the BillingProvider abstraction instead.
+  ...(() => {
+    const plugin = getBillingProvider().betterAuthPlugin?.()
+    return plugin ? [plugin as ReturnType<typeof apiKey>] : []
+  })(),
   tanstackStartCookies(),
 ]
 

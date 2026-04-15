@@ -596,6 +596,23 @@ export const analyticsSnapshots = pgTable('analytics_snapshots', {
   createdAt: now(),
 })
 
+export const workspaceSubscriptions = pgTable('workspace_subscriptions', {
+  id: id(),
+  workspaceId: uuid('workspace_id')
+    .notNull()
+    .references(() => workspaces.id, { onDelete: 'cascade' })
+    .unique(),
+  provider: text('provider').notNull(),
+  customerId: text('customer_id'),
+  subscriptionId: text('subscription_id'),
+  plan: text('plan'),
+  status: text('status').notNull().default('none'),
+  currentPeriodEnd: timestamp('current_period_end', { withTimezone: true }),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}).notNull(),
+  createdAt: now(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
 export const postMetricsSnapshots = pgTable(
   'post_metrics_snapshots',
   {
