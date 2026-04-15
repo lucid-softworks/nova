@@ -49,10 +49,10 @@ export function LogoUploader({
           <img
             src={value}
             alt=""
-            className="h-10 w-10 rounded border border-neutral-200 object-cover"
+            className="h-10 w-10 rounded border border-neutral-200 dark:border-neutral-800 object-cover"
           />
         ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded border border-dashed border-neutral-300 text-neutral-400">
+          <div className="flex h-10 w-10 items-center justify-center rounded border border-dashed border-neutral-300 text-neutral-400 dark:text-neutral-500">
             <Upload className="h-4 w-4" />
           </div>
         )}

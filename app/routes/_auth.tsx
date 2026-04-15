@@ -6,10 +6,10 @@ export const Route = createFileRoute('/_auth')({
 
 function AuthLayout() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <div className="text-2xl font-semibold text-neutral-900">SocialHub</div>
+          <div className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">SocialHub</div>
         </div>
         <Outlet />
       </div>

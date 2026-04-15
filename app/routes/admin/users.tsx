@@ -68,7 +68,7 @@ function UsersPage() {
         <div className="overflow-hidden rounded-md">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-neutral-100 bg-neutral-50 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              <tr className="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 <th className="px-3 py-2">User</th>
                 <th className="px-3 py-2">Role</th>
                 <th className="px-3 py-2">Status</th>
@@ -78,18 +78,18 @@ function UsersPage() {
             </thead>
             <tbody>
               {filtered.map((u) => (
-                <tr key={u.id} className="border-b border-neutral-100 last:border-0">
+                <tr key={u.id} className="border-b border-neutral-100 dark:border-neutral-800 last:border-0">
                   <td className="px-3 py-2">
-                    <div className="font-medium text-neutral-900">{u.name}</div>
-                    <div className="text-xs text-neutral-500">{u.email}</div>
+                    <div className="font-medium text-neutral-900 dark:text-neutral-100">{u.name}</div>
+                    <div className="text-xs text-neutral-500 dark:text-neutral-400">{u.email}</div>
                   </td>
                   <td className="px-3 py-2">
                     <span
                       className={cn(
                         'rounded-full px-2 py-0.5 text-xs font-medium',
                         u.role === 'admin'
-                          ? 'bg-purple-50 text-purple-700'
-                          : 'bg-neutral-100 text-neutral-700',
+                          ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300'
+                          : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200',
                       )}
                     >
                       {u.role ?? 'user'}
@@ -97,14 +97,14 @@ function UsersPage() {
                   </td>
                   <td className="px-3 py-2">
                     {u.banned ? (
-                      <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
+                      <span className="rounded-full bg-red-50 dark:bg-red-950/40 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-300">
                         Banned
                       </span>
                     ) : (
-                      <span className="text-xs text-neutral-500">Active</span>
+                      <span className="text-xs text-neutral-500 dark:text-neutral-400">Active</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-xs text-neutral-500">
+                  <td className="px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400">
                     {new Date(u.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-3 py-2 text-right">

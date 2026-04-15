@@ -50,8 +50,8 @@ function AccountsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-neutral-900">Connected Accounts</h2>
-          <p className="text-sm text-neutral-500">Link the platforms you want to publish to.</p>
+          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">Connected Accounts</h2>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">Link the platforms you want to publish to.</p>
         </div>
         <AddAccountDialog
           workspaceSlug={workspaceSlug}
@@ -64,8 +64,8 @@ function AccountsPage() {
         <Card>
           <CardContent className="py-10 text-center">
             <Plug className="mx-auto mb-3 h-8 w-8 text-neutral-300" />
-            <p className="text-sm text-neutral-600">No accounts connected yet.</p>
-            <p className="text-xs text-neutral-500">
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">No accounts connected yet.</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
               Click &quot;Add Account&quot; to connect your first platform.
             </p>
           </CardContent>
@@ -114,17 +114,17 @@ function PlatformGroup({
       >
         <PlatformIcon platform={platform} />
         <div className="flex-1">
-          <div className="font-medium text-neutral-900">{p.label}</div>
-          <div className="text-xs text-neutral-500">
+          <div className="font-medium text-neutral-900 dark:text-neutral-100">{p.label}</div>
+          <div className="text-xs text-neutral-500 dark:text-neutral-400">
             {accounts.length} {accounts.length === 1 ? 'account' : 'accounts'}
           </div>
         </div>
         <ChevronDown
-          className={cn('h-4 w-4 text-neutral-400 transition-transform', expanded && 'rotate-180')}
+          className={cn('h-4 w-4 text-neutral-400 dark:text-neutral-500 transition-transform', expanded && 'rotate-180')}
         />
       </button>
       {expanded ? (
-        <div className="border-t border-neutral-100">
+        <div className="border-t border-neutral-100 dark:border-neutral-800">
           {accounts.map((a) => (
             <AccountRow
               key={a.id}
@@ -169,19 +169,19 @@ function AccountRow({
       {account.avatarUrl ? (
         <img src={account.avatarUrl} alt="" className="h-9 w-9 rounded-full" />
       ) : (
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-semibold text-neutral-600 dark:text-neutral-300">
           {initialsOf(account.accountName)}
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium text-neutral-900">{account.accountName}</div>
-        <div className="flex items-center gap-2 text-xs text-neutral-500">
+        <div className="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">{account.accountName}</div>
+        <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
           <span className="truncate">@{account.accountHandle}</span>
           {account.lastSyncedAt ? <span>· Synced {fmtDate(account.lastSyncedAt)}</span> : null}
         </div>
       </div>
       {expiring && account.status === 'connected' ? (
-        <span className="inline-flex items-center gap-1 rounded-full bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-700">
+        <span className="inline-flex items-center gap-1 rounded-full bg-yellow-50 dark:bg-yellow-950/40 px-2 py-0.5 text-xs font-medium text-yellow-700">
           Token expiring soon
         </span>
       ) : null}

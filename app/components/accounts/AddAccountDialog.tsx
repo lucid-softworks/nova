@@ -87,10 +87,10 @@ export function AddAccountDialog({
                     type="button"
                     onClick={() => handlePlatform(p.key)}
                     disabled={busy !== null}
-                    className="relative flex flex-col items-center gap-2 rounded-lg border border-neutral-200 p-4 hover:border-indigo-300 hover:bg-indigo-50/50 disabled:opacity-60"
+                    className="relative flex flex-col items-center gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 hover:border-indigo-300 hover:bg-indigo-50/50 disabled:opacity-60"
                   >
                     <PlatformIcon platform={p.key} size={40} />
-                    <div className="text-xs font-medium text-neutral-700">{p.label}</div>
+                    <div className="text-xs font-medium text-neutral-700 dark:text-neutral-200">{p.label}</div>
                     {count > 0 ? (
                       <span className="absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-500 px-1 text-[10px] font-semibold text-white">
                         +{count}

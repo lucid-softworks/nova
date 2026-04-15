@@ -32,20 +32,20 @@ function ActivityPage() {
   return (
     <div className="space-y-3">
       <div>
-        <h2 className="text-2xl font-semibold text-neutral-900">Activity</h2>
-        <p className="text-sm text-neutral-500">Recent changes across your workspace.</p>
+        <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">Activity</h2>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">Recent changes across your workspace.</p>
       </div>
       <Card>
         {activity.length === 0 ? (
-          <p className="p-4 text-sm text-neutral-500">Nothing yet.</p>
+          <p className="p-4 text-sm text-neutral-500 dark:text-neutral-400">Nothing yet.</p>
         ) : (
-          <ul className="divide-y divide-neutral-100">
+          <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
             {activity.map((a) => (
               <li key={a.id} className="flex items-start gap-3 p-3 text-sm">
                 <div className="min-w-0 flex-1">
-                  <div className="text-neutral-900">
+                  <div className="text-neutral-900 dark:text-neutral-100">
                     <span className="font-medium">{a.userName ?? 'Someone'}</span>{' '}
-                    <span className="text-neutral-500">{labelFor(a.action)}</span>{' '}
+                    <span className="text-neutral-500 dark:text-neutral-400">{labelFor(a.action)}</span>{' '}
                     <Link
                       to="/$workspaceSlug/compose"
                       params={{ workspaceSlug }}
@@ -54,15 +54,15 @@ function ActivityPage() {
                     >
                       a post
                     </Link>
-                    {a.note ? <span className="text-neutral-500"> — {a.note}</span> : null}
+                    {a.note ? <span className="text-neutral-500 dark:text-neutral-400"> — {a.note}</span> : null}
                   </div>
                   {a.postContent ? (
-                    <div className="mt-0.5 truncate text-xs text-neutral-500">
+                    <div className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
                       “{a.postContent}”
                     </div>
                   ) : null}
                 </div>
-                <time className="whitespace-nowrap text-xs text-neutral-400">
+                <time className="whitespace-nowrap text-xs text-neutral-400 dark:text-neutral-500">
                   {new Date(a.createdAt).toLocaleString()}
                 </time>
               </li>

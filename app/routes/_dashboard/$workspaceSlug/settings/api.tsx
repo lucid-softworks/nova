@@ -121,18 +121,18 @@ function ApiSettings() {
 
       <Card>
         <div className="space-y-3 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900">API keys</h3>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">API keys</h3>
           {keys.length === 0 ? (
-            <p className="text-xs text-neutral-500">No API keys yet.</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">No API keys yet.</p>
           ) : (
             <div className="space-y-2">
               {keys.map((k) => (
-                <div key={k.id} className="flex items-center justify-between rounded-md border border-neutral-200 p-2">
+                <div key={k.id} className="flex items-center justify-between rounded-md border border-neutral-200 dark:border-neutral-800 p-2">
                   <div className="space-y-0.5">
-                    <div className="text-sm font-medium text-neutral-900">{k.name}</div>
-                    <code className="text-xs text-neutral-500">{k.maskedKey}</code>
+                    <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{k.name}</div>
+                    <code className="text-xs text-neutral-500 dark:text-neutral-400">{k.maskedKey}</code>
                   </div>
-                  <div className="text-xs text-neutral-500">
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400">
                     Created {new Date(k.createdAt).toLocaleDateString()}
                   </div>
                   <Button size="sm" variant="ghost" className="text-red-600" onClick={() => onDeleteKey(k)}>
@@ -156,10 +156,10 @@ function ApiSettings() {
             </Button>
           </div>
           {revealed ? (
-            <div className="rounded-md border border-indigo-200 bg-indigo-50 p-3 text-sm">
+            <div className="rounded-md border border-indigo-200 bg-indigo-50 dark:bg-indigo-950/40 p-3 text-sm">
               <div className="font-semibold text-indigo-800">Save this key — it won&apos;t be shown again.</div>
               <div className="mt-1 flex items-center gap-2">
-                <code className="flex-1 break-all rounded bg-white px-2 py-1 text-xs">
+                <code className="flex-1 break-all rounded bg-white dark:bg-neutral-900 px-2 py-1 text-xs">
                   {revealed.plaintext}
                 </code>
                 <Button
@@ -179,13 +179,13 @@ function ApiSettings() {
 
       <Card>
         <div className="space-y-3 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900">Webhooks</h3>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Webhooks</h3>
           {webhooks.length === 0 ? (
-            <p className="text-xs text-neutral-500">No webhooks yet.</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">No webhooks yet.</p>
           ) : (
             <div className="space-y-2">
               {webhooks.map((w) => (
-                <div key={w.id} className="space-y-1 rounded-md border border-neutral-200 p-2">
+                <div key={w.id} className="space-y-1 rounded-md border border-neutral-200 dark:border-neutral-800 p-2">
                   <div className="flex items-center justify-between gap-2">
                     <code className="min-w-0 flex-1 truncate text-xs">{w.url}</code>
                     <label className="flex items-center gap-1 text-xs">
@@ -204,7 +204,7 @@ function ApiSettings() {
                     {w.events.map((e) => (
                       <span
                         key={e}
-                        className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-medium text-neutral-700"
+                        className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 text-[10px] font-medium text-neutral-700 dark:text-neutral-200"
                       >
                         {e}
                       </span>
@@ -224,7 +224,7 @@ function ApiSettings() {
               />
             </Field>
             <div>
-              <div className="mb-1 text-xs font-medium text-neutral-600">Events</div>
+              <div className="mb-1 text-xs font-medium text-neutral-600 dark:text-neutral-300">Events</div>
               <div className="flex flex-wrap gap-2">
                 {EVENTS.map((e) => (
                   <label key={e} className="flex items-center gap-1 text-xs">
@@ -245,12 +245,12 @@ function ApiSettings() {
             </div>
           </div>
           {webhookSecret ? (
-            <div className="rounded-md border border-indigo-200 bg-indigo-50 p-3 text-sm">
+            <div className="rounded-md border border-indigo-200 bg-indigo-50 dark:bg-indigo-950/40 p-3 text-sm">
               <div className="font-semibold text-indigo-800">
                 Save this webhook secret — it won&apos;t be shown again.
               </div>
               <div className="mt-1 flex items-center gap-2">
-                <code className="flex-1 break-all rounded bg-white px-2 py-1 text-xs">
+                <code className="flex-1 break-all rounded bg-white dark:bg-neutral-900 px-2 py-1 text-xs">
                   {webhookSecret.secret}
                 </code>
                 <Button
@@ -263,7 +263,7 @@ function ApiSettings() {
                   <Copy className="h-3 w-3" /> Copy
                 </Button>
               </div>
-              <p className="mt-2 text-xs text-indigo-700">
+              <p className="mt-2 text-xs text-indigo-700 dark:text-indigo-300">
                 Requests are signed with <code>X-SocialHub-Signature: sha256={'{hmac}'}</code>.
               </p>
             </div>

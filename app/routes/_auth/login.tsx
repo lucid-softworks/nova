@@ -59,7 +59,7 @@ function LoginPage() {
             Sign in
           </Button>
         </form>
-        <div className="my-4 flex items-center gap-2 text-xs text-neutral-400">
+        <div className="my-4 flex items-center gap-2 text-xs text-neutral-400 dark:text-neutral-500">
           <div className="h-px flex-1 bg-neutral-200" />
           or
           <div className="h-px flex-1 bg-neutral-200" />

@@ -200,20 +200,20 @@ export function ReshareBrowser({
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="absolute inset-y-0 right-0 flex w-[min(880px,100%)] flex-col bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-neutral-200 p-4">
+      <div className="absolute inset-y-0 right-0 flex w-[min(880px,100%)] flex-col bg-white dark:bg-neutral-900 shadow-xl">
+        <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 p-4">
           <div className="text-lg font-semibold">Queue Reshares</div>
-          <button type="button" onClick={onClose} className="rounded p-2 hover:bg-neutral-100" aria-label="Close">
+          <button type="button" onClick={onClose} className="rounded p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Close">
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="space-y-3 border-b border-neutral-200 p-4">
+        <div className="space-y-3 border-b border-neutral-200 dark:border-neutral-800 p-4">
           <div className="flex flex-wrap items-center gap-2">
             <select
               value={platform}
               onChange={(e) => onPlatformChange(e.target.value as ResharePlatform)}
-              className="h-9 rounded-md border border-neutral-200 bg-white px-2 text-sm"
+              className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 text-sm"
             >
               {RESHARE_PLATFORMS.map((p) => (
                 <option key={p} value={p}>
@@ -221,18 +221,18 @@ export function ReshareBrowser({
                 </option>
               ))}
             </select>
-            <div className="inline-flex rounded-md border border-neutral-200 bg-white p-0.5 text-xs">
+            <div className="inline-flex rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0.5 text-xs">
               <button
                 type="button"
                 onClick={() => setMode('browse')}
-                className={cn('rounded px-2 py-1', mode === 'browse' ? 'bg-neutral-900 text-white' : 'text-neutral-600')}
+                className={cn('rounded px-2 py-1', mode === 'browse' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
               >
                 Browse Account
               </button>
               <button
                 type="button"
                 onClick={() => setMode('search')}
-                className={cn('rounded px-2 py-1', mode === 'search' ? 'bg-neutral-900 text-white' : 'text-neutral-600')}
+                className={cn('rounded px-2 py-1', mode === 'search' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
               >
                 Search
               </button>
@@ -266,7 +266,7 @@ export function ReshareBrowser({
               }}
             >
               <div className="relative flex-1 min-w-[200px] max-w-sm">
-                <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+                <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -291,11 +291,11 @@ export function ReshareBrowser({
 
         <div className="flex-1 overflow-auto p-4">
           {result === null ? (
-            <div className="py-12 text-center text-sm text-neutral-500">
+            <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
               Choose a platform and load results.
             </div>
           ) : result.kind === 'unsupported' ? (
-            <div className="flex items-start gap-3 rounded-md border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-800">
+            <div className="flex items-start gap-3 rounded-md border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/40 p-4 text-sm text-yellow-800">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
                 <div className="font-semibold">Limited API access</div>
@@ -303,7 +303,7 @@ export function ReshareBrowser({
               </div>
             </div>
           ) : result.items.length === 0 ? (
-            <div className="py-12 text-center text-sm text-neutral-500">
+            <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
               No results for this query.
             </div>
           ) : (
@@ -324,13 +324,13 @@ export function ReshareBrowser({
         </div>
 
         {selectedCount > 0 ? (
-          <div className="space-y-2 border-t border-neutral-200 bg-neutral-50 p-3 text-sm">
+          <div className="space-y-2 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3 text-sm">
             <div className="flex flex-wrap items-center gap-2">
               <div>Reshare from:</div>
               <select
                 value={targetAccountId}
                 onChange={(e) => setTargetAccountId(e.target.value)}
-                className="h-8 rounded border border-neutral-200 bg-white px-2"
+                className="h-8 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2"
               >
                 <option value="">Select account…</option>
                 {accountsForPlatform.map((a) => (
@@ -339,18 +339,18 @@ export function ReshareBrowser({
                   </option>
                 ))}
               </select>
-              <div className="inline-flex rounded-md border border-neutral-200 bg-white p-0.5 text-xs">
+              <div className="inline-flex rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0.5 text-xs">
                 <button
                   type="button"
                   onClick={() => setScheduleMode('queue')}
-                  className={cn('rounded px-2 py-1', scheduleMode === 'queue' ? 'bg-neutral-900 text-white' : 'text-neutral-600')}
+                  className={cn('rounded px-2 py-1', scheduleMode === 'queue' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
                 >
                   Add to Queue
                 </button>
                 <button
                   type="button"
                   onClick={() => setScheduleMode('schedule')}
-                  className={cn('rounded px-2 py-1', scheduleMode === 'schedule' ? 'bg-neutral-900 text-white' : 'text-neutral-600')}
+                  className={cn('rounded px-2 py-1', scheduleMode === 'schedule' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
                 >
                   Schedule
                 </button>
@@ -360,12 +360,12 @@ export function ReshareBrowser({
                   type="datetime-local"
                   value={scheduledAt}
                   onChange={(e) => setScheduledAt(e.target.value)}
-                  className="h-8 rounded border border-neutral-200 bg-white px-2 text-xs"
+                  className="h-8 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 text-xs"
                 />
               ) : null}
             </div>
             <div className="flex items-center justify-between">
-              <div className="text-neutral-600">{selectedCount} selected</div>
+              <div className="text-neutral-600 dark:text-neutral-300">{selectedCount} selected</div>
               <Button
                 type="button"
                 onClick={submit}
@@ -374,7 +374,7 @@ export function ReshareBrowser({
                 {submitting ? <Spinner /> : null} Queue {selectedCount} post{selectedCount === 1 ? '' : 's'}
               </Button>
             </div>
-            {toast ? <div className="text-xs text-neutral-700">{toast}</div> : null}
+            {toast ? <div className="text-xs text-neutral-700 dark:text-neutral-200">{toast}</div> : null}
           </div>
         ) : null}
       </div>
@@ -411,7 +411,7 @@ function ResultCard({
     <div
       className={cn(
         'relative rounded-md border p-3',
-        selected ? 'border-indigo-400 bg-indigo-50/30' : 'border-neutral-200 bg-white',
+        selected ? 'border-indigo-400 bg-indigo-50/30' : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900',
       )}
     >
       <button
@@ -420,7 +420,7 @@ function ResultCard({
         aria-label={selected ? 'Deselect' : 'Select'}
         className={cn(
           'absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded border',
-          selected ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-neutral-300 bg-white',
+          selected ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-neutral-300 bg-white dark:bg-neutral-900',
         )}
       >
         {selected ? <Check className="h-3 w-3" /> : null}
@@ -431,18 +431,18 @@ function ResultCard({
           {src.platformExtra.avatar ? (
             <img src={src.platformExtra.avatar} alt="" className="h-9 w-9 rounded-full" />
           ) : (
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
               <PlatformIcon platform={platform} size={22} />
             </div>
           )}
         </div>
         <div className="min-w-0 flex-1 pr-6">
           <div className="flex items-center gap-1 text-sm">
-            <span className="font-semibold text-neutral-900">{src.sourceAuthorName}</span>
-            <span className="text-neutral-500">@{src.sourceAuthorHandle}</span>
+            <span className="font-semibold text-neutral-900 dark:text-neutral-100">{src.sourceAuthorName}</span>
+            <span className="text-neutral-500 dark:text-neutral-400">@{src.sourceAuthorHandle}</span>
           </div>
           <div
-            className={cn('mt-1 whitespace-pre-wrap text-sm text-neutral-800', !expanded && longText && 'line-clamp-3')}
+            className={cn('mt-1 whitespace-pre-wrap text-sm text-neutral-800 dark:text-neutral-100', !expanded && longText && 'line-clamp-3')}
           >
             {src.sourceContent}
           </div>
@@ -459,10 +459,10 @@ function ResultCard({
             <img
               src={src.sourceMediaUrls[0]}
               alt=""
-              className="mt-2 max-h-60 rounded border border-neutral-200 object-cover"
+              className="mt-2 max-h-60 rounded border border-neutral-200 dark:border-neutral-800 object-cover"
             />
           ) : null}
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-neutral-500">
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
             {src.postedAt ? <span>{new Date(src.postedAt).toLocaleDateString()}</span> : null}
             {src.stats.likes != null ? <span>❤ {src.stats.likes}</span> : null}
             {src.stats.reposts != null ? <span>↻ {src.stats.reposts}</span> : null}
@@ -480,7 +480,7 @@ function ResultCard({
       </div>
 
       {selected ? (
-        <div className="mt-3 space-y-2 border-t border-neutral-200 pt-2">
+        <div className="mt-3 space-y-2 border-t border-neutral-200 dark:border-neutral-800 pt-2">
           <div className="flex flex-wrap gap-3 text-xs">
             {options.map((opt) => (
               <label key={opt.value} className="flex items-center gap-1.5">
@@ -499,9 +499,9 @@ function ResultCard({
                 value={selected.quoteComment}
                 onChange={(e) => onUpdate({ quoteComment: e.target.value })}
                 placeholder="Add your commentary"
-                className="min-h-[60px] w-full resize-y rounded border border-neutral-200 p-2 text-sm"
+                className="min-h-[60px] w-full resize-y rounded border border-neutral-200 dark:border-neutral-800 p-2 text-sm"
               />
-              <div className="flex items-center justify-between text-[11px] text-neutral-500">
+              <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400">
                 <span>
                   {selected.quoteComment.length} / {textLimit.toLocaleString()}
                 </span>

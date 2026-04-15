@@ -10,10 +10,13 @@ const buttonVariants = cva(
       variant: {
         default: 'bg-indigo-500 text-white hover:bg-indigo-600',
         destructive: 'bg-red-500 text-white hover:bg-red-600',
-        outline: 'border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900',
-        secondary: 'bg-neutral-100 text-neutral-900 hover:bg-neutral-200',
-        ghost: 'hover:bg-neutral-100 text-neutral-900',
-        link: 'text-indigo-600 underline-offset-4 hover:underline',
+        outline:
+          'border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800',
+        secondary:
+          'bg-neutral-100 text-neutral-900 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700',
+        ghost:
+          'hover:bg-neutral-100 text-neutral-900 dark:text-neutral-100 dark:hover:bg-white/10',
+        link: 'text-indigo-600 underline-offset-4 hover:underline dark:text-indigo-400',
       },
       size: {
         default: 'h-10 px-4 py-2',

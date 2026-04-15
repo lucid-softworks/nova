@@ -89,7 +89,7 @@ function withinTolerance(actual: number, target: number): boolean {
 export function MediaMismatchBanner({ items }: { items: Mismatch[] }) {
   if (items.length === 0) return null
   return (
-    <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3 text-sm">
+    <div className="rounded-md border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/40 p-3 text-sm">
       <div className="flex items-start gap-2">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-700" />
         <div className="space-y-1">

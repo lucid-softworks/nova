@@ -41,19 +41,22 @@ function AdminLayout() {
   const { userName } = Route.useRouteContext()
   const { pathname } = useLocation()
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <header className="border-b border-neutral-200 bg-white">
+    <div className="min-h-screen bg-neutral-50 dark:bg-[#0b0d12]">
+      <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-6">
-            <div className="text-sm font-semibold text-neutral-900">SocialHub · Admin</div>
+            <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+              SocialHub · Admin
+            </div>
             <nav className="flex items-center gap-3 text-sm">
               {NAV.map((n) => (
                 <Link
                   key={n.to}
                   to={n.to}
                   className={cn(
-                    'text-neutral-600 hover:text-neutral-900',
-                    pathname === n.to && 'font-semibold text-indigo-600',
+                    'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100',
+                    pathname === n.to &&
+                      'font-semibold text-indigo-600 dark:text-indigo-400',
                   )}
                 >
                   {n.label}
@@ -61,9 +64,9 @@ function AdminLayout() {
               ))}
             </nav>
           </div>
-          <div className="flex items-center gap-2 text-xs text-neutral-500">
+          <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
             <span>{userName}</span>
-            <Link to="/" className="text-indigo-600 hover:underline">
+            <Link to="/" className="text-indigo-600 hover:underline dark:text-indigo-400">
               ↩ App
             </Link>
           </div>

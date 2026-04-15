@@ -1,9 +1,14 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: #6366f1;
   --color-sidebar-bg: #0f1117;
   --color-app-bg: #f8f9fb;
+  --color-app-bg-dark: #0b0d12;
+  --color-app-surface-dark: #14171e;
+  --color-app-border-dark: #272b33;
 }
 
 @layer base {
@@ -15,5 +20,9 @@
   body {
     @apply text-neutral-900 antialiased;
     background: var(--color-app-bg);
+  }
+  html.dark body {
+    @apply text-neutral-100;
+    background: var(--color-app-bg-dark);
   }
 }

@@ -70,7 +70,7 @@ function RegisterPage() {
             Create account
           </Button>
         </form>
-        <p className="mt-6 text-sm text-neutral-500">
+        <p className="mt-6 text-sm text-neutral-500 dark:text-neutral-400">
           Already have an account?{' '}
           <Link to="/login" className="text-indigo-600 hover:underline">
             Sign in

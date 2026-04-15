@@ -33,8 +33,8 @@ function AdminOverview() {
       {cards.map((c) => (
         <Card key={c.label}>
           <div className="space-y-1 p-3">
-            <div className="text-[11px] uppercase tracking-wider text-neutral-500">{c.label}</div>
-            <div className="text-xl font-semibold text-neutral-900">{c.value}</div>
+            <div className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">{c.label}</div>
+            <div className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{c.value}</div>
           </div>
         </Card>
       ))}

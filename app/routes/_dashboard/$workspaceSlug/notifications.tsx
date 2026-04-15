@@ -49,13 +49,13 @@ function NotificationsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-neutral-900">Notifications</h2>
-          <div className="text-sm text-neutral-500">
+          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">Notifications</h2>
+          <div className="text-sm text-neutral-500 dark:text-neutral-400">
             {unreadCount} unread · {rows.length} total
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-md border border-neutral-200 bg-white p-0.5 text-xs">
+          <div className="inline-flex rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0.5 text-xs">
             {(['all', 'unread'] as const).map((k) => (
               <button
                 key={k}
@@ -63,7 +63,7 @@ function NotificationsPage() {
                 onClick={() => setFilter(k)}
                 className={cn(
                   'rounded px-2 py-1 capitalize',
-                  filter === k ? 'bg-neutral-900 text-white' : 'text-neutral-600',
+                  filter === k ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300',
                 )}
               >
                 {k}
@@ -76,9 +76,9 @@ function NotificationsPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-md border border-neutral-200 bg-white">
+      <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
         {visible.length === 0 ? (
-          <div className="py-12 text-center text-sm text-neutral-500">
+          <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
             {filter === 'unread' ? "You're all caught up." : 'No notifications yet.'}
           </div>
         ) : (
@@ -88,19 +88,19 @@ function NotificationsPage() {
               type="button"
               onClick={() => void onClickItem(n)}
               className={cn(
-                'flex w-full items-start gap-3 border-b border-neutral-100 px-4 py-3 text-left last:border-0 hover:bg-neutral-50',
+                'flex w-full items-start gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 text-left last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800',
                 !n.readAt && 'border-l-4 border-l-indigo-500',
               )}
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-neutral-900">{n.title}</span>
-                  <span className="rounded bg-neutral-100 px-1.5 text-[10px] uppercase tracking-wider text-neutral-600">
+                  <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{n.title}</span>
+                  <span className="rounded bg-neutral-100 dark:bg-neutral-800 px-1.5 text-[10px] uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
                     {n.type.replace(/_/g, ' ')}
                   </span>
                 </div>
-                <div className="mt-0.5 text-sm text-neutral-600">{n.body}</div>
-                <div className="mt-1 text-xs text-neutral-400">
+                <div className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-300">{n.body}</div>
+                <div className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
                   {new Date(n.createdAt).toLocaleString()}
                 </div>
               </div>

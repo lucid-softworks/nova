@@ -49,16 +49,16 @@ export function EmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
         type="button"
         title="Emoji"
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100"
+        className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
       >
         <Smile className="h-4 w-4" />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-20 mt-1 w-72 rounded-md border border-neutral-200 bg-white p-2 shadow-lg">
+        <div className="absolute left-0 top-full z-20 mt-1 w-72 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-2 shadow-lg">
           <div className="max-h-64 overflow-y-auto">
             {CATEGORIES.map((cat) => (
               <div key={cat.label} className="mb-2">
-                <div className="mb-1 text-[10px] font-semibold uppercase text-neutral-500">
+                <div className="mb-1 text-[10px] font-semibold uppercase text-neutral-500 dark:text-neutral-400">
                   {cat.label}
                 </div>
                 <div className="grid grid-cols-8 gap-0.5">
@@ -70,7 +70,7 @@ export function EmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
                         onPick(e)
                         setOpen(false)
                       }}
-                      className="h-7 w-7 rounded text-lg leading-none hover:bg-neutral-100"
+                      className="h-7 w-7 rounded text-lg leading-none hover:bg-neutral-100 dark:hover:bg-neutral-800"
                     >
                       {e}
                     </button>

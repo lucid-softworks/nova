@@ -40,7 +40,7 @@ function VerifyEmailPage() {
           {sent ? 'Sent — check your inbox again' : 'Resend email'}
         </Button>
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Wrong address?{' '}
           <Link to="/login" className="text-indigo-600 hover:underline">
             Back to sign in

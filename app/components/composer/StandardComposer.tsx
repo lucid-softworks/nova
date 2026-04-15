@@ -297,7 +297,7 @@ export function StandardComposer({
           </>
         ) : null}
 
-        <div className="flex items-center justify-between border-t border-neutral-200 pt-4">
+        <div className="flex items-center justify-between border-t border-neutral-200 dark:border-neutral-800 pt-4">
           <Button type="button" variant="ghost" onClick={onDiscard}>
             Discard
           </Button>
@@ -350,14 +350,14 @@ export function StandardComposer({
               </>
             )}
             {scheduleOpen ? (
-              <div className="absolute bottom-full right-0 z-20 mb-2 w-80 rounded-md border border-neutral-200 bg-white p-4 shadow-lg">
+              <div className="absolute bottom-full right-0 z-20 mb-2 w-80 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-lg">
                 <div className="space-y-3">
-                  <div className="text-sm font-semibold text-neutral-900">Schedule post</div>
+                  <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Schedule post</div>
                   <input
                     type="datetime-local"
                     value={scheduleAt}
                     onChange={(e) => setScheduleAt(e.target.value)}
-                    className="w-full rounded border border-neutral-200 px-2 py-1.5 text-sm"
+                    className="w-full rounded border border-neutral-200 dark:border-neutral-800 px-2 py-1.5 text-sm"
                   />
                   <div className="flex justify-end gap-2">
                     <Button
@@ -385,7 +385,7 @@ export function StandardComposer({
         </div>
         {saveError ? <p className="text-sm text-red-600">{saveError}</p> : null}
         {toast ? (
-          <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
+          <div className="rounded-md border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/40 p-3 text-sm text-yellow-800">
             {toast}{' '}
             <a
               className="underline"
@@ -398,7 +398,7 @@ export function StandardComposer({
       </div>
 
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-neutral-700">Preview</h3>
+        <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">Preview</h3>
         {activeVersion && activeVersion.platforms.length > 0 ? (
           <PreviewTabs
             version={activeVersion}
@@ -409,7 +409,7 @@ export function StandardComposer({
           />
         ) : (
           <Card>
-            <div className="p-8 text-center text-sm text-neutral-500">
+            <div className="p-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
               Select accounts to see a live preview.
             </div>
           </Card>
@@ -455,7 +455,7 @@ function StartFromSelector({
   return (
     <Card>
       <div className="space-y-2 p-4">
-        <div className="text-sm font-medium text-neutral-700">Start from</div>
+        <div className="text-sm font-medium text-neutral-700 dark:text-neutral-200">Start from</div>
         <div className="grid gap-2 sm:grid-cols-2">
           <RadioCard
             selected={mode === 'shared'}
@@ -492,7 +492,7 @@ function RadioCard({
       onClick={onSelect}
       className={cn(
         'flex items-start gap-2 rounded-md border p-3 text-left',
-        selected ? 'border-indigo-500 bg-indigo-50' : 'border-neutral-200 hover:bg-neutral-50',
+        selected ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40' : 'border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800',
       )}
     >
       <div
@@ -502,8 +502,8 @@ function RadioCard({
         )}
       />
       <div>
-        <div className="text-sm font-medium text-neutral-900">{label}</div>
-        <div className="text-xs text-neutral-500">{description}</div>
+        <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{label}</div>
+        <div className="text-xs text-neutral-500 dark:text-neutral-400">{description}</div>
       </div>
     </button>
   )
@@ -549,9 +549,9 @@ function AccountPicker({
     <Card>
       <div className="space-y-2 p-4">
         <div className="flex items-center justify-between">
-          <div className="text-sm font-medium text-neutral-700">Post to</div>
+          <div className="text-sm font-medium text-neutral-700 dark:text-neutral-200">Post to</div>
           {minLimit !== null ? (
-            <div className="text-xs text-neutral-500">
+            <div className="text-xs text-neutral-500 dark:text-neutral-400">
               Limit: {minLimit.toLocaleString()} chars
             </div>
           ) : null}
@@ -569,7 +569,7 @@ function AccountPicker({
                   'flex items-center gap-2 rounded-full border px-2 py-1 text-xs',
                   isSelected
                     ? 'border-transparent text-white'
-                    : 'border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50',
+                    : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800',
                 )}
                 style={isSelected ? { backgroundColor: p.color } : undefined}
                 title={`${p.label} · @${a.accountHandle}`}
@@ -616,7 +616,7 @@ function VersionTabs({
   const [addOpen, setAddOpen] = useState(false)
 
   return (
-    <div className="flex flex-wrap items-center gap-1 border-b border-neutral-200">
+    <div className="flex flex-wrap items-center gap-1 border-b border-neutral-200 dark:border-neutral-800">
       {versions.map((v) => {
         const hasIssue = (mismatchesByVersion[v.id] ?? []).length > 0
         const label = v.isDefault ? 'Default' : v.platforms.length === 1 ? PLATFORMS[v.platforms[0]!].label : v.label
@@ -629,7 +629,7 @@ function VersionTabs({
                 'flex items-center gap-1.5 px-3 py-2 text-xs font-medium',
                 v.id === activeId
                   ? 'border-b-2 border-indigo-500 text-indigo-600'
-                  : 'text-neutral-600 hover:text-neutral-900',
+                  : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900',
               )}
             >
               {hasIssue ? (
@@ -647,7 +647,7 @@ function VersionTabs({
               <button
                 type="button"
                 onClick={() => onRemove(v.id)}
-                className="mr-1 rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+                className="mr-1 rounded p-1 text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-600"
                 aria-label="Remove version"
               >
                 <X className="h-3 w-3" />
@@ -667,7 +667,7 @@ function VersionTabs({
             <ChevronDown className="h-3 w-3" />
           </button>
           {addOpen ? (
-            <div className="absolute left-0 top-full z-10 mt-1 w-56 rounded-md border border-neutral-200 bg-white p-1 shadow-lg">
+            <div className="absolute left-0 top-full z-10 mt-1 w-56 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg">
               {unassignedPlatforms.map((p) => (
                 <button
                   key={p}
@@ -676,7 +676,7 @@ function VersionTabs({
                     onAdd([p])
                     setAddOpen(false)
                   }}
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-neutral-100"
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
                 >
                   <PlatformIcon platform={p} size={16} />
                   {PLATFORMS[p].label}
@@ -740,13 +740,13 @@ function Editor({
               dispatch({ type: 'UPDATE_CONTENT', versionId: version.id, content: e.target.value })
             }
             placeholder="What do you want to say?"
-            className="min-h-[160px] w-full resize-y rounded-md border border-neutral-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="min-h-[160px] w-full resize-y rounded-md border border-neutral-200 dark:border-neutral-800 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         ) : (
           <div className="space-y-2">
             {version.threadParts.map((part, idx) => (
-              <div key={part.id} className="space-y-1 rounded-md border border-neutral-200 p-2">
-                <div className="flex items-center justify-between text-xs text-neutral-500">
+              <div key={part.id} className="space-y-1 rounded-md border border-neutral-200 dark:border-neutral-800 p-2">
+                <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
                   <span>Part {idx + 1}</span>
                   <div className="flex gap-1">
                     <IconBtn
@@ -784,7 +784,7 @@ function Editor({
                       value: e.target.value,
                     })
                   }
-                  className="min-h-[80px] w-full resize-y rounded border border-neutral-200 p-2 text-sm"
+                  className="min-h-[80px] w-full resize-y rounded border border-neutral-200 dark:border-neutral-800 p-2 text-sm"
                   placeholder={`Part ${idx + 1}`}
                 />
               </div>
@@ -811,7 +811,7 @@ function Editor({
               <Code className="h-4 w-4" />
             </ToolbarBtn>
             {showVariables ? (
-              <div className="absolute left-0 top-full z-10 mt-1 w-40 rounded-md border border-neutral-200 bg-white p-1 shadow-lg">
+              <div className="absolute left-0 top-full z-10 mt-1 w-40 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg">
                 {['{date}', '{time}', '{day}', '{month}', '{year}'].map((v) => (
                   <button
                     key={v}
@@ -820,7 +820,7 @@ function Editor({
                       insertAtCursor(v)
                       setShowVariables(false)
                     }}
-                    className="block w-full rounded px-2 py-1 text-left text-sm hover:bg-neutral-100"
+                    className="block w-full rounded px-2 py-1 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   >
                     {v}
                   </button>
@@ -833,7 +833,7 @@ function Editor({
           </ToolbarBtn>
           <div className="ml-auto flex items-center gap-3 text-xs">
             {supportsThread ? (
-              <label className="flex items-center gap-1 text-neutral-600">
+              <label className="flex items-center gap-1 text-neutral-600 dark:text-neutral-300">
                 <input
                   type="checkbox"
                   checked={version.isThread}
@@ -848,7 +848,7 @@ function Editor({
               <span
                 className={cn(
                   'tabular-nums',
-                  currentLen > minLimit ? 'text-red-600 font-semibold' : 'text-neutral-500',
+                  currentLen > minLimit ? 'text-red-600 font-semibold' : 'text-neutral-500 dark:text-neutral-400',
                 )}
               >
                 {currentLen} / {minLimit.toLocaleString()}
@@ -858,8 +858,8 @@ function Editor({
         </div>
 
         {supportsFirstComment ? (
-          <div className="rounded-md border border-neutral-200 p-3">
-            <label className="flex items-center gap-2 text-sm font-medium text-neutral-700">
+          <div className="rounded-md border border-neutral-200 dark:border-neutral-800 p-3">
+            <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-200">
               <input
                 type="checkbox"
                 checked={version.firstCommentEnabled}
@@ -884,7 +884,7 @@ function Editor({
                   })
                 }
                 placeholder="First comment posted after your main post"
-                className="mt-2 min-h-[60px] w-full resize-y rounded border border-neutral-200 p-2 text-sm"
+                className="mt-2 min-h-[60px] w-full resize-y rounded border border-neutral-200 dark:border-neutral-800 p-2 text-sm"
               />
             ) : null}
           </div>
@@ -908,7 +908,7 @@ function ToolbarBtn({
       type="button"
       onClick={onClick}
       title={title}
-      className="rounded p-1.5 text-neutral-600 hover:bg-neutral-100"
+      className="rounded p-1.5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
     >
       {children}
     </button>
@@ -929,7 +929,7 @@ function IconBtn({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="rounded p-1 text-neutral-500 hover:bg-neutral-100 disabled:opacity-40"
+      className="rounded p-1 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-40"
     >
       {children}
     </button>
@@ -946,7 +946,7 @@ function RedditFields({
   return (
     <Card>
       <div className="space-y-3 p-4">
-        <div className="text-sm font-semibold text-neutral-700">Reddit options</div>
+        <div className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">Reddit options</div>
         <Field label="Title" htmlFor="reddit-title">
           <Input
             id="reddit-title"
@@ -972,7 +972,7 @@ function RedditFields({
               onChange={(e) =>
                 onChange({ postType: e.target.value as import('./types').RedditFields['postType'] })
               }
-              className="rounded border border-neutral-200 px-2 py-1"
+              className="rounded border border-neutral-200 dark:border-neutral-800 px-2 py-1"
             >
               <option value="text">Text</option>
               <option value="link">Link</option>
@@ -1039,7 +1039,7 @@ function PreviewTabs({
               'flex items-center gap-1 rounded-md px-2 py-1 text-xs',
               current === p
                 ? 'bg-neutral-900 text-white'
-                : 'bg-white text-neutral-600 hover:bg-neutral-100',
+                : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800',
             )}
           >
             <PlatformIcon platform={p} size={14} />

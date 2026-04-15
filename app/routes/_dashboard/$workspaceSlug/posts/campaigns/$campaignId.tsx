@@ -62,24 +62,24 @@ function CampaignDetailPage() {
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold text-neutral-900">{detail.name}</h2>
+              <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{detail.name}</h2>
               <CampaignStatusBadge status={detail.status} />
             </div>
-            <div className="text-sm text-neutral-500">
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">
               {publishedSteps} of {detail.steps.length} steps published
             </div>
           </div>
         </div>
       </div>
 
-      <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
+      <div className="h-2 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
         <div
           className="h-full bg-indigo-500 transition-all"
           style={{ width: `${(publishedSteps / Math.max(1, detail.steps.length)) * 100}%` }}
         />
       </div>
 
-      <div className="flex gap-1 border-b border-neutral-200">
+      <div className="flex gap-1 border-b border-neutral-200 dark:border-neutral-800">
         {(['steps', 'analytics'] as const).map((k) => (
           <button
             key={k}
@@ -89,7 +89,7 @@ function CampaignDetailPage() {
               'px-3 py-2 text-sm font-medium capitalize',
               tab === k
                 ? 'border-b-2 border-indigo-500 text-indigo-600'
-                : 'text-neutral-600 hover:text-neutral-900',
+                : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900',
             )}
           >
             {k}
@@ -131,7 +131,7 @@ function CampaignDetailPage() {
 
 function CampaignAnalyticsPanel({ analytics }: { analytics: CampaignAnalytics | null }) {
   if (!analytics) {
-    return <div className="py-12 text-center text-sm text-neutral-500">Analytics unavailable.</div>
+    return <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">Analytics unavailable.</div>
   }
   const { totals, byPlatform } = analytics
   const fmt = (n: number) => n.toLocaleString()
@@ -151,7 +151,7 @@ function CampaignAnalyticsPanel({ analytics }: { analytics: CampaignAnalytics | 
   return (
     <div className="space-y-4">
       {!hasData ? (
-        <div className="rounded border border-dashed border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-500">
+        <div className="rounded border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3 text-xs text-neutral-500 dark:text-neutral-400">
           No analytics snapshots have arrived for this campaign yet. Numbers will populate once the analytics sync runs.
         </div>
       ) : null}
@@ -159,8 +159,8 @@ function CampaignAnalyticsPanel({ analytics }: { analytics: CampaignAnalytics | 
         {kpis.map((k) => (
           <Card key={k.label}>
             <div className="p-3">
-              <div className="text-xs uppercase tracking-wider text-neutral-500">{k.label}</div>
-              <div className="mt-0.5 text-xl font-semibold text-neutral-900">{k.value}</div>
+              <div className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400">{k.label}</div>
+              <div className="mt-0.5 text-xl font-semibold text-neutral-900 dark:text-neutral-100">{k.value}</div>
             </div>
           </Card>
         ))}
@@ -168,9 +168,9 @@ function CampaignAnalyticsPanel({ analytics }: { analytics: CampaignAnalytics | 
       {byPlatform.length > 0 ? (
         <Card>
           <div className="p-4">
-            <h3 className="mb-2 text-sm font-semibold text-neutral-900">By platform</h3>
+            <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">By platform</h3>
             <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">
+              <thead className="text-left text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 <tr>
                   <th className="py-1">Platform</th>
                   <th className="py-1 text-right">Posts</th>
@@ -182,7 +182,7 @@ function CampaignAnalyticsPanel({ analytics }: { analytics: CampaignAnalytics | 
               </thead>
               <tbody>
                 {byPlatform.map((r) => (
-                  <tr key={r.platform} className="border-t border-neutral-100">
+                  <tr key={r.platform} className="border-t border-neutral-100 dark:border-neutral-800">
                     <td className="py-1.5">
                       <div className="flex items-center gap-1.5">
                         <PlatformIcon platform={r.platform} size={14} />
@@ -256,7 +256,7 @@ function StepCard({
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <div className="text-sm font-semibold text-neutral-900">Step {step.stepOrder + 1}</div>
+              <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Step {step.stepOrder + 1}</div>
               <div className="flex gap-0.5">
                 {[...platformIcons].map((p) => (
                   <PlatformIcon key={p} platform={p as keyof typeof PLATFORMS} size={16} />
@@ -264,7 +264,7 @@ function StepCard({
               </div>
               {step.post ? <PostStatusBadge status={step.post.status} /> : null}
             </div>
-            <div className="text-xs text-neutral-500">{triggerDesc}</div>
+            <div className="text-xs text-neutral-500 dark:text-neutral-400">{triggerDesc}</div>
           </div>
           <div className="flex flex-wrap gap-1">
             {canTrigger ? (
@@ -299,13 +299,13 @@ function StepCard({
         </div>
 
         {step.post ? (
-          <div className="rounded-md bg-neutral-50 p-3 text-sm text-neutral-700">
-            {step.post.defaultContent || <span className="italic text-neutral-400">No content</span>}
+          <div className="rounded-md bg-neutral-50 dark:bg-neutral-900 p-3 text-sm text-neutral-700 dark:text-neutral-200">
+            {step.post.defaultContent || <span className="italic text-neutral-400 dark:text-neutral-500">No content</span>}
           </div>
         ) : null}
 
         {step.post?.failureReason ? (
-          <div className="rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+          <div className="rounded-md border border-red-200 bg-red-50 dark:bg-red-950/40 p-2 text-xs text-red-700 dark:text-red-300">
             {step.post.failureReason}
           </div>
         ) : null}
@@ -318,7 +318,7 @@ function StepCard({
                 href={url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2 py-0.5 text-xs text-indigo-600 hover:bg-indigo-50"
+                className="inline-flex items-center gap-1 rounded-full border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 py-0.5 text-xs text-indigo-600 hover:bg-indigo-50"
               >
                 <ExternalLink className="h-3 w-3" /> View
               </a>
@@ -327,7 +327,7 @@ function StepCard({
         ) : null}
 
         {step.status === 'waiting' ? (
-          <div className="text-xs text-neutral-500">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400">
             Waiting for Step {depIndex + 1} to succeed
           </div>
         ) : null}

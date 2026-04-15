@@ -73,7 +73,7 @@ function SchedulePage() {
       <Card>
         <div className="space-y-3 p-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-neutral-900">Posting schedule</h3>
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Posting schedule</h3>
             <Button variant="outline" size="sm" onClick={copyMondayToAll}>
               Copy Monday to all days
             </Button>
@@ -86,9 +86,9 @@ function SchedulePage() {
               return order.indexOf(a.dayOfWeek) - order.indexOf(b.dayOfWeek)
             })
             .map((d) => (
-              <div key={d.dayOfWeek} className="space-y-2 rounded-md border border-neutral-200 p-3">
+              <div key={d.dayOfWeek} className="space-y-2 rounded-md border border-neutral-200 dark:border-neutral-800 p-3">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-neutral-900">
+                  <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                     {DAY_LABELS[d.dayOfWeek]}
                   </div>
                   <div className="flex items-center gap-1">
@@ -107,12 +107,12 @@ function SchedulePage() {
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {d.times.length === 0 ? (
-                    <span className="text-xs text-neutral-400">No slots</span>
+                    <span className="text-xs text-neutral-400 dark:text-neutral-500">No slots</span>
                   ) : (
                     d.times.map((t) => (
                       <span
                         key={t}
-                        className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700"
+                        className="inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300"
                       >
                         {t}
                         <button
@@ -129,7 +129,7 @@ function SchedulePage() {
                 </div>
               </div>
             ))}
-          {message ? <p className="text-sm text-neutral-600">{message}</p> : null}
+          {message ? <p className="text-sm text-neutral-600 dark:text-neutral-300">{message}</p> : null}
           <div className="flex justify-end">
             <Button onClick={save} disabled={saving}>
               {saving ? <Spinner /> : null} Save schedule
@@ -140,11 +140,11 @@ function SchedulePage() {
 
       <Card>
         <div className="space-y-2 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900">Next 5 queue slots</h3>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Next 5 queue slots</h3>
           {upcoming.length === 0 ? (
-            <p className="text-xs text-neutral-500">Add some slots above to preview.</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Add some slots above to preview.</p>
           ) : (
-            <ul className={cn('text-sm text-neutral-700')}>
+            <ul className={cn('text-sm text-neutral-700 dark:text-neutral-200')}>
               {upcoming.map((d) => (
                 <li key={d.toISOString()} className="py-0.5">
                   {d.toLocaleString(undefined, {

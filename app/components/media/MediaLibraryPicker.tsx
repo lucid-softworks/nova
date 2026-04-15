@@ -65,16 +65,16 @@ export function MediaLibraryPicker({
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className={cn('absolute inset-y-0 right-0 flex w-[min(720px,100%)] flex-col bg-white shadow-xl')}>
-        <div className="flex items-center justify-between border-b border-neutral-200 p-4">
+      <div className={cn('absolute inset-y-0 right-0 flex w-[min(720px,100%)] flex-col bg-white dark:bg-neutral-900 shadow-xl')}>
+        <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 p-4">
           <div className="text-lg font-semibold">Media Library</div>
-          <button type="button" onClick={onClose} className="rounded p-2 hover:bg-neutral-100" aria-label="Close">
+          <button type="button" onClick={onClose} className="rounded p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Close">
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex items-center gap-2 border-b border-neutral-200 p-3">
+        <div className="flex items-center gap-2 border-b border-neutral-200 dark:border-neutral-800 p-3">
           <div className="relative flex-1">
-            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -86,7 +86,7 @@ export function MediaLibraryPicker({
         </div>
         <div className="flex-1 overflow-auto p-4">
           {assets.length === 0 ? (
-            <div className="py-12 text-center text-sm text-neutral-500">
+            <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
               No assets yet. Upload via the Media page or the drop zone above.
             </div>
           ) : (
@@ -104,7 +104,7 @@ export function MediaLibraryPicker({
             </div>
           )}
         </div>
-        <div className="flex items-center justify-between border-t border-neutral-200 p-3">
+        <div className="flex items-center justify-between border-t border-neutral-200 dark:border-neutral-800 p-3">
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
           </Button>

@@ -86,10 +86,10 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={() => (open ? setOpen(false) : void openAndLoad())}
-        className="relative rounded-md p-2 hover:bg-neutral-100"
+        className="relative rounded-md p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
         aria-label="Notifications"
       >
-        <Bell className="h-5 w-5 text-neutral-700" />
+        <Bell className="h-5 w-5 text-neutral-700 dark:text-neutral-200" />
         {count > 0 ? (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
             {count > 99 ? '99+' : count}
@@ -97,9 +97,9 @@ export function NotificationBell() {
         ) : null}
       </button>
       {open ? (
-        <div className="absolute right-0 top-full z-50 mt-1 w-[360px] overflow-hidden rounded-md border border-neutral-200 bg-white shadow-lg">
-          <div className="flex items-center justify-between border-b border-neutral-100 px-3 py-2">
-            <div className="text-sm font-semibold text-neutral-900">Notifications</div>
+        <div className="absolute right-0 top-full z-50 mt-1 w-[360px] overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-lg">
+          <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 px-3 py-2">
+            <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Notifications</div>
             <button
               type="button"
               onClick={markAll}
@@ -109,7 +109,7 @@ export function NotificationBell() {
             </button>
           </div>
           {workspaceSlug ? (
-            <div className="border-b border-neutral-100 px-3 py-1.5 text-right">
+            <div className="border-b border-neutral-100 dark:border-neutral-800 px-3 py-1.5 text-right">
               <Link
                 to="/$workspaceSlug/notifications"
                 params={{ workspaceSlug }}
@@ -122,9 +122,9 @@ export function NotificationBell() {
           ) : null}
           <div className="max-h-[500px] overflow-auto">
             {loading ? (
-              <div className="px-3 py-6 text-center text-xs text-neutral-500">Loading…</div>
+              <div className="px-3 py-6 text-center text-xs text-neutral-500 dark:text-neutral-400">Loading…</div>
             ) : items.length === 0 ? (
-              <div className="px-3 py-10 text-center text-xs text-neutral-500">
+              <div className="px-3 py-10 text-center text-xs text-neutral-500 dark:text-neutral-400">
                 You&apos;re all caught up.
               </div>
             ) : (
@@ -134,15 +134,15 @@ export function NotificationBell() {
                   type="button"
                   onClick={() => onItemClick(n)}
                   className={cn(
-                    'flex w-full gap-2 border-b border-neutral-100 px-3 py-2 text-left last:border-0 hover:bg-neutral-50',
+                    'flex w-full gap-2 border-b border-neutral-100 dark:border-neutral-800 px-3 py-2 text-left last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800',
                     !n.readAt && 'border-l-4 border-l-indigo-500',
                   )}
                 >
                   <TypeIcon type={n.type} />
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-neutral-900">{n.title}</div>
-                    <div className="line-clamp-2 text-xs text-neutral-600">{n.body}</div>
-                    <div className="mt-0.5 text-[10px] uppercase tracking-wider text-neutral-400">
+                    <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{n.title}</div>
+                    <div className="line-clamp-2 text-xs text-neutral-600 dark:text-neutral-300">{n.body}</div>
+                    <div className="mt-0.5 text-[10px] uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
                       {relTime(n.createdAt)}
                     </div>
                   </div>
@@ -162,7 +162,7 @@ export function NotificationBell() {
 function TypeIcon({ type: _type }: { type: NotificationRow['type'] }) {
   void _type
   return (
-    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600">
       <Check className="h-3 w-3" />
     </div>
   )

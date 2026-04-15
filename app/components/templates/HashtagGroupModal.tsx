@@ -72,19 +72,19 @@ export function HashtagGroupModal({
               id="grp-tags"
               value={raw}
               onChange={(e) => setRaw(e.target.value)}
-              className="min-h-[120px] w-full resize-y rounded-md border border-neutral-200 p-2 text-sm"
+              className="min-h-[120px] w-full resize-y rounded-md border border-neutral-200 dark:border-neutral-800 p-2 text-sm"
               placeholder="design ux typography product"
             />
           </Field>
           <div>
-            <div className="mb-1 text-xs text-neutral-500">
+            <div className="mb-1 text-xs text-neutral-500 dark:text-neutral-400">
               {parsed.length} tag{parsed.length === 1 ? '' : 's'} preview
             </div>
             <div className="flex flex-wrap gap-1">
               {parsed.map((t) => (
                 <span
                   key={t}
-                  className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700"
+                  className="rounded-full bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300"
                 >
                   {t}
                 </span>

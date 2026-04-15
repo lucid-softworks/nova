@@ -196,7 +196,7 @@ export function CampaignComposer({
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-      <div className="flex items-center justify-end gap-2 border-t border-neutral-200 pt-4">
+      <div className="flex items-center justify-end gap-2 border-t border-neutral-200 dark:border-neutral-800 pt-4">
         <Button type="button" variant="ghost" onClick={() => onSave(true)} disabled={saving !== null}>
           {saving === 'draft' ? <Spinner /> : null}
           Save Campaign Draft
@@ -268,11 +268,11 @@ function StepCard({
 
   return (
     <Card>
-      <div className="flex items-center justify-between border-b border-neutral-100 p-3">
+      <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 p-3">
         <button
           type="button"
           onClick={() => onChange({ expanded: !step.expanded })}
-          className="flex items-center gap-2 text-sm font-semibold text-neutral-900"
+          className="flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100"
         >
           {step.expanded ? (
             <ChevronDown className="h-4 w-4" />
@@ -288,9 +288,9 @@ function StepCard({
       {step.expanded ? (
         <div className="space-y-3 p-4">
           <div>
-            <div className="mb-1 text-xs font-medium text-neutral-600">Accounts</div>
+            <div className="mb-1 text-xs font-medium text-neutral-600 dark:text-neutral-300">Accounts</div>
             {accounts.length === 0 ? (
-              <p className="text-sm text-neutral-500">No connected accounts.</p>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">No connected accounts.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {accounts.map((a) => {
@@ -311,7 +311,7 @@ function StepCard({
                         'flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs',
                         selected
                           ? 'border-transparent text-white'
-                          : 'border-neutral-200 bg-white text-neutral-700',
+                          : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200',
                       )}
                       style={selected ? { backgroundColor: p.color } : undefined}
                     >
@@ -333,13 +333,13 @@ function StepCard({
               />
             </Field>
           ) : (
-            <div className="space-y-2 rounded-md border border-neutral-200 p-3">
+            <div className="space-y-2 rounded-md border border-neutral-200 dark:border-neutral-800 p-3">
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-neutral-600">Depends on:</span>
+                <span className="text-neutral-600 dark:text-neutral-300">Depends on:</span>
                 <select
                   value={step.dependsOn ?? ''}
                   onChange={(e) => onChange({ dependsOn: e.target.value || null })}
-                  className="rounded border border-neutral-200 px-2 py-1 text-sm"
+                  className="rounded border border-neutral-200 dark:border-neutral-800 px-2 py-1 text-sm"
                 >
                   {availableDeps.map((s) => {
                     const i = allSteps.findIndex((x) => x.clientId === s.clientId)
@@ -372,7 +372,7 @@ function StepCard({
                     max={10080}
                     value={step.triggerDelayMinutes ?? 30}
                     onChange={(e) => onChange({ triggerDelayMinutes: Number(e.target.value) || 0 })}
-                    className="w-20 rounded border border-neutral-200 px-2 py-1 text-sm"
+                    className="w-20 rounded border border-neutral-200 dark:border-neutral-800 px-2 py-1 text-sm"
                   />
                   minutes after Step {dependsIdx + 1} succeeds
                 </label>
@@ -392,7 +392,7 @@ function StepCard({
                         triggerType: 'scheduled',
                       })
                     }
-                    className="rounded border border-neutral-200 px-2 py-1 text-sm"
+                    className="rounded border border-neutral-200 dark:border-neutral-800 px-2 py-1 text-sm"
                   />
                 </label>
               </div>
@@ -416,7 +416,7 @@ function StepCard({
           />
           <MediaMismatchBanner items={mismatches} />
           {platforms.length > 0 ? (
-            <div className="text-xs text-neutral-500">
+            <div className="text-xs text-neutral-500 dark:text-neutral-400">
               Platforms: {platforms.map((p) => PLATFORMS[p].label).join(', ')}
             </div>
           ) : null}
@@ -466,7 +466,7 @@ function StepContent({
         value={content}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Step content"
-        className="min-h-[120px] w-full resize-y rounded-md border border-neutral-200 p-3 text-sm"
+        className="min-h-[120px] w-full resize-y rounded-md border border-neutral-200 dark:border-neutral-800 p-3 text-sm"
       />
       <div className="flex items-center gap-2">
         <Button type="button" variant="ghost" size="sm" onClick={() => setAiOpen(true)}>
@@ -487,7 +487,7 @@ function StepContent({
             <Code className="h-3 w-3" /> Insert URL variable
           </Button>
           {open ? (
-            <div className="absolute left-0 top-full z-10 mt-1 w-72 rounded-md border border-neutral-200 bg-white p-1 shadow-lg">
+            <div className="absolute left-0 top-full z-10 mt-1 w-72 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg">
               {urlVariables.map((v) => (
                 <button
                   key={v.key}
@@ -496,10 +496,10 @@ function StepContent({
                     insertAtCursor(v.key)
                     setOpen(false)
                   }}
-                  className="block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-neutral-100"
+                  className="block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
                 >
                   <code className="text-xs">{v.key}</code>
-                  <div className="text-xs text-neutral-500">{v.label}</div>
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400">{v.label}</div>
                 </button>
               ))}
             </div>

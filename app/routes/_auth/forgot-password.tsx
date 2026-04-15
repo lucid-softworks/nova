@@ -66,7 +66,7 @@ function ForgotPasswordPage() {
             Send reset link
           </Button>
         </form>
-        <p className="mt-6 text-sm text-neutral-500">
+        <p className="mt-6 text-sm text-neutral-500 dark:text-neutral-400">
           <Link to="/login" className="text-indigo-600 hover:underline">
             Back to sign in
           </Link>

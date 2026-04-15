@@ -78,11 +78,11 @@ export function TemplateModal({
               id="tpl-content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="min-h-[140px] w-full resize-y rounded-md border border-neutral-200 p-2 text-sm"
+              className="min-h-[140px] w-full resize-y rounded-md border border-neutral-200 dark:border-neutral-800 p-2 text-sm"
             />
           </Field>
           <div>
-            <div className="mb-1 text-sm font-medium text-neutral-700">Platforms</div>
+            <div className="mb-1 text-sm font-medium text-neutral-700 dark:text-neutral-200">Platforms</div>
             <div className="flex flex-wrap gap-1">
               {PLATFORM_KEYS.map((p) => (
                 <button
@@ -93,7 +93,7 @@ export function TemplateModal({
                     'flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs',
                     platforms.includes(p)
                       ? 'border-transparent text-white'
-                      : 'border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50',
+                      : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800',
                   )}
                   style={platforms.includes(p) ? { backgroundColor: PLATFORMS[p].color } : undefined}
                   title={PLATFORMS[p].label}

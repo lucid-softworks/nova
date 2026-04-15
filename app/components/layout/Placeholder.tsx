@@ -9,7 +9,7 @@ export function Placeholder({ title, stage }: { title: string; stage: number }) 
           <CardDescription>Coming soon — {title} (Stage {stage})</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
             This page is a placeholder. It will be built out in Stage {stage}.
           </p>
         </CardContent>

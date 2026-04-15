@@ -68,11 +68,11 @@ function AcceptInvitationPage() {
 
   if (!invitation) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
         <Card>
           <div className="p-6 text-center">
             <h1 className="text-lg font-semibold">Invitation not found</h1>
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
               It may have expired or already been used.
             </p>
           </div>
@@ -82,7 +82,7 @@ function AcceptInvitationPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
       <Card>
         <div className="w-[min(480px,95vw)] space-y-4 p-6">
           <h1 className="text-xl font-semibold">You're invited to join {invitation.orgName}</h1>

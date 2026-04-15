@@ -100,7 +100,7 @@ function GeneralSettings() {
       <SettingsNav workspaceSlug={workspaceSlug} active="general" />
       <Card>
         <div className="space-y-4 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900">General</h3>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">General</h3>
           <Field label="Workspace name" htmlFor="name">
             <Input
               id="name"
@@ -131,7 +131,7 @@ function GeneralSettings() {
               value={settings.timezone}
               disabled={!canEdit}
               onChange={(e) => setSettings((s) => ({ ...s, timezone: e.target.value }))}
-              className="h-10 w-full rounded-md border border-neutral-200 bg-white px-2 text-sm"
+              className="h-10 w-full rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 text-sm"
             >
               {COMMON_TIMEZONES.map((t) => (
                 <option key={t} value={t}>
@@ -146,7 +146,7 @@ function GeneralSettings() {
               value={settings.defaultLanguage}
               disabled={!canEdit}
               onChange={(e) => setSettings((s) => ({ ...s, defaultLanguage: e.target.value }))}
-              className="h-10 w-full rounded-md border border-neutral-200 bg-white px-2 text-sm"
+              className="h-10 w-full rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 text-sm"
             >
               {LANGUAGES.map((l) => (
                 <option key={l.value} value={l.value}>
@@ -155,7 +155,7 @@ function GeneralSettings() {
               ))}
             </select>
           </Field>
-          {message ? <p className="text-sm text-neutral-600">{message}</p> : null}
+          {message ? <p className="text-sm text-neutral-600 dark:text-neutral-300">{message}</p> : null}
           <div className="flex justify-end">
             <Button onClick={save} disabled={saving || !canEdit}>
               {saving ? <Spinner /> : null} Save
@@ -167,8 +167,8 @@ function GeneralSettings() {
       {canEdit ? (
         <Card>
           <div className="space-y-3 p-4">
-            <h3 className="text-sm font-semibold text-red-700">Danger zone</h3>
-            <p className="text-xs text-neutral-500">
+            <h3 className="text-sm font-semibold text-red-700 dark:text-red-300">Danger zone</h3>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
               Deleting the workspace removes all posts, media, campaigns, and connected accounts.
               This cannot be undone.
             </p>
@@ -182,9 +182,9 @@ function GeneralSettings() {
       {deleteOpen ? (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/30" onClick={() => setDeleteOpen(false)} />
-          <div className="absolute left-1/2 top-1/2 w-[min(460px,95%)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-neutral-200 bg-white p-4 shadow-xl">
-            <h3 className="text-sm font-semibold text-red-700">Delete &quot;{settings.name}&quot;?</h3>
-            <p className="mt-1 text-xs text-neutral-500">
+          <div className="absolute left-1/2 top-1/2 w-[min(460px,95%)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-xl">
+            <h3 className="text-sm font-semibold text-red-700 dark:text-red-300">Delete &quot;{settings.name}&quot;?</h3>
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
               Type the workspace name below to confirm. This cannot be undone.
             </p>
             <Input

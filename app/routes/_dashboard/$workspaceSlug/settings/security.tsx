@@ -89,13 +89,13 @@ function TwoFactorCard() {
           {enabled ? (
             <ShieldCheck className="h-4 w-4 text-green-600" />
           ) : (
-            <Shield className="h-4 w-4 text-neutral-500" />
+            <Shield className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
           )}
-          <h3 className="text-sm font-semibold text-neutral-900">Two-factor authentication</h3>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Two-factor authentication</h3>
         </div>
         {enabled ? (
           <>
-            <p className="text-sm text-neutral-600">2FA is active on this account.</p>
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">2FA is active on this account.</p>
             <Field label="Confirm password to disable" htmlFor="tfa-pw">
               <Input
                 id="tfa-pw"
@@ -110,10 +110,10 @@ function TwoFactorCard() {
           </>
         ) : qr ? (
           <>
-            <p className="text-sm text-neutral-600">
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">
               Scan the TOTP URI with your authenticator, then enter a code to finish enrolment.
             </p>
-            <code className="block break-all rounded bg-neutral-50 p-2 text-[11px]">{qr.totpURI}</code>
+            <code className="block break-all rounded bg-neutral-50 dark:bg-neutral-900 p-2 text-[11px]">{qr.totpURI}</code>
             {qr.backupCodes.length > 0 ? (
               <div>
                 <div className="mb-1 text-xs font-semibold">Backup codes (save these)</div>
@@ -133,7 +133,7 @@ function TwoFactorCard() {
           </>
         ) : (
           <>
-            <p className="text-sm text-neutral-600">
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">
               Add a time-based code from your authenticator app as a second factor.
             </p>
             <Field label="Confirm password to enable" htmlFor="tfa-pw-enable">
@@ -149,7 +149,7 @@ function TwoFactorCard() {
             </Button>
           </>
         )}
-        {message ? <p className="text-sm text-neutral-600">{message}</p> : null}
+        {message ? <p className="text-sm text-neutral-600 dark:text-neutral-300">{message}</p> : null}
       </div>
     </Card>
   )
@@ -200,23 +200,23 @@ function PasskeyCard() {
     <Card>
       <div className="space-y-3 p-4">
         <div className="flex items-center gap-2">
-          <KeyRound className="h-4 w-4 text-neutral-500" />
-          <h3 className="text-sm font-semibold text-neutral-900">Passkeys</h3>
+          <KeyRound className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Passkeys</h3>
         </div>
         {loading ? (
           <Spinner />
         ) : keys.length === 0 ? (
-          <p className="text-sm text-neutral-500">No passkeys yet.</p>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">No passkeys yet.</p>
         ) : (
           <div className="space-y-2">
             {keys.map((k) => (
               <div
                 key={k.id}
-                className="flex items-center justify-between rounded-md border border-neutral-200 p-2 text-sm"
+                className="flex items-center justify-between rounded-md border border-neutral-200 dark:border-neutral-800 p-2 text-sm"
               >
                 <div>
-                  <div className="font-medium text-neutral-900">{k.name ?? 'Unnamed passkey'}</div>
-                  <div className="text-xs text-neutral-500">
+                  <div className="font-medium text-neutral-900 dark:text-neutral-100">{k.name ?? 'Unnamed passkey'}</div>
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400">
                     Added {new Date(k.createdAt).toLocaleDateString()}
                   </div>
                 </div>
@@ -230,7 +230,7 @@ function PasskeyCard() {
         <Button onClick={addPasskey} disabled={busy}>
           {busy ? <Spinner /> : null} Add passkey
         </Button>
-        {message ? <p className="text-xs text-neutral-500">{message}</p> : null}
+        {message ? <p className="text-xs text-neutral-500 dark:text-neutral-400">{message}</p> : null}
       </div>
     </Card>
   )
@@ -272,8 +272,8 @@ function SessionsCard() {
       <div className="space-y-3 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Smartphone className="h-4 w-4 text-neutral-500" />
-            <h3 className="text-sm font-semibold text-neutral-900">Active sessions</h3>
+            <Smartphone className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Active sessions</h3>
           </div>
           <Button variant="outline" size="sm" className="text-red-600" onClick={revokeAll}>
             Log out everywhere
@@ -282,16 +282,16 @@ function SessionsCard() {
         {loading ? (
           <Spinner />
         ) : sessions.length === 0 ? (
-          <p className="text-sm text-neutral-500">Just this one.</p>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">Just this one.</p>
         ) : (
           <div className="space-y-2">
             {sessions.map((s) => (
-              <div key={s.id} className="flex items-center justify-between rounded-md border border-neutral-200 p-2 text-sm">
+              <div key={s.id} className="flex items-center justify-between rounded-md border border-neutral-200 dark:border-neutral-800 p-2 text-sm">
                 <div className="min-w-0">
-                  <div className="truncate text-xs text-neutral-600">
+                  <div className="truncate text-xs text-neutral-600 dark:text-neutral-300">
                     {s.userAgent ?? 'Unknown device'}
                   </div>
-                  <div className="text-[11px] text-neutral-500">
+                  <div className="text-[11px] text-neutral-500 dark:text-neutral-400">
                     {s.ipAddress ?? '—'} · {new Date(s.createdAt).toLocaleString()}
                   </div>
                 </div>

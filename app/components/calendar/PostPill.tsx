@@ -43,7 +43,7 @@ export function PostPill({
       {...listeners}
       {...attributes}
       className={cn(
-        'flex w-full items-center gap-1 overflow-hidden rounded border border-l-4 border-neutral-200 bg-white px-1.5 py-0.5 text-left text-[11px] leading-tight hover:bg-neutral-50',
+        'flex w-full items-center gap-1 overflow-hidden rounded border border-l-4 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-1.5 py-0.5 text-left text-[11px] leading-tight hover:bg-neutral-50 dark:hover:bg-neutral-800',
         isDragging && 'opacity-40',
         compact && 'py-[1px]',
       )}
@@ -55,11 +55,11 @@ export function PostPill({
       ) : post.type === 'reshare' ? (
         <Repeat2 className="h-2.5 w-2.5 shrink-0 text-purple-600" />
       ) : null}
-      <span className="truncate flex-1 text-neutral-900">
+      <span className="truncate flex-1 text-neutral-900 dark:text-neutral-100">
         {post.campaignId && post.campaignName ? <span className="font-medium">{post.campaignName} · </span> : null}
         {preview}
       </span>
-      <span className="shrink-0 text-neutral-500">{fmtTime(time)}</span>
+      <span className="shrink-0 text-neutral-500 dark:text-neutral-400">{fmtTime(time)}</span>
     </button>
   )
 }

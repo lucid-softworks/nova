@@ -51,7 +51,7 @@ function OnboardingPage() {
   const [createdSlug, setCreatedSlug] = useState<string | null>(null)
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
       <div className="w-full max-w-lg">
         <div className="mb-6 flex items-center justify-center gap-2">
           {[1, 2, 3].map((n) => (
@@ -181,7 +181,7 @@ function Step2({
                   {...form.register(`invites.${i}.email` as const)}
                 />
                 <select
-                  className="h-10 rounded-md border border-neutral-200 bg-white px-2 text-sm"
+                  className="h-10 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 text-sm"
                   {...form.register(`invites.${i}.role` as const)}
                 >
                   <option value="admin">Admin</option>

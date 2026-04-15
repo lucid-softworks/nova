@@ -26,7 +26,7 @@ export function MediaPreviewModal({
       <DialogContent className="max-w-4xl">
         {asset ? (
           <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
-            <div className="flex min-h-[240px] items-center justify-center rounded bg-neutral-100">
+            <div className="flex min-h-[240px] items-center justify-center rounded bg-neutral-100 dark:bg-neutral-800">
               {asset.kind === 'video' ? (
                 <video src={asset.url} controls className="max-h-[70vh] w-full" />
               ) : (
@@ -38,7 +38,7 @@ export function MediaPreviewModal({
                 <DialogTitle className="break-all">{asset.originalName}</DialogTitle>
                 <DialogDescription>{asset.mimeType}</DialogDescription>
               </DialogHeader>
-              <dl className="space-y-1.5 text-sm text-neutral-600">
+              <dl className="space-y-1.5 text-sm text-neutral-600 dark:text-neutral-300">
                 {asset.width && asset.height ? (
                   <Row label="Dimensions">{asset.width} × {asset.height}</Row>
                 ) : null}
@@ -89,8 +89,8 @@ export function MediaPreviewModal({
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-2">
-      <dt className="text-neutral-500">{label}</dt>
-      <dd className="truncate font-medium text-neutral-900">{children}</dd>
+      <dt className="text-neutral-500 dark:text-neutral-400">{label}</dt>
+      <dd className="truncate font-medium text-neutral-900 dark:text-neutral-100">{children}</dd>
     </div>
   )
 }

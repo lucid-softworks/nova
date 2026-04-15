@@ -25,14 +25,14 @@ function UsageBar({ label, used, limit }: { label: string; used: number; limit: 
   const pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0
   const danger = pct >= 90
   return (
-    <div className="rounded-md border border-neutral-200 p-2">
+    <div className="rounded-md border border-neutral-200 dark:border-neutral-800 p-2">
       <div className="flex items-baseline justify-between">
-        <div className="text-xs text-neutral-600">{label}</div>
-        <div className="text-xs font-medium text-neutral-900">
+        <div className="text-xs text-neutral-600 dark:text-neutral-300">{label}</div>
+        <div className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
           {used}/{limit}
         </div>
       </div>
-      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-neutral-100">
+      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
         <div
           className={danger ? 'h-full bg-red-500' : 'h-full bg-indigo-500'}
           style={{ width: `${pct}%` }}
@@ -82,12 +82,12 @@ function BillingSettings() {
       <Card>
         <div className="space-y-3 p-4">
           <div>
-            <h3 className="text-sm font-semibold text-neutral-900">Billing</h3>
-            <p className="text-xs text-neutral-500">
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Billing</h3>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
               Provider: <span className="font-medium">{summary.provider}</span>
             </p>
           </div>
-          <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm">
+          <div className="rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3 text-sm">
             <div>
               Current plan: <span className="font-medium">{summary.plan ?? 'Free'}</span>
             </div>
@@ -95,7 +95,7 @@ function BillingSettings() {
               Status: <span className="font-medium">{summary.status}</span>
             </div>
             {summary.currentPeriodEnd ? (
-              <div className="text-xs text-neutral-500">
+              <div className="text-xs text-neutral-500 dark:text-neutral-400">
                 Renews on {new Date(summary.currentPeriodEnd).toLocaleDateString()}
               </div>
             ) : null}
@@ -120,12 +120,12 @@ function BillingSettings() {
           </div>
 
           {disabled ? (
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
               Billing is disabled. Set <code>BILLING_PROVIDER</code> in your environment to
               enable Stripe, Polar, Dodo, Autumn, Creem, or Chargebee.
             </p>
           ) : !canManage ? (
-            <p className="text-xs text-neutral-500">Only workspace admins can manage billing.</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Only workspace admins can manage billing.</p>
           ) : summary.status === 'active' || summary.status === 'trialing' ? (
             <div>
               <Button onClick={manage} disabled={busy !== null}>

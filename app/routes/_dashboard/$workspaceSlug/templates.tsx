@@ -47,9 +47,9 @@ function TemplatesPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-neutral-900">Templates</h2>
+        <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">Templates</h2>
       </div>
-      <div className="flex gap-1 border-b border-neutral-200">
+      <div className="flex gap-1 border-b border-neutral-200 dark:border-neutral-800">
         <TabBtn active={tab === 'templates'} onClick={() => setTab('templates')}>
           Templates
         </TabBtn>
@@ -97,7 +97,7 @@ function TabBtn({
       onClick={onClick}
       className={cn(
         'px-3 py-2 text-sm font-medium',
-        active ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-neutral-600 hover:text-neutral-900',
+        active ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900',
       )}
     >
       {children}
@@ -133,7 +133,7 @@ function TemplatesTab({
       </div>
       {templates.length === 0 ? (
         <Card>
-          <div className="p-8 text-center text-sm text-neutral-500">
+          <div className="p-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
             No templates yet. Click &quot;Create Template&quot; to make your first.
           </div>
         </Card>
@@ -194,16 +194,16 @@ function TemplateCard({
         <button
           type="button"
           onClick={() => setMenuOpen((o) => !o)}
-          className="absolute right-2 top-2 rounded p-1 text-neutral-500 hover:bg-neutral-100"
+          className="absolute right-2 top-2 rounded p-1 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
           aria-label="Menu"
         >
           <MoreHorizontal className="h-4 w-4" />
         </button>
         {menuOpen ? (
-          <div className="absolute right-2 top-8 z-10 w-40 rounded-md border border-neutral-200 bg-white p-1 text-sm shadow-lg">
+          <div className="absolute right-2 top-8 z-10 w-40 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 text-sm shadow-lg">
             <button
               type="button"
-              className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100"
+              className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
               onClick={() => {
                 setMenuOpen(false)
                 onEdit()
@@ -223,16 +223,16 @@ function TemplateCard({
             </button>
           </div>
         ) : null}
-        <div className="pr-8 text-sm font-semibold text-neutral-900">{template.name}</div>
-        <div className="line-clamp-3 whitespace-pre-wrap text-xs text-neutral-600">
-          {template.content || <span className="italic text-neutral-400">No content</span>}
+        <div className="pr-8 text-sm font-semibold text-neutral-900 dark:text-neutral-100">{template.name}</div>
+        <div className="line-clamp-3 whitespace-pre-wrap text-xs text-neutral-600 dark:text-neutral-300">
+          {template.content || <span className="italic text-neutral-400 dark:text-neutral-500">No content</span>}
         </div>
         <div className="flex items-center gap-0.5">
           {template.platforms.slice(0, 6).map((p) => (
             <PlatformIcon key={p} platform={p} size={14} />
           ))}
           {template.platforms.length === 0 ? (
-            <span className="text-xs text-neutral-400">No platforms</span>
+            <span className="text-xs text-neutral-400 dark:text-neutral-500">No platforms</span>
           ) : null}
         </div>
         <Button type="button" variant="outline" size="sm" onClick={onUse} className="w-full">
@@ -269,7 +269,7 @@ function HashtagsTab({
       </div>
       {groups.length === 0 ? (
         <Card>
-          <div className="p-8 text-center text-sm text-neutral-500">
+          <div className="p-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
             No hashtag groups yet.
           </div>
         </Card>
@@ -332,27 +332,27 @@ function GroupRow({
           <button
             type="button"
             onClick={() => setExpanded((e) => !e)}
-            className="rounded p-0.5 text-neutral-500 hover:bg-neutral-100"
+            className="rounded p-0.5 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
           >
             {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </button>
-          <div className="text-sm font-semibold text-neutral-900">{group.name}</div>
-          <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-xs text-neutral-600">
+          <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{group.name}</div>
+          <span className="rounded bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 text-xs text-neutral-600 dark:text-neutral-300">
             {group.hashtags.length}
           </span>
           <button
             type="button"
             onClick={() => setMenuOpen((o) => !o)}
-            className="ml-auto rounded p-1 text-neutral-500 hover:bg-neutral-100"
+            className="ml-auto rounded p-1 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
             aria-label="Menu"
           >
             <MoreHorizontal className="h-4 w-4" />
           </button>
           {menuOpen ? (
-            <div className="absolute right-2 top-8 z-10 w-36 rounded-md border border-neutral-200 bg-white p-1 text-sm shadow-lg">
+            <div className="absolute right-2 top-8 z-10 w-36 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 text-sm shadow-lg">
               <button
                 type="button"
-                className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100"
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                 onClick={() => {
                   setMenuOpen(false)
                   onEdit()
@@ -377,7 +377,7 @@ function GroupRow({
           {visible.map((t) => (
             <span
               key={t}
-              className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700"
+              className="rounded-full bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300"
             >
               {t}
             </span>
@@ -386,7 +386,7 @@ function GroupRow({
             <button
               type="button"
               onClick={() => setExpanded(true)}
-              className="text-xs text-neutral-500 hover:underline"
+              className="text-xs text-neutral-500 dark:text-neutral-400 hover:underline"
             >
               +{hidden} more
             </button>

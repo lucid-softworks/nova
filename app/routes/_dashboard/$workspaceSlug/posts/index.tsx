@@ -142,20 +142,20 @@ function PostsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-neutral-900">Posts</h2>
+          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">Posts</h2>
         </div>
-        <div className="inline-flex rounded-md border border-neutral-200 bg-white p-0.5 text-xs">
+        <div className="inline-flex rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0.5 text-xs">
           <button
             type="button"
             onClick={() => setView('flat')}
-            className={cn('rounded px-2 py-1', view === 'flat' ? 'bg-neutral-900 text-white' : 'text-neutral-600')}
+            className={cn('rounded px-2 py-1', view === 'flat' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
           >
             Flat
           </button>
           <button
             type="button"
             onClick={() => setView('grouped')}
-            className={cn('rounded px-2 py-1', view === 'grouped' ? 'bg-neutral-900 text-white' : 'text-neutral-600')}
+            className={cn('rounded px-2 py-1', view === 'grouped' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
           >
             Grouped
           </button>
@@ -167,7 +167,7 @@ function PostsPage() {
           {onHoldCampaigns.map((c) => (
             <div
               key={c.id}
-              className="flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 p-3 text-sm"
+              className="flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/40 p-3 text-sm"
             >
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-700" />
               <div className="flex-1">
@@ -189,7 +189,7 @@ function PostsPage() {
         </div>
       ) : null}
 
-      <div className="flex flex-wrap gap-1 border-b border-neutral-200">
+      <div className="flex flex-wrap gap-1 border-b border-neutral-200 dark:border-neutral-800">
         {TABS.map((t) => (
           <button
             key={t.key}
@@ -199,11 +199,11 @@ function PostsPage() {
               'flex items-center gap-1.5 px-3 py-2 text-sm font-medium',
               tab === t.key
                 ? 'border-b-2 border-indigo-500 text-indigo-600'
-                : 'text-neutral-600 hover:text-neutral-900',
+                : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900',
             )}
           >
             {t.label}
-            <span className="rounded bg-neutral-100 px-1.5 text-xs text-neutral-600">
+            <span className="rounded bg-neutral-100 dark:bg-neutral-800 px-1.5 text-xs text-neutral-600 dark:text-neutral-300">
               {counts[t.key] ?? 0}
             </span>
           </button>
@@ -212,7 +212,7 @@ function PostsPage() {
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+          <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -220,13 +220,13 @@ function PostsPage() {
             className="pl-8"
           />
         </div>
-        <div className="inline-flex rounded-md border border-neutral-200 bg-white p-0.5 text-xs">
+        <div className="inline-flex rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0.5 text-xs">
           {(['all', 'original', 'reshare'] as const).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setType(t)}
-              className={cn('rounded px-2 py-1 capitalize', type === t ? 'bg-neutral-900 text-white' : 'text-neutral-600')}
+              className={cn('rounded px-2 py-1 capitalize', type === t ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
             >
               {t}
             </button>
@@ -251,7 +251,7 @@ function PostsPage() {
         <select
           value={authorId}
           onChange={(e) => setAuthorId(e.target.value)}
-          className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs"
+          className="rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 py-1 text-xs"
           title="Filter by author"
         >
           <option value="">All authors</option>
@@ -261,7 +261,7 @@ function PostsPage() {
             </option>
           ))}
         </select>
-        <div className="flex items-center gap-1 text-xs text-neutral-600">
+        <div className="flex items-center gap-1 text-xs text-neutral-600 dark:text-neutral-300">
           <span>From</span>
           <Input
             type="date"
@@ -283,7 +283,7 @@ function PostsPage() {
                 setFromDate('')
                 setToDate('')
               }}
-              className="rounded px-1 text-neutral-500 hover:bg-neutral-100"
+              className="rounded px-1 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
               title="Clear dates"
             >
               ×
@@ -294,7 +294,7 @@ function PostsPage() {
       </div>
 
       {selectedIds.size > 0 ? (
-        <div className="flex items-center justify-between rounded-md border border-neutral-200 bg-white p-2 text-sm">
+        <div className="flex items-center justify-between rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-2 text-sm">
           <div>{selectedIds.size} selected</div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={bulkToDraft}>
@@ -308,9 +308,9 @@ function PostsPage() {
       ) : null}
 
       {view === 'flat' ? (
-        <div className="overflow-hidden rounded-md border border-neutral-200 bg-white">
+        <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
           {rows.length === 0 ? (
-            <div className="py-12 text-center text-sm text-neutral-500">No posts.</div>
+            <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">No posts.</div>
           ) : (
             rows.map((r) => (
               <PostRow
@@ -339,7 +339,7 @@ function PostsPage() {
             />
           ))}
           {standalonePosts.length > 0 ? (
-            <div className="overflow-hidden rounded-md border border-neutral-200 bg-white">
+            <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
               {standalonePosts.map((r) => (
                 <PostRow
                   key={r.id}
@@ -353,7 +353,7 @@ function PostsPage() {
             </div>
           ) : null}
           {campaigns.length === 0 && standalonePosts.length === 0 ? (
-            <div className="py-12 text-center text-sm text-neutral-500">No posts.</div>
+            <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">No posts.</div>
           ) : null}
         </div>
       )}
@@ -384,12 +384,12 @@ function CampaignGroupRow({
   }
 
   return (
-    <div className="overflow-hidden rounded-md border border-neutral-200 bg-white">
+    <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
       <div className="flex items-center gap-3 p-3">
         <button
           type="button"
           onClick={() => setExpanded((e) => !e)}
-          className="rounded p-0.5 text-neutral-500 hover:bg-neutral-100"
+          className="rounded p-0.5 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
         >
           {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </button>
@@ -399,16 +399,16 @@ function CampaignGroupRow({
             <Link
               to="/$workspaceSlug/posts/campaigns/$campaignId"
               params={{ workspaceSlug, campaignId: campaign.id }}
-              className="text-sm font-semibold text-neutral-900 hover:underline"
+              className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 hover:underline"
             >
               {campaign.name}
             </Link>
             <CampaignStatusBadge status={campaign.status} />
-            <span className="text-xs text-neutral-500">
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">
               {published}/{campaign.steps.length} done
             </span>
           </div>
-          <div className="mt-0.5 flex items-center gap-1 text-xs text-neutral-500">
+          <div className="mt-0.5 flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
             <span>{campaign.steps.length} steps ·</span>
             <div className="flex gap-0.5">
               {[...platformsInCampaign].slice(0, 6).map((p) => (
@@ -424,12 +424,12 @@ function CampaignGroupRow({
         />
       </div>
       {expanded ? (
-        <div className="border-t border-neutral-100">
+        <div className="border-t border-neutral-100 dark:border-neutral-800">
           {campaign.steps.map((s) =>
             s.post ? (
               <div key={s.id}>
-                <div className="flex items-center gap-2 px-12 pt-3 text-xs text-neutral-500">
-                  <span className="font-semibold text-neutral-700">Step {s.stepOrder + 1}</span>
+                <div className="flex items-center gap-2 px-12 pt-3 text-xs text-neutral-500 dark:text-neutral-400">
+                  <span className="font-semibold text-neutral-700 dark:text-neutral-200">Step {s.stepOrder + 1}</span>
                   <PostStatusBadge status={s.post.status} />
                   {s.triggerType === 'delay' ? (
                     <span>delay {s.triggerDelayMinutes}m after step {campaign.steps.findIndex((x) => x.id === s.dependsOnStepId) + 1}</span>
@@ -485,17 +485,17 @@ function CampaignActionsMenu({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="rounded p-1 text-neutral-500 hover:bg-neutral-100"
+        className="rounded p-1 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
         aria-label="Campaign actions"
         disabled={busy}
       >
         <MoreHorizontal className="h-4 w-4" />
       </button>
       {open ? (
-        <div className="absolute right-0 top-full z-10 mt-1 w-52 rounded-md border border-neutral-200 bg-white p-1 text-sm shadow-lg">
+        <div className="absolute right-0 top-full z-10 mt-1 w-52 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 text-sm shadow-lg">
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 disabled:opacity-50"
+            className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50"
             onClick={() =>
               run(() =>
                 pauseCampaign({ data: { workspaceSlug, campaignId: campaign.id } }),
@@ -520,7 +520,7 @@ function CampaignActionsMenu({
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 disabled:opacity-50"
+            className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50"
             onClick={() =>
               run(() =>
                 duplicateCampaign({ data: { workspaceSlug, campaignId: campaign.id } }),

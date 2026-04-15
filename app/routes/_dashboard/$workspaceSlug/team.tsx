@@ -38,10 +38,10 @@ const ROLE_LABELS: Record<Role, string> = {
   viewer: 'Viewer',
 }
 const ROLE_COLORS: Record<Role, string> = {
-  admin: 'bg-purple-50 text-purple-700',
-  manager: 'bg-blue-50 text-blue-700',
-  editor: 'bg-green-50 text-green-700',
-  viewer: 'bg-neutral-100 text-neutral-700',
+  admin: 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300',
+  manager: 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300',
+  editor: 'bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300',
+  viewer: 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200',
 }
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/team')({
@@ -146,8 +146,8 @@ function TeamPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-neutral-900">Team</h2>
-          <p className="text-sm text-neutral-500">Manage who can see and edit this workspace.</p>
+          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">Team</h2>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">Manage who can see and edit this workspace.</p>
         </div>
         {canManage ? (
           <Button onClick={() => setInviteOpen(true)}>
@@ -160,7 +160,7 @@ function TeamPage() {
         <div className="overflow-hidden rounded-md">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-neutral-100 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              <tr className="border-b border-neutral-100 dark:border-neutral-800 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2">Member</th>
                 <th className="px-4 py-2">Role</th>
                 <th className="px-4 py-2">Joined</th>
@@ -169,22 +169,22 @@ function TeamPage() {
             </thead>
             <tbody>
               {members.map((m) => (
-                <tr key={m.id} className="border-b border-neutral-100 last:border-0">
+                <tr key={m.id} className="border-b border-neutral-100 dark:border-neutral-800 last:border-0">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {m.image ? (
                         <img src={m.image} alt="" className="h-8 w-8 rounded-full" />
                       ) : (
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-semibold text-neutral-600 dark:text-neutral-300">
                           {m.name.charAt(0).toUpperCase()}
                         </div>
                       )}
                       <div>
-                        <div className="text-sm font-medium text-neutral-900">
+                        <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                           {m.name}
-                          {m.isSelf ? <span className="ml-1 text-xs text-neutral-500">(you)</span> : null}
+                          {m.isSelf ? <span className="ml-1 text-xs text-neutral-500 dark:text-neutral-400">(you)</span> : null}
                         </div>
-                        <div className="text-xs text-neutral-500">{m.email}</div>
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400">{m.email}</div>
                       </div>
                     </div>
                   </td>
@@ -194,7 +194,7 @@ function TeamPage() {
                         value={m.role}
                         onChange={(e) => handleRoleChange(m, e.target.value as Role)}
                         className={cn(
-                          'rounded-full border border-neutral-200 px-2 py-0.5 text-xs font-medium',
+                          'rounded-full border border-neutral-200 dark:border-neutral-800 px-2 py-0.5 text-xs font-medium',
                           ROLE_COLORS[m.role],
                         )}
                       >
@@ -210,7 +210,7 @@ function TeamPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs text-neutral-500">
+                  <td className="px-4 py-3 text-xs text-neutral-500 dark:text-neutral-400">
                     {m.joinedAt
                       ? new Date(m.joinedAt).toLocaleDateString(undefined, {
                           month: 'short',
@@ -236,10 +236,10 @@ function TeamPage() {
       {canManage && invitations.length > 0 ? (
         <Card>
           <div className="p-4">
-            <h3 className="mb-2 text-sm font-semibold text-neutral-900">Pending invitations</h3>
+            <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">Pending invitations</h3>
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                   <th className="py-1">Email</th>
                   <th className="py-1">Role</th>
                   <th className="py-1">Invited by</th>
@@ -249,15 +249,15 @@ function TeamPage() {
               </thead>
               <tbody>
                 {invitations.map((inv) => (
-                  <tr key={inv.id} className="border-t border-neutral-100">
+                  <tr key={inv.id} className="border-t border-neutral-100 dark:border-neutral-800">
                     <td className="py-1.5">{inv.email}</td>
                     <td className="py-1.5">
                       <span className={cn('rounded-full px-2 py-0.5 text-xs', ROLE_COLORS[inv.role])}>
                         {ROLE_LABELS[inv.role]}
                       </span>
                     </td>
-                    <td className="py-1.5 text-xs text-neutral-500">{inv.inviterName ?? '—'}</td>
-                    <td className="py-1.5 text-xs text-neutral-500">
+                    <td className="py-1.5 text-xs text-neutral-500 dark:text-neutral-400">{inv.inviterName ?? '—'}</td>
+                    <td className="py-1.5 text-xs text-neutral-500 dark:text-neutral-400">
                       {new Date(inv.expiresAt).toLocaleDateString()}
                     </td>
                     <td className="py-1.5 text-right">
@@ -277,8 +277,8 @@ function TeamPage() {
         <Card>
           <div className="space-y-3 p-4">
             <div>
-              <h3 className="text-sm font-semibold text-neutral-900">Approval workflow</h3>
-              <p className="text-xs text-neutral-500">
+              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Approval workflow</h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
                 When enabled, posts from Editors require approval before they publish.
               </p>
             </div>
@@ -292,9 +292,9 @@ function TeamPage() {
             </label>
             {requireApproval ? (
               <div className="space-y-2">
-                <div className="text-xs font-medium text-neutral-600">Approvers</div>
+                <div className="text-xs font-medium text-neutral-600 dark:text-neutral-300">Approvers</div>
                 {approverCandidates.length === 0 ? (
-                  <p className="text-xs text-neutral-500">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
                     Promote a member to Manager or Admin to make them an approver.
                   </p>
                 ) : (
@@ -310,7 +310,7 @@ function TeamPage() {
                             'flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs',
                             selected
                               ? 'border-indigo-500 bg-indigo-500 text-white'
-                              : 'border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50',
+                              : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800',
                           )}
                         >
                           {m.name}
@@ -402,7 +402,7 @@ function InviteModal({
               id="inv-role"
               value={role}
               onChange={(e) => setRole(e.target.value as Role)}
-              className="h-10 w-full rounded-md border border-neutral-200 bg-white px-2 text-sm"
+              className="h-10 w-full rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 text-sm"
             >
               <option value="admin">Admin</option>
               <option value="manager">Manager</option>

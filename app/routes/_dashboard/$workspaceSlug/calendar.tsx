@@ -191,18 +191,18 @@ function CalendarPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-md border border-neutral-200 bg-white p-0.5 text-xs">
+          <div className="inline-flex rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0.5 text-xs">
             <button
               type="button"
               onClick={() => setView('month')}
-              className={cn('rounded px-2 py-1', view === 'month' ? 'bg-neutral-900 text-white' : 'text-neutral-600')}
+              className={cn('rounded px-2 py-1', view === 'month' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
             >
               Month
             </button>
             <button
               type="button"
               onClick={() => setView('week')}
-              className={cn('rounded px-2 py-1', view === 'week' ? 'bg-neutral-900 text-white' : 'text-neutral-600')}
+              className={cn('rounded px-2 py-1', view === 'week' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
             >
               Week
             </button>
@@ -216,7 +216,7 @@ function CalendarPage() {
           <Button size="sm" variant="outline" onClick={goNext} aria-label="Next">
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <div className="text-sm font-semibold text-neutral-900">{title}</div>
+          <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{title}</div>
           {loading ? <Spinner /> : null}
         </div>
         <Button asChild size="sm">
@@ -275,8 +275,8 @@ function MonthGrid({
   const days = monthGrid(anchor)
   const month = anchor.getMonth()
   return (
-    <div className="overflow-hidden rounded-md border border-neutral-200 bg-white">
-      <div className="grid grid-cols-7 border-b border-neutral-200 bg-neutral-50 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
+    <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+      <div className="grid grid-cols-7 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
         {DAY_LABELS.map((l) => (
           <div key={l} className="px-2 py-1.5">
             {l}
@@ -325,9 +325,9 @@ function DayCell({
         if (e.target === e.currentTarget) onClickEmpty(day)
       }}
       className={cn(
-        'relative flex h-[130px] flex-col gap-0.5 border-b border-r border-neutral-100 p-1.5 text-xs transition-colors',
-        !inMonth && 'bg-neutral-50/60 text-neutral-400',
-        isOver && 'bg-indigo-50 ring-2 ring-indigo-300',
+        'relative flex h-[130px] flex-col gap-0.5 border-b border-r border-neutral-100 dark:border-neutral-800 p-1.5 text-xs transition-colors',
+        !inMonth && 'bg-neutral-50/60 text-neutral-400 dark:text-neutral-500',
+        isOver && 'bg-indigo-50 dark:bg-indigo-950/40 ring-2 ring-indigo-300',
       )}
     >
       <div
@@ -350,13 +350,13 @@ function DayCell({
                 e.stopPropagation()
                 setShowMore((s) => !s)
               }}
-              className="w-full rounded bg-neutral-100 px-1.5 py-0.5 text-left text-[10px] font-semibold text-neutral-600 hover:bg-neutral-200"
+              className="w-full rounded bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 text-left text-[10px] font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200"
             >
               +{hidden.length} more
             </button>
             {showMore ? (
               <div
-                className="absolute left-0 top-full z-10 mt-1 w-64 space-y-0.5 rounded-md border border-neutral-200 bg-white p-1 shadow-lg"
+                className="absolute left-0 top-full z-10 mt-1 w-64 space-y-0.5 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg"
                 onClick={(e) => e.stopPropagation()}
               >
                 {hidden.map((p) => (
@@ -400,15 +400,15 @@ function WeekGrid({
   const hours = Array.from({ length: 24 }, (_, h) => h)
 
   return (
-    <div className="overflow-hidden rounded-md border border-neutral-200 bg-white">
-      <div className="grid grid-cols-[48px_repeat(7,minmax(0,1fr))] border-b border-neutral-200 bg-neutral-50">
+    <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+      <div className="grid grid-cols-[48px_repeat(7,minmax(0,1fr))] border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
         <div />
         {days.map((d) => (
-          <div key={d.toISOString()} className="border-l border-neutral-100 px-2 py-1.5 text-xs font-semibold">
-            <div className="text-neutral-500">
+          <div key={d.toISOString()} className="border-l border-neutral-100 dark:border-neutral-800 px-2 py-1.5 text-xs font-semibold">
+            <div className="text-neutral-500 dark:text-neutral-400">
               {d.toLocaleDateString(undefined, { weekday: 'short' })}
             </div>
-            <div className="text-neutral-900">{d.getDate()}</div>
+            <div className="text-neutral-900 dark:text-neutral-100">{d.getDate()}</div>
           </div>
         ))}
       </div>
@@ -443,7 +443,7 @@ function HourRow({
 }) {
   return (
     <>
-      <div className="border-t border-neutral-100 px-1 py-1 text-[10px] text-neutral-400">
+      <div className="border-t border-neutral-100 dark:border-neutral-800 px-1 py-1 text-[10px] text-neutral-400 dark:text-neutral-500">
         {String(hour).padStart(2, '0')}:00
       </div>
       {days.map((d) => (
@@ -490,8 +490,8 @@ function HourCell({
     <div
       ref={setNodeRef}
       className={cn(
-        'relative min-h-[40px] border-l border-t border-neutral-100 p-0.5',
-        isOver && 'bg-indigo-50',
+        'relative min-h-[40px] border-l border-t border-neutral-100 dark:border-neutral-800 p-0.5',
+        isOver && 'bg-indigo-50 dark:bg-indigo-950/40',
       )}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClickEmpty(slotDate)
@@ -509,13 +509,13 @@ function HourCell({
                 e.stopPropagation()
                 setShowMore((s) => !s)
               }}
-              className="w-full rounded bg-neutral-100 px-1 py-0.5 text-left text-[10px] font-semibold text-neutral-600 hover:bg-neutral-200"
+              className="w-full rounded bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 text-left text-[10px] font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200"
             >
               +{hidden.length} more
             </button>
             {showMore ? (
               <div
-                className="absolute left-0 top-full z-20 mt-1 w-56 space-y-0.5 rounded-md border border-neutral-200 bg-white p-1 shadow-lg"
+                className="absolute left-0 top-full z-20 mt-1 w-56 space-y-0.5 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg"
                 onClick={(e) => e.stopPropagation()}
               >
                 {hidden.map((p) => (
@@ -597,7 +597,7 @@ function QuickViewPopover({
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="absolute left-1/2 top-1/2 w-[min(500px,95%)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-neutral-200 bg-white p-4 shadow-xl">
+      <div className="absolute left-1/2 top-1/2 w-[min(500px,95%)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-xl">
         <div className="flex items-start justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <PostStatusBadge status={post.status} />
@@ -606,23 +606,23 @@ function QuickViewPopover({
                 <PlatformIcon key={p.socialAccountId} platform={p.platform} size={16} />
               ))}
             </div>
-            <span className="text-xs text-neutral-500">
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">
               {fmtTime(post.scheduledAt ?? post.publishedAt ?? post.createdAt)}
             </span>
           </div>
-          <button type="button" onClick={onClose} className="rounded p-1 text-neutral-500 hover:bg-neutral-100">
+          <button type="button" onClick={onClose} className="rounded p-1 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800">
             ×
           </button>
         </div>
-        <div className="mt-3 whitespace-pre-wrap text-sm text-neutral-900">
+        <div className="mt-3 whitespace-pre-wrap text-sm text-neutral-900 dark:text-neutral-100">
           {post.type === 'reshare' && post.reshareSource ? (
             <span>
               <span className="font-medium">↻ from @{post.reshareSource.authorHandle}</span>
               <br />
-              <span className="text-neutral-600">{post.reshareSource.preview}</span>
+              <span className="text-neutral-600 dark:text-neutral-300">{post.reshareSource.preview}</span>
             </span>
           ) : (
-            post.defaultContent || <span className="italic text-neutral-400">No content</span>
+            post.defaultContent || <span className="italic text-neutral-400 dark:text-neutral-500">No content</span>
           )}
         </div>
         {post.campaignId && post.campaignName ? (
@@ -639,7 +639,7 @@ function QuickViewPopover({
 
         {post.status !== 'published' ? (
           <div className="mt-3 flex items-center gap-2">
-            <CalendarClock className="h-3 w-3 text-neutral-500" />
+            <CalendarClock className="h-3 w-3 text-neutral-500 dark:text-neutral-400" />
             <Input
               type="datetime-local"
               value={rescheduleAt}

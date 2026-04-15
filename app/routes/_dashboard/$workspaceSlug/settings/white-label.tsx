@@ -49,7 +49,7 @@ function WhiteLabelPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <div className="space-y-3 p-4">
-            <h3 className="text-sm font-semibold text-neutral-900">White label</h3>
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">White label</h3>
             <Field label="App name" htmlFor="app-name" hint="Replaces SocialHub in the sidebar">
               <Input
                 id="app-name"
@@ -66,7 +66,7 @@ function WhiteLabelPage() {
                 disabled={!canEdit}
               />
             </Field>
-            {message ? <p className="text-sm text-neutral-600">{message}</p> : null}
+            {message ? <p className="text-sm text-neutral-600 dark:text-neutral-300">{message}</p> : null}
             <div className="flex justify-end">
               <Button onClick={save} disabled={saving || !canEdit}>
                 {saving ? <Spinner /> : null} Save
@@ -76,7 +76,7 @@ function WhiteLabelPage() {
         </Card>
         <Card>
           <div className="space-y-2 p-4">
-            <h3 className="text-sm font-semibold text-neutral-900">Sidebar preview</h3>
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Sidebar preview</h3>
             <div className="overflow-hidden rounded-md">
               <div className="flex items-center gap-2 bg-[#0f1117] px-3 py-3 text-white">
                 {logoUrl ? (

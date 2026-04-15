@@ -115,13 +115,13 @@ function NotificationsSettings() {
 
       <Card>
         <div className="space-y-3 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900">brrr.now push</h3>
-          <p className="text-xs text-neutral-500">
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">brrr.now push</h3>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
             Paste the webhook secret from your brrr.now app to receive push notifications on
             your iPhone/iPad. Secret is encrypted at rest.
           </p>
           {settings.brrrConnected ? (
-            <div className="flex items-center gap-2 text-sm text-green-700">
+            <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
               <Check className="h-4 w-4" /> Connected
             </div>
           ) : null}
@@ -161,11 +161,11 @@ function NotificationsSettings() {
 
       <Card>
         <div className="space-y-3 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900">Event preferences</h3>
-          <div className="overflow-hidden rounded-md border border-neutral-200">
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Event preferences</h3>
+          <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-neutral-100 bg-neutral-50 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                <tr className="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                   <th className="px-3 py-2 text-left">Event</th>
                   <th className="px-3 py-2 text-center">In-app</th>
                   <th className="px-3 py-2 text-center">Email</th>
@@ -176,7 +176,7 @@ function NotificationsSettings() {
                 {TYPES.map((t) => {
                   const p = getPrefs(t.key)
                   return (
-                    <tr key={t.key} className="border-b border-neutral-100 last:border-0">
+                    <tr key={t.key} className="border-b border-neutral-100 dark:border-neutral-800 last:border-0">
                       <td className="px-3 py-2">{t.label}</td>
                       <td className="px-3 py-2 text-center">
                         <input
@@ -211,7 +211,7 @@ function NotificationsSettings() {
       </Card>
 
       {toast ? (
-        <div className="rounded-md border border-neutral-200 bg-white p-3 text-sm text-neutral-700 shadow-sm">
+        <div className="rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 text-sm text-neutral-700 dark:text-neutral-200 shadow-sm">
           {toast}
         </div>
       ) : null}

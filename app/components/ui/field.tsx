@@ -16,7 +16,7 @@ export function Field({ label, htmlFor, error, hint, children, className }: Fiel
     <div className={cn('space-y-1.5', className)}>
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}
-      {error ? <p className="text-xs text-red-600">{error}</p> : hint ? <p className="text-xs text-neutral-500">{hint}</p> : null}
+      {error ? <p className="text-xs text-red-600">{error}</p> : hint ? <p className="text-xs text-neutral-500 dark:text-neutral-400">{hint}</p> : null}
     </div>
   )
 }

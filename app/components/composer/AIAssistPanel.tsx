@@ -117,8 +117,8 @@ export function AIAssistPanel({
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="absolute inset-y-0 right-0 flex w-[min(480px,100%)] flex-col bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-neutral-200 p-4">
+      <div className="absolute inset-y-0 right-0 flex w-[min(480px,100%)] flex-col bg-white dark:bg-neutral-900 shadow-xl">
+        <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 p-4">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-indigo-500" />
             <div className="text-lg font-semibold">AI Assist</div>
@@ -126,7 +126,7 @@ export function AIAssistPanel({
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-2 hover:bg-neutral-100"
+            className="rounded p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -135,16 +135,16 @@ export function AIAssistPanel({
 
         <div className="flex-1 space-y-5 overflow-auto p-4">
           <div className="space-y-3">
-            <div className="text-xs text-neutral-500">{platformLabel}</div>
+            <div className="text-xs text-neutral-500 dark:text-neutral-400">{platformLabel}</div>
             <div className="space-y-2">
-              <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 Generate from scratch
               </div>
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Describe what you want to post about…"
-                className="min-h-[80px] w-full resize-y rounded-md border border-neutral-200 p-2 text-sm"
+                className="min-h-[80px] w-full resize-y rounded-md border border-neutral-200 dark:border-neutral-800 p-2 text-sm"
               />
               <ChipRow label="Tone">
                 {(['professional', 'casual', 'funny', 'persuasive', 'inspirational'] as Tone[]).map(
@@ -176,7 +176,7 @@ export function AIAssistPanel({
 
           {existingContent.trim() ? (
             <div className="space-y-2">
-              <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 Improve existing text
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -197,14 +197,14 @@ export function AIAssistPanel({
                     Change tone →
                   </ImproveBtn>
                   {toneMenuOpen ? (
-                    <div className="absolute left-0 top-full z-10 mt-1 w-48 rounded-md border border-neutral-200 bg-white p-1 text-sm shadow-lg">
+                    <div className="absolute left-0 top-full z-10 mt-1 w-48 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 text-sm shadow-lg">
                       {(
                         ['professional', 'casual', 'funny', 'persuasive', 'inspirational'] as Tone[]
                       ).map((t) => (
                         <button
                           key={t}
                           type="button"
-                          className="block w-full rounded px-2 py-1.5 text-left hover:bg-neutral-100"
+                          className="block w-full rounded px-2 py-1.5 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
                           onClick={() => {
                             setToneMenuOpen(false)
                             run('improve', `Tone: ${t}`, 'change_tone', t)
@@ -226,7 +226,7 @@ export function AIAssistPanel({
           {rows.length > 0 ? (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                   Results
                 </div>
                 <Button
@@ -239,11 +239,11 @@ export function AIAssistPanel({
                 </Button>
               </div>
               {rows.map((row) => (
-                <div key={row.id} className="space-y-1.5 rounded-md border border-neutral-200 p-3">
-                  <div className="text-[10px] uppercase tracking-wider text-neutral-400">
+                <div key={row.id} className="space-y-1.5 rounded-md border border-neutral-200 dark:border-neutral-800 p-3">
+                  <div className="text-[10px] uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
                     {row.label}
                   </div>
-                  <div className="whitespace-pre-wrap text-sm text-neutral-900">
+                  <div className="whitespace-pre-wrap text-sm text-neutral-900 dark:text-neutral-100">
                     {row.text}
                     {row.streaming ? (
                       <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-indigo-500 align-middle" />
@@ -292,7 +292,7 @@ export function AIAssistPanel({
 function ChipRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <div className="text-[10px] uppercase tracking-wider text-neutral-400">{label}</div>
+      <div className="text-[10px] uppercase tracking-wider text-neutral-400 dark:text-neutral-500">{label}</div>
       <div className="flex flex-wrap gap-1">{children}</div>
     </div>
   )
@@ -315,7 +315,7 @@ function Chip({
         'rounded-full px-2.5 py-0.5 text-xs capitalize',
         active
           ? 'bg-indigo-500 text-white'
-          : 'bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-50',
+          : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800',
       )}
     >
       {children}
@@ -328,7 +328,7 @@ function ImproveBtn({ onClick, children }: { onClick: () => void; children: Reac
     <button
       type="button"
       onClick={onClick}
-      className="rounded-md border border-neutral-200 bg-white p-2 text-left text-xs hover:border-indigo-300 hover:bg-indigo-50"
+      className="rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-2 text-left text-xs hover:border-indigo-300 hover:bg-indigo-50"
     >
       {children}
     </button>

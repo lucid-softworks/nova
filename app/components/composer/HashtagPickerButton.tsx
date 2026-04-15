@@ -35,16 +35,16 @@ export function HashtagPickerButton({
         type="button"
         onClick={() => setOpen((o) => !o)}
         title="Hashtag groups"
-        className="rounded p-1.5 text-neutral-600 hover:bg-neutral-100"
+        className="rounded p-1.5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
       >
         <Hash className="h-4 w-4" />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-10 mt-1 w-72 rounded-md border border-neutral-200 bg-white p-1 shadow-lg">
+        <div className="absolute left-0 top-full z-10 mt-1 w-72 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg">
           {loading ? (
-            <div className="px-2 py-3 text-xs text-neutral-500">Loading…</div>
+            <div className="px-2 py-3 text-xs text-neutral-500 dark:text-neutral-400">Loading…</div>
           ) : !groups || groups.length === 0 ? (
-            <div className="px-2 py-3 text-xs text-neutral-500">
+            <div className="px-2 py-3 text-xs text-neutral-500 dark:text-neutral-400">
               No hashtag groups yet. Create some in Templates.
             </div>
           ) : (
@@ -56,10 +56,10 @@ export function HashtagPickerButton({
                   onInsert(g.hashtags.join(' '))
                   setOpen(false)
                 }}
-                className="block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-neutral-100"
+                className="block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
               >
-                <div className="font-medium text-neutral-900">{g.name}</div>
-                <div className="truncate text-xs text-neutral-500">
+                <div className="font-medium text-neutral-900 dark:text-neutral-100">{g.name}</div>
+                <div className="truncate text-xs text-neutral-500 dark:text-neutral-400">
                   {g.hashtags.slice(0, 6).join(' ')}
                   {g.hashtags.length > 6 ? ' …' : ''}
                 </div>

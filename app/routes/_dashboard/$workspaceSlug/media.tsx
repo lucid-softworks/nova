@@ -215,7 +215,7 @@ function MediaPage() {
       <div className="flex-1 space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -238,7 +238,7 @@ function MediaPage() {
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as Sort)}
-            className="h-8 rounded-md border border-neutral-200 bg-white px-2 text-xs"
+            className="h-8 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 text-xs"
           >
             <option value="date_desc">Newest first</option>
             <option value="date_asc">Oldest first</option>
@@ -266,9 +266,9 @@ function MediaPage() {
         </div>
 
         {selectedIds.size > 0 ? (
-          <div className="flex items-center justify-between rounded-md border border-neutral-200 bg-white p-2 text-sm">
+          <div className="flex items-center justify-between rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-2 text-sm">
             <div className="flex items-center gap-2">
-              <button type="button" onClick={clearSelection} className="rounded p-1 hover:bg-neutral-100">
+              <button type="button" onClick={clearSelection} className="rounded p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800">
                 <X className="h-4 w-4" />
               </button>
               {selectedIds.size} selected
@@ -281,10 +281,10 @@ function MediaPage() {
                 <FolderInput className="h-4 w-4" /> Move to folder
               </Button>
               {moveOpen ? (
-                <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border border-neutral-200 bg-white p-1 text-sm shadow-lg">
+                <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 text-sm shadow-lg">
                   <button
                     type="button"
-                    className="block w-full rounded px-2 py-1.5 text-left hover:bg-neutral-100"
+                    className="block w-full rounded px-2 py-1.5 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
                     onClick={() => onMove(null)}
                   >
                     (Uncategorized)
@@ -293,7 +293,7 @@ function MediaPage() {
                     <button
                       key={f.id}
                       type="button"
-                      className="block w-full truncate rounded px-2 py-1.5 text-left hover:bg-neutral-100"
+                      className="block w-full truncate rounded px-2 py-1.5 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
                       onClick={() => onMove(f.id)}
                     >
                       {f.name}
@@ -309,15 +309,15 @@ function MediaPage() {
         ) : null}
 
         {refreshing ? (
-          <div className="flex items-center gap-2 text-xs text-neutral-500">
+          <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
             <Spinner /> Loading
           </div>
         ) : null}
 
         {assets.length === 0 && uploading.length === 0 ? (
           <div className="rounded-md border border-dashed border-neutral-300 p-10 text-center">
-            <Upload className="mx-auto mb-2 h-8 w-8 text-neutral-400" />
-            <p className="text-sm text-neutral-600">Drop files anywhere or click Upload.</p>
+            <Upload className="mx-auto mb-2 h-8 w-8 text-neutral-400 dark:text-neutral-500" />
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">Drop files anywhere or click Upload.</p>
           </div>
         ) : (
           <div className={cn('grid gap-3', gridCols)}>
@@ -334,7 +334,7 @@ function MediaPage() {
             {uploading.map((name) => (
               <div
                 key={name}
-                className="flex h-40 items-center justify-center rounded-md border border-dashed border-neutral-300 bg-neutral-50"
+                className="flex h-40 items-center justify-center rounded-md border border-dashed border-neutral-300 bg-neutral-50 dark:bg-neutral-900"
               >
                 <Spinner />
               </div>
@@ -345,9 +345,9 @@ function MediaPage() {
 
       {dragActive ? (
         <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-indigo-500/10">
-          <div className="rounded-lg border-2 border-dashed border-indigo-400 bg-white px-8 py-6 text-center shadow">
+          <div className="rounded-lg border-2 border-dashed border-indigo-400 bg-white dark:bg-neutral-900 px-8 py-6 text-center shadow">
             <Upload className="mx-auto mb-2 h-8 w-8 text-indigo-500" />
-            <p className="text-sm font-medium text-indigo-700">Drop to upload</p>
+            <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">Drop to upload</p>
           </div>
         </div>
       ) : null}
@@ -376,7 +376,7 @@ function FilterChip({
       onClick={onClick}
       className={cn(
         'rounded-full px-3 py-1 text-xs font-medium',
-        active ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-700 border border-neutral-200',
+        active ? 'bg-neutral-900 text-white' : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-800',
       )}
     >
       {children}
@@ -386,7 +386,7 @@ function FilterChip({
 
 function SizeToggle({ size, onChange }: { size: Size; onChange: (s: Size) => void }) {
   return (
-    <div className="flex rounded-md border border-neutral-200 bg-white p-0.5 text-xs">
+    <div className="flex rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0.5 text-xs">
       {(['sm', 'md', 'lg'] as Size[]).map((s) => (
         <button
           key={s}

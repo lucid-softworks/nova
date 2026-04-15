@@ -28,11 +28,11 @@ export function MediaAssetCard({
       }}
       className={cn(
         'group relative overflow-hidden rounded-md border text-left transition-all',
-        selected ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-neutral-200 hover:border-neutral-300',
+        selected ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300',
       )}
     >
       <div
-        className="relative flex items-center justify-center bg-neutral-100"
+        className="relative flex items-center justify-center bg-neutral-100 dark:bg-neutral-800"
         style={{ height: h }}
       >
         {asset.kind === 'video' ? (
@@ -61,7 +61,7 @@ export function MediaAssetCard({
             onSelect(asset.id, true)
           }}
           className={cn(
-            'absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded border bg-white transition-opacity',
+            'absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded border bg-white dark:bg-neutral-900 transition-opacity',
             selected
               ? 'border-indigo-500 bg-indigo-500 text-white opacity-100'
               : 'border-neutral-300 opacity-0 group-hover:opacity-100',
@@ -70,9 +70,9 @@ export function MediaAssetCard({
           {selected ? <Check className="h-3 w-3" /> : null}
         </span>
       </div>
-      <div className="space-y-0.5 bg-white p-2">
-        <div className="truncate text-xs font-medium text-neutral-900">{asset.originalName}</div>
-        <div className="text-[11px] text-neutral-500">{formatBytes(asset.size)}</div>
+      <div className="space-y-0.5 bg-white dark:bg-neutral-900 p-2">
+        <div className="truncate text-xs font-medium text-neutral-900 dark:text-neutral-100">{asset.originalName}</div>
+        <div className="text-[11px] text-neutral-500 dark:text-neutral-400">{formatBytes(asset.size)}</div>
       </div>
     </button>
   )

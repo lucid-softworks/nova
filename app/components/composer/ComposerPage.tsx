@@ -25,13 +25,13 @@ export function ComposerPage({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <div className="inline-flex rounded-md border border-neutral-200 bg-white p-0.5 text-sm">
+        <div className="inline-flex rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0.5 text-sm">
           <button
             type="button"
             onClick={() => setMode('standard')}
             className={cn(
               'rounded px-3 py-1',
-              mode === 'standard' ? 'bg-indigo-500 text-white' : 'text-neutral-600',
+              mode === 'standard' ? 'bg-indigo-500 text-white' : 'text-neutral-600 dark:text-neutral-300',
             )}
           >
             Standard Post
@@ -41,14 +41,14 @@ export function ComposerPage({
             onClick={() => setMode('campaign')}
             className={cn(
               'rounded px-3 py-1',
-              mode === 'campaign' ? 'bg-indigo-500 text-white' : 'text-neutral-600',
+              mode === 'campaign' ? 'bg-indigo-500 text-white' : 'text-neutral-600 dark:text-neutral-300',
             )}
           >
             Campaign
           </button>
         </div>
         {existing ? (
-          <div className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+          <div className="rounded-full bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300">
             Editing {existing.status} post
           </div>
         ) : null}

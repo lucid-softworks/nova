@@ -43,13 +43,13 @@ export function FolderTree({
   const [newName, setNewName] = useState('')
 
   return (
-    <div className="w-56 shrink-0 space-y-1 border-r border-neutral-200 pr-3">
+    <div className="w-56 shrink-0 space-y-1 border-r border-neutral-200 dark:border-neutral-800 pr-3">
       <button
         type="button"
         onClick={() => onSelect('all')}
         className={cn(
           'flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm',
-          selected === 'all' ? 'bg-indigo-50 text-indigo-700' : 'text-neutral-700 hover:bg-neutral-100',
+          selected === 'all' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300' : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800',
         )}
       >
         <Folder className="h-4 w-4" /> All Media
@@ -60,13 +60,13 @@ export function FolderTree({
         className={cn(
           'flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm',
           selected === 'uncategorized'
-            ? 'bg-indigo-50 text-indigo-700'
-            : 'text-neutral-600 hover:bg-neutral-100',
+            ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300'
+            : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800',
         )}
       >
         <Inbox className="h-4 w-4" /> Uncategorized
       </button>
-      <div className="pt-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+      <div className="pt-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
         Folders
       </div>
       {tree.map((node) => (
@@ -144,7 +144,7 @@ function TreeRow({
         <button
           type="button"
           onClick={() => hasChildren && setOpen((o) => !o)}
-          className={cn('shrink-0 p-0.5 text-neutral-400', !hasChildren && 'invisible')}
+          className={cn('shrink-0 p-0.5 text-neutral-400 dark:text-neutral-500', !hasChildren && 'invisible')}
           aria-label="Toggle"
         >
           {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -176,8 +176,8 @@ function TreeRow({
               className={cn(
                 'flex flex-1 items-center gap-2 rounded px-1.5 py-1 text-left text-sm',
                 selected === node.id
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-neutral-700 hover:bg-neutral-100',
+                  ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300'
+                  : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800',
               )}
               style={{ paddingLeft: 8 + depth * 12 }}
             >
@@ -187,16 +187,16 @@ function TreeRow({
             <button
               type="button"
               onClick={() => setMenu((m) => !m)}
-              className="rounded p-1 text-neutral-400 opacity-0 hover:bg-neutral-100 group-hover:opacity-100"
+              className="rounded p-1 text-neutral-400 dark:text-neutral-500 opacity-0 hover:bg-neutral-100 dark:hover:bg-neutral-800 group-hover:opacity-100"
               aria-label="Folder menu"
             >
               <MoreHorizontal className="h-3.5 w-3.5" />
             </button>
             {menu ? (
-              <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-md border border-neutral-200 bg-white p-1 text-sm shadow-lg">
+              <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 text-sm shadow-lg">
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100"
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   onClick={() => {
                     setMenu(false)
                     setCreatingChild(true)
@@ -206,7 +206,7 @@ function TreeRow({
                 </button>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100"
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   onClick={() => {
                     setMenu(false)
                     setRenaming(true)

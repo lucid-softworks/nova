@@ -65,7 +65,7 @@ function Avatar({ url, fallback, size = 40 }: { url: string | null | undefined; 
   if (url) return <img src={url} alt="" className="rounded-full" style={{ width: size, height: size }} />
   return (
     <div
-      className="flex items-center justify-center rounded-full bg-neutral-200 text-xs font-semibold text-neutral-600"
+      className="flex items-center justify-center rounded-full bg-neutral-200 text-xs font-semibold text-neutral-600 dark:text-neutral-300"
       style={{ width: size, height: size }}
     >
       {fallback.charAt(0).toUpperCase()}
@@ -107,17 +107,17 @@ function XPreview({
   media: MediaAsset[]
 }) {
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-4">
+    <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
       <div className="flex gap-3">
         <Avatar url={avatar} fallback={name} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1 text-sm">
-            <span className="font-semibold text-neutral-900">{name}</span>
-            <span className="text-neutral-500">@{handle}</span>
+            <span className="font-semibold text-neutral-900 dark:text-neutral-100">{name}</span>
+            <span className="text-neutral-500 dark:text-neutral-400">@{handle}</span>
           </div>
-          <div className="mt-1 whitespace-pre-wrap text-[15px] text-neutral-900">{text}</div>
+          <div className="mt-1 whitespace-pre-wrap text-[15px] text-neutral-900 dark:text-neutral-100">{text}</div>
           <MediaGrid media={media} />
-          <div className="mt-3 flex items-center gap-8 text-xs text-neutral-500">
+          <div className="mt-3 flex items-center gap-8 text-xs text-neutral-500 dark:text-neutral-400">
             <MessageCircle className="h-4 w-4" />
             <Repeat2 className="h-4 w-4" />
             <Heart className="h-4 w-4" />
@@ -143,18 +143,18 @@ function InstagramPreview({
   media: MediaAsset[]
 }) {
   return (
-    <div className="mx-auto w-full max-w-sm overflow-hidden rounded-[32px] border border-neutral-200 bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b border-neutral-100 p-3">
+    <div className="mx-auto w-full max-w-sm overflow-hidden rounded-[32px] border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm">
+      <div className="flex items-center gap-2 border-b border-neutral-100 dark:border-neutral-800 p-3">
         <Avatar url={avatar} fallback={handle} size={32} />
         <div className="text-sm font-semibold">{handle}</div>
       </div>
-      <div className="aspect-square w-full bg-neutral-100">
+      <div className="aspect-square w-full bg-neutral-100 dark:bg-neutral-800">
         {media[0]?.mimeType.startsWith('video/') ? (
           <video src={media[0].url} className="h-full w-full object-cover" controls />
         ) : media[0] ? (
           <img src={media[0].url} alt="" className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-neutral-400">
+          <div className="flex h-full items-center justify-center text-sm text-neutral-400 dark:text-neutral-500">
             Image placeholder
           </div>
         )}
@@ -167,7 +167,7 @@ function InstagramPreview({
       <div className="space-y-1 px-3 pb-4 text-sm">
         <div>
           <span className="font-semibold">{handle}</span>{' '}
-          <span className="whitespace-pre-wrap text-neutral-800">
+          <span className="whitespace-pre-wrap text-neutral-800 dark:text-neutral-100">
             {text.replace(/#(\w+)/g, (m) => m).split(/(#\w+)/g).map((chunk, i) =>
               chunk.startsWith('#') ? (
                 <span key={i} className="text-blue-600">
@@ -179,7 +179,7 @@ function InstagramPreview({
             )}
           </span>
         </div>
-        <div className="text-xs text-neutral-500">{name}</div>
+        <div className="text-xs text-neutral-500 dark:text-neutral-400">{name}</div>
       </div>
     </div>
   )
@@ -197,19 +197,19 @@ function LinkedInPreview({
   avatar?: string | null
 }) {
   return (
-    <div className="rounded-md border border-neutral-200 bg-white p-4">
+    <div className="rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
       <div className="flex gap-3">
         <Avatar url={avatar} fallback={name} />
         <div className="flex-1">
-          <div className="text-sm font-semibold text-neutral-900">
-            {name} <span className="text-xs font-normal text-neutral-500">· 1st</span>
+          <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+            {name} <span className="text-xs font-normal text-neutral-500 dark:text-neutral-400">· 1st</span>
           </div>
-          <div className="text-xs text-neutral-500">Just now · 🌐</div>
+          <div className="text-xs text-neutral-500 dark:text-neutral-400">Just now · 🌐</div>
         </div>
       </div>
-      <div className="mt-3 whitespace-pre-wrap text-sm text-neutral-900">{text}</div>
+      <div className="mt-3 whitespace-pre-wrap text-sm text-neutral-900 dark:text-neutral-100">{text}</div>
       <MediaGrid media={media} />
-      <div className="mt-3 flex items-center gap-4 text-xs text-neutral-500">
+      <div className="mt-3 flex items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400">
         <ThumbsUp className="h-4 w-4" /> Like
         <MessageCircle className="h-4 w-4" /> Comment
         <Share2 className="h-4 w-4" /> Share
@@ -230,17 +230,17 @@ function FacebookPreview({
   media: MediaAsset[]
 }) {
   return (
-    <div className="rounded-md border border-neutral-200 bg-white p-4">
+    <div className="rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
       <div className="flex gap-3">
         <Avatar url={avatar} fallback={name} />
         <div>
-          <div className="text-sm font-semibold text-neutral-900">{name}</div>
-          <div className="text-xs text-neutral-500">Just now · 🌐</div>
+          <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{name}</div>
+          <div className="text-xs text-neutral-500 dark:text-neutral-400">Just now · 🌐</div>
         </div>
       </div>
-      <div className="mt-3 whitespace-pre-wrap text-sm text-neutral-900">{text}</div>
+      <div className="mt-3 whitespace-pre-wrap text-sm text-neutral-900 dark:text-neutral-100">{text}</div>
       <MediaGrid media={media} />
-      <div className="mt-3 flex items-center gap-4 text-xs text-neutral-500">
+      <div className="mt-3 flex items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400">
         <ThumbsUp className="h-4 w-4" /> Like
         <MessageCircle className="h-4 w-4" /> Comment
         <Share2 className="h-4 w-4" /> Share
@@ -263,20 +263,20 @@ function RedditPreview({
   handle: string
 }) {
   return (
-    <div className="overflow-hidden rounded-md border border-neutral-200 bg-white">
-      <div className="flex items-center gap-2 border-b border-neutral-100 px-3 py-2 text-xs text-neutral-500">
-        <span className="font-semibold text-neutral-900">{subreddit.startsWith('r/') ? subreddit : `r/${subreddit}`}</span>
+    <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+      <div className="flex items-center gap-2 border-b border-neutral-100 dark:border-neutral-800 px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400">
+        <span className="font-semibold text-neutral-900 dark:text-neutral-100">{subreddit.startsWith('r/') ? subreddit : `r/${subreddit}`}</span>
         <span>· Posted by u/{handle}</span>
       </div>
       <div className="flex">
-        <div className="flex w-10 flex-col items-center gap-1 bg-neutral-50 py-3 text-neutral-400">
+        <div className="flex w-10 flex-col items-center gap-1 bg-neutral-50 dark:bg-neutral-900 py-3 text-neutral-400 dark:text-neutral-500">
           <ArrowUpFromLine className="h-4 w-4" />
           <span className="text-xs">–</span>
           <ArrowUpFromLine className="h-4 w-4 rotate-180" />
         </div>
         <div className="flex-1 p-3">
-          <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
-          {text ? <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-700">{text}</p> : null}
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{title}</h3>
+          {text ? <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-700 dark:text-neutral-200">{text}</p> : null}
           <MediaGrid media={media} />
         </div>
       </div>
@@ -301,7 +301,7 @@ function GenericPreview({
 }) {
   const p = PLATFORMS[platform]
   return (
-    <div className="overflow-hidden rounded-md border border-neutral-200 bg-white">
+    <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
       <div
         className="flex items-center gap-2 p-3 text-sm font-semibold text-white"
         style={{ backgroundColor: p.color }}
@@ -313,12 +313,12 @@ function GenericPreview({
           <Avatar url={avatar} fallback={name} size={32} />
           <div>
             <div className="text-sm font-semibold">{name}</div>
-            <div className="text-xs text-neutral-500">@{handle}</div>
+            <div className="text-xs text-neutral-500 dark:text-neutral-400">@{handle}</div>
           </div>
         </div>
-        <div className="mt-2 whitespace-pre-wrap text-sm text-neutral-900">{text}</div>
+        <div className="mt-2 whitespace-pre-wrap text-sm text-neutral-900 dark:text-neutral-100">{text}</div>
         <MediaGrid media={media} />
-        <div className="mt-3 flex items-center gap-4 text-xs text-neutral-500">
+        <div className="mt-3 flex items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400">
           <Smile className="h-4 w-4" />
           <MessageCircle className="h-4 w-4" />
           <Share2 className="h-4 w-4" />

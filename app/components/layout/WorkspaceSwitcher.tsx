@@ -26,14 +26,14 @@ export function WorkspaceSwitcher({
         <ChevronsUpDown className="h-4 w-4 opacity-60" />
       </button>
       {open ? (
-        <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-md border border-neutral-200 bg-white p-1 text-neutral-900 shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 text-neutral-900 dark:text-neutral-100 shadow-lg">
           {all.map((w) => (
             <Link
               key={w.id}
               to="/$workspaceSlug/compose"
               params={{ workspaceSlug: w.slug }}
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-neutral-100"
+              className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
             >
               <div className="flex h-6 w-6 items-center justify-center rounded bg-indigo-100 text-xs font-semibold text-indigo-600">
                 {w.name.charAt(0).toUpperCase()}
@@ -42,7 +42,7 @@ export function WorkspaceSwitcher({
               {w.id === current.id ? <Check className="h-4 w-4 text-indigo-500" /> : null}
             </Link>
           ))}
-          <div className="my-1 h-px bg-neutral-100" />
+          <div className="my-1 h-px bg-neutral-100 dark:bg-neutral-800" />
           <Link
             to="/onboarding"
             onClick={() => setOpen(false)}

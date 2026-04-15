@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { ChevronDown, Menu, Share2 } from 'lucide-react'
 import { Button } from '~/components/ui/button'
+import { ThemeToggle } from '~/components/ui/ThemeToggle'
 import { NotificationBell } from './NotificationBell'
 import { ReshareBrowser, type ReshareAccount } from '~/components/reshare/ReshareBrowser'
 import { listAccounts } from '~/server/accounts'
@@ -43,20 +44,21 @@ export function TopBar({
   }, [reshareOpen, workspaceSlug])
 
   return (
-    <header className="flex h-14 items-center justify-between gap-4 border-b border-neutral-200 bg-white px-4 md:px-6">
+    <header className="flex h-14 items-center justify-between gap-4 border-b border-neutral-200 bg-white px-4 dark:border-neutral-800 dark:bg-neutral-950 md:px-6">
       <div className="flex items-center gap-2">
         <button
           type="button"
-          className="md:hidden rounded p-2 hover:bg-neutral-100"
+          className="md:hidden rounded p-2 hover:bg-neutral-100 dark:hover:bg-white/10"
           onClick={onOpenSidebar}
           aria-label="Open sidebar"
         >
           <Menu className="h-5 w-5" />
         </button>
-        <h1 className="text-base font-semibold text-neutral-900">{title}</h1>
+        <h1 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">{title}</h1>
       </div>
 
       <div className="flex items-center gap-2">
+        <ThemeToggle />
         <NotificationBell />
 
         <div className="relative flex">
@@ -74,14 +76,14 @@ export function TopBar({
             <ChevronDown className="h-4 w-4" />
           </button>
           {menuOpen ? (
-            <div className="absolute right-0 top-full z-30 mt-1 w-56 rounded-md border border-neutral-200 bg-white p-1 shadow-lg">
+            <div className="absolute right-0 top-full z-30 mt-1 w-56 rounded-md border border-neutral-200 bg-white p-1 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
               <button
                 type="button"
                 onClick={() => {
                   setMenuOpen(false)
                   setReshareOpen(true)
                 }}
-                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-neutral-100"
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-neutral-100 dark:hover:bg-white/10"
               >
                 <Share2 className="h-4 w-4" /> Queue Reshares
               </button>

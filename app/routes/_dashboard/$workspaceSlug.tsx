@@ -52,7 +52,7 @@ function WorkspaceLayout() {
   if (!session.user) return null
 
   return (
-    <div className="flex h-screen bg-[#f8f9fb]">
+    <div className="flex h-screen bg-[#f8f9fb] dark:bg-[#0b0d12]">
       <div className="hidden md:block">
         <Sidebar user={session.user} workspace={workspace} workspaces={session.workspaces} />
       </div>

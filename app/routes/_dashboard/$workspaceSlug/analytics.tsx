@@ -138,19 +138,19 @@ function AnalyticsPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-2xl font-semibold text-neutral-900">Analytics</h2>
-          <p className="text-sm text-neutral-500">Performance across your connected accounts.</p>
+          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">Analytics</h2>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">Performance across your connected accounts.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <RangeToggle value={range} onChange={setRange} />
           {range === 'custom' ? (
-            <div className="flex items-center gap-1 text-xs text-neutral-600">
+            <div className="flex items-center gap-1 text-xs text-neutral-600 dark:text-neutral-300">
               <input
                 type="date"
                 value={customFrom}
                 max={customTo}
                 onChange={(e) => setCustomFrom(e.target.value)}
-                className="h-8 rounded-md border border-neutral-200 bg-white px-2"
+                className="h-8 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2"
               />
               <span>→</span>
               <input
@@ -158,7 +158,7 @@ function AnalyticsPage() {
                 value={customTo}
                 min={customFrom}
                 onChange={(e) => setCustomTo(e.target.value)}
-                className="h-8 rounded-md border border-neutral-200 bg-white px-2"
+                className="h-8 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2"
               />
             </div>
           ) : null}
@@ -191,14 +191,14 @@ function AnalyticsPage() {
 
       <Card>
         <div className="p-4">
-          <h3 className="mb-2 text-sm font-semibold text-neutral-900">Per-platform</h3>
+          <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">Per-platform</h3>
           <PlatformTable rows={data.platformTable} />
         </div>
       </Card>
 
       <Card>
         <div className="p-4">
-          <h3 className="mb-2 text-sm font-semibold text-neutral-900">Top performing posts</h3>
+          <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">Top performing posts</h3>
           <TopPosts rows={data.topPosts} />
         </div>
       </Card>
@@ -216,7 +216,7 @@ function RangeToggle({
   onChange: (r: AnalyticsRange) => void
 }) {
   return (
-    <div className="inline-flex rounded-md border border-neutral-200 bg-white p-0.5 text-xs">
+    <div className="inline-flex rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0.5 text-xs">
       {(['7d', '30d', '90d', 'custom'] as AnalyticsRange[]).map((r) => (
         <button
           key={r}
@@ -224,7 +224,7 @@ function RangeToggle({
           onClick={() => onChange(r)}
           className={cn(
             'rounded px-2 py-1',
-            value === r ? 'bg-neutral-900 text-white' : 'text-neutral-600',
+            value === r ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300',
           )}
         >
           {r === '7d'
@@ -253,7 +253,7 @@ function AccountFilter({
     <select
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value || null)}
-      className="h-8 rounded-md border border-neutral-200 bg-white px-2 text-xs"
+      className="h-8 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 text-xs"
     >
       <option value="">All accounts</option>
       {accounts.map((a) => (
@@ -287,8 +287,8 @@ function SummaryCards({ summary }: { summary: AnalyticsSummary }) {
       {items.map((i) => (
         <Card key={i.label}>
           <div className="space-y-1 p-3">
-            <div className="text-[11px] uppercase tracking-wider text-neutral-500">{i.label}</div>
-            <div className="text-xl font-semibold text-neutral-900">{i.value}</div>
+            <div className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">{i.label}</div>
+            <div className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{i.value}</div>
             <DeltaBadge delta={i.delta} />
           </div>
         </Card>
@@ -299,7 +299,7 @@ function SummaryCards({ summary }: { summary: AnalyticsSummary }) {
 
 function DeltaBadge({ delta }: { delta: number }) {
   if (!isFinite(delta) || delta === 0) {
-    return <div className="text-[11px] text-neutral-500">—</div>
+    return <div className="text-[11px] text-neutral-500 dark:text-neutral-400">—</div>
   }
   const up = delta > 0
   return (
@@ -319,7 +319,7 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
   return (
     <Card>
       <div className="space-y-2 p-4">
-        <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
+        <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{title}</h3>
         <div className="h-64">{children}</div>
       </div>
     </Card>
@@ -434,13 +434,13 @@ function Heatmap({ data }: { data: HeatmapRow[] }) {
       <div className="grid" style={{ gridTemplateColumns: '32px repeat(24, minmax(12px, 1fr))' }}>
         <div />
         {Array.from({ length: 24 }, (_, h) => (
-          <div key={h} className="pb-1 text-center text-[9px] text-neutral-400">
+          <div key={h} className="pb-1 text-center text-[9px] text-neutral-400 dark:text-neutral-500">
             {h % 3 === 0 ? h : ''}
           </div>
         ))}
         {DAY_ORDER.map((d, di) => (
           <>
-            <div key={`l${d}`} className="pr-1 text-right text-[10px] text-neutral-500">
+            <div key={`l${d}`} className="pr-1 text-right text-[10px] text-neutral-500 dark:text-neutral-400">
               {DAY_LABELS[di]}
             </div>
             {Array.from({ length: 24 }, (_, h) => {
@@ -469,8 +469,8 @@ function PlatformTable({ rows }: { rows: PlatformTableRow[] }) {
   return (
     <div className="overflow-auto">
       <table className="w-full text-sm">
-        <thead className="text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">
-          <tr className="border-b border-neutral-100">
+        <thead className="text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+          <tr className="border-b border-neutral-100 dark:border-neutral-800">
             <th className="px-2 py-1.5">Platform</th>
             <th className="px-2 py-1.5">Account</th>
             <th className="px-2 py-1.5">Posts</th>
@@ -486,14 +486,14 @@ function PlatformTable({ rows }: { rows: PlatformTableRow[] }) {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.accountId} className="border-b border-neutral-100 last:border-0">
+            <tr key={r.accountId} className="border-b border-neutral-100 dark:border-neutral-800 last:border-0">
               <td className="px-2 py-2">
                 <div className="flex items-center gap-1.5">
                   <PlatformIcon platform={r.platform as PlatformKey} size={14} />
                   {PLATFORMS[r.platform as PlatformKey].label}
                 </div>
               </td>
-              <td className="px-2 py-2 text-neutral-600">@{r.accountHandle}</td>
+              <td className="px-2 py-2 text-neutral-600 dark:text-neutral-300">@{r.accountHandle}</td>
               <td className="px-2 py-2">{r.posts}</td>
               <td className="px-2 py-2">{r.reshares}</td>
               <td className="px-2 py-2">{r.reach}</td>
@@ -514,15 +514,15 @@ function PlatformTable({ rows }: { rows: PlatformTableRow[] }) {
 function TopPosts({ rows }: { rows: TopPostRow[] }) {
   if (rows.length === 0) return <EmptyState label="No posts in the window" />
   return (
-    <div className="divide-y divide-neutral-100">
+    <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
       {rows.map((p) => (
         <div key={p.id} className="flex items-start gap-3 py-2">
-          <div className="h-10 w-10 shrink-0 rounded bg-neutral-100" />
+          <div className="h-10 w-10 shrink-0 rounded bg-neutral-100 dark:bg-neutral-800" />
           <div className="min-w-0 flex-1">
-            <div className="line-clamp-2 text-sm text-neutral-900">
-              {p.content || <span className="italic text-neutral-400">No content</span>}
+            <div className="line-clamp-2 text-sm text-neutral-900 dark:text-neutral-100">
+              {p.content || <span className="italic text-neutral-400 dark:text-neutral-500">No content</span>}
             </div>
-            <div className="mt-0.5 flex items-center gap-1 text-xs text-neutral-500">
+            <div className="mt-0.5 flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
               {p.platforms.map((pl) => (
                 <PlatformIcon key={pl} platform={pl} size={12} />
               ))}
@@ -549,7 +549,7 @@ function TopPosts({ rows }: { rows: TopPostRow[] }) {
 
 function EmptyState({ label }: { label: string }) {
   return (
-    <div className="flex h-full items-center justify-center text-xs text-neutral-500">
+    <div className="flex h-full items-center justify-center text-xs text-neutral-500 dark:text-neutral-400">
       {label}
     </div>
   )
