@@ -13,6 +13,11 @@ import { getAnalyticsWorker } from './server/queues/analyticsWorker'
 import { startScheduler, stopScheduler } from './server/queues/scheduler'
 import { startAnalyticsSync } from './server/queues/analyticsSync'
 import { getRssQueue, getRssWorker, startRssPolling } from './server/rss/schedule'
+import {
+  getInboxQueue,
+  getInboxWorker,
+  startInboxPolling,
+} from './server/inbox/schedule'
 import { logger } from './lib/logger'
 import { initSentry } from './lib/sentry'
 
@@ -29,6 +34,8 @@ const analyticsQueue = getAnalyticsQueue()
 const analyticsWorker = getAnalyticsWorker()
 const rssQueue = getRssQueue()
 const rssWorker = getRssWorker()
+const inboxQueue = getInboxQueue()
+const inboxWorker = getInboxWorker()
 startScheduler()
 // Scheduling the repeatables is idempotent — BullMQ dedupes on the jobId,
 // so running this on every worker boot (any replica count) is safe.
@@ -38,17 +45,30 @@ startAnalyticsSync().catch((e) =>
 startRssPolling().catch((e) =>
   logger.error({ err: e instanceof Error ? e.message : String(e) }, 'rss schedule failed'),
 )
+startInboxPolling().catch((e) =>
+  logger.error({ err: e instanceof Error ? e.message : String(e) }, 'inbox schedule failed'),
+)
 logger.info(
   { replicaId: process.env.HOSTNAME ?? 'local' },
-  'worker online: posts + analytics + rss + scheduler',
+  'worker online: posts + analytics + rss + inbox + scheduler',
 )
 
 const shutdown = async (signal: string) => {
   logger.info({ signal }, 'worker draining')
   stopScheduler()
   try {
-    await Promise.all([postWorker.close(), analyticsWorker.close(), rssWorker.close()])
-    await Promise.all([postQueue.close(), analyticsQueue.close(), rssQueue.close()])
+    await Promise.all([
+      postWorker.close(),
+      analyticsWorker.close(),
+      rssWorker.close(),
+      inboxWorker.close(),
+    ])
+    await Promise.all([
+      postQueue.close(),
+      analyticsQueue.close(),
+      rssQueue.close(),
+      inboxQueue.close(),
+    ])
   } catch (e) {
     logger.error({ err: e instanceof Error ? e.message : String(e) }, 'worker drain error')
   }

@@ -10,6 +10,12 @@ import {
   resetRss,
   startRssPolling,
 } from '~/server/rss/schedule'
+import {
+  getInboxQueue,
+  getInboxWorker,
+  resetInbox,
+  startInboxPolling,
+} from '~/server/inbox/schedule'
 import { logger } from '~/lib/logger'
 import { initSentry } from '~/lib/sentry'
 
@@ -37,6 +43,8 @@ export function bootQueues() {
   const analyticsWorker = getAnalyticsWorker()
   const rssQueue = getRssQueue()
   const rssWorker = getRssWorker()
+  const inboxQueue = getInboxQueue()
+  const inboxWorker = getInboxWorker()
   startScheduler()
   startAnalyticsSync().catch((e) =>
     logger.error({ err: e instanceof Error ? e.message : String(e) }, 'analytics schedule failed'),
@@ -44,19 +52,35 @@ export function bootQueues() {
   startRssPolling().catch((e) =>
     logger.error({ err: e instanceof Error ? e.message : String(e) }, 'rss schedule failed'),
   )
-  logger.info('queues online: posts + analytics + rss workers + scheduler')
+  startInboxPolling().catch((e) =>
+    logger.error({ err: e instanceof Error ? e.message : String(e) }, 'inbox schedule failed'),
+  )
+  logger.info('queues online: posts + analytics + rss + inbox workers + scheduler')
   void rssQueue
   void rssWorker
+  void inboxQueue
+  void inboxWorker
 
   globalThis.__socialhubQueueCleanup = async () => {
     stopScheduler()
-    await Promise.all([worker.close(), analyticsWorker.close(), rssWorker.close()])
-    await Promise.all([queue.close(), analyticsQueue.close(), rssQueue.close()])
+    await Promise.all([
+      worker.close(),
+      analyticsWorker.close(),
+      rssWorker.close(),
+      inboxWorker.close(),
+    ])
+    await Promise.all([
+      queue.close(),
+      analyticsQueue.close(),
+      rssQueue.close(),
+      inboxQueue.close(),
+    ])
     resetPostWorker()
     resetPostQueue()
     resetAnalyticsWorker()
     resetAnalyticsQueue()
     resetRss()
+    resetInbox()
     globalThis.__socialhubQueuesBooted = false
   }
 }

@@ -7,6 +7,7 @@ import {
   FileText,
   BarChart2,
   History,
+  Inbox,
   Link as LinkIcon,
   Users,
   Settings,
@@ -39,6 +40,7 @@ const sections: NavSection[] = [
   {
     label: 'Insights',
     items: [
+      { label: 'Inbox', to: '/$workspaceSlug/inbox', icon: Inbox },
       { label: 'Analytics', to: '/$workspaceSlug/analytics', icon: BarChart2 },
       { label: 'Activity', to: '/$workspaceSlug/activity', icon: History },
     ],

@@ -596,6 +596,42 @@ export const analyticsSnapshots = pgTable('analytics_snapshots', {
   createdAt: now(),
 })
 
+export const inboxItems = pgTable(
+  'inbox_items',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    socialAccountId: uuid('social_account_id')
+      .notNull()
+      .references(() => socialAccounts.id, { onDelete: 'cascade' }),
+    platform: text('platform').notNull(),
+    platformItemId: text('platform_item_id').notNull(),
+    kind: text('kind').notNull(),
+    actorHandle: text('actor_handle'),
+    actorName: text('actor_name'),
+    actorAvatar: text('actor_avatar'),
+    content: text('content'),
+    permalink: text('permalink'),
+    itemCreatedAt: timestamp('item_created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    readAt: timestamp('read_at', { withTimezone: true }),
+    postPlatformId: uuid('post_platform_id').references(() => postPlatforms.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: now(),
+  },
+  (t) => ({
+    acctItemUnq: uniqueIndex('inbox_items_account_item_unq').on(
+      t.socialAccountId,
+      t.platformItemId,
+    ),
+    workspaceIdx: index('inbox_items_workspace_idx').on(t.workspaceId, t.itemCreatedAt),
+  }),
+)
+
 export const rssFeeds = pgTable(
   'rss_feeds',
   {
