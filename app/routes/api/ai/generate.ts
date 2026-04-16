@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
+import { limitsFor } from '~/lib/billing/limits'
 import { PLATFORM_KEYS } from '~/lib/platforms'
 import { startGeneration, type GenerateRequest } from '~/server/ai.server'
 import { requireWorkspaceAccess } from '~/server/session.server'
@@ -42,6 +43,11 @@ export const Route = createFileRoute('/api/ai/generate')({
         const access = await requireWorkspaceAccess(parsed.data.workspaceSlug)
         if (!access.ok) {
           return Response.json({ error: access.reason }, { status: 403 })
+        }
+
+        const limits = await limitsFor(access.workspace.id)
+        if (!limits.aiAssistEnabled) {
+          return Response.json({ error: 'AI assist is not available on your current plan' }, { status: 403 })
         }
 
         const req: GenerateRequest = {
