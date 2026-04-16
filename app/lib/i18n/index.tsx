@@ -33,14 +33,18 @@ const I18nContext = createContext<I18nCtx>({
 })
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale] = useState<Locale>(() => detectLocale())
+  // SSR always returns 'en' (no document/navigator). The client
+  // immediately corrects via the effect below. The pre-hydrate
+  // inline script hides the page until this effect fires so the
+  // user never sees the SSR English.
+  const [locale, setLocale] = useState<Locale>('en')
 
   useEffect(() => {
-    document.documentElement.lang = locale
-    // The pre-hydrate script hid the page to prevent the English flash.
-    // Now that React has rendered in the correct locale, show it.
+    const detected = detectLocale()
+    setLocale(detected)
+    document.documentElement.lang = detected
     document.documentElement.style.visibility = ''
-  }, [locale])
+  }, [])
 
   const t = useCallback(
     (key: string, params?: Record<string, string | number>): string => {
