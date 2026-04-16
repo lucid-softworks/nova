@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { auth } from '~/lib/auth'
+import { logger } from '~/lib/logger'
 import { db, schema } from './db'
 import { withSessionOverride } from './session.server'
 import type { SessionContext, WorkspaceRole } from './types'
@@ -185,8 +186,8 @@ export async function rateLimit(key: string): Promise<RateResult> {
       const resetInMs = ttl > 0 ? ttl : WINDOW_MS
       if (count > RATE_LIMIT) return { ok: false, remaining: 0, resetInMs }
       return { ok: true, remaining: Math.max(0, RATE_LIMIT - count), resetInMs }
-    } catch {
-      // fall through to in-memory — Redis hiccup shouldn't lock out API.
+    } catch (err) {
+      logger.warn({ err, key }, 'Redis rate limiter failed — falling back to in-memory')
     }
   }
   return rateLimitInMemory(key)
