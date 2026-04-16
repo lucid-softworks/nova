@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { and, eq } from 'drizzle-orm'
+import { z } from 'zod'
 import {
   apiError,
   apiResponse,
@@ -10,6 +11,12 @@ import {
 } from '~/server/apiAuth'
 import { db, schema } from '~/server/db'
 import { deletePostsImpl } from '~/server/posts.server'
+
+const patchSchema = z.object({
+  status: z.enum(['draft', 'scheduled', 'pending_approval']).optional(),
+  scheduledAt: z.string().datetime().nullable().optional(),
+  labels: z.array(z.string().max(100)).max(50).optional(),
+}).strict()
 
 async function loadPost(workspaceId: string, postId: string) {
   const post = await db.query.posts.findFirst({
@@ -63,11 +70,11 @@ export const Route = createFileRoute('/api/v1/posts/$id')({
         } catch {
           return apiError('BAD_REQUEST', 'Invalid JSON body', 400)
         }
-        const patch = body as Partial<{
-          status: 'draft' | 'scheduled' | 'pending_approval'
-          scheduledAt: string | null
-          labels: string[]
-        }>
+        const parsed = patchSchema.safeParse(body)
+        if (!parsed.success) {
+          return apiError('VALIDATION_ERROR', parsed.error.issues.map((i) => i.message).join('; '), 400)
+        }
+        const patch = parsed.data
         const exists = await db.query.posts.findFirst({
           where: and(
             eq(schema.posts.id, params.id),
