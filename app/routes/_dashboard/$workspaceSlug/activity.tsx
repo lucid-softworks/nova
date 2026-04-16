@@ -79,14 +79,19 @@ function ActivityPage() {
     }
   }, [workspaceSlug, fromDate, toDate, userId])
 
-  const exportUrl = (format: 'csv' | 'json') => {
+  const triggerExport = (format: 'csv' | 'json') => {
     const params = new URLSearchParams({ workspaceSlug, format })
     const from = isoForDate(fromDate)
     const to = isoForDate(toDate, true)
     if (from) params.set('fromIso', from)
     if (to) params.set('toIso', to)
     if (userId) params.set('userId', userId)
-    return `/api/activity/export?${params.toString()}`
+    const form = document.createElement('form')
+    form.method = 'POST'
+    form.action = `/api/activity/export?${params.toString()}`
+    document.body.appendChild(form)
+    form.submit()
+    form.remove()
   }
 
   return (
@@ -134,15 +139,11 @@ function ActivityPage() {
               ))}
             </select>
           </label>
-          <Button asChild size="sm" variant="outline">
-            <a href={exportUrl('csv')}>
-              <Download className="h-3 w-3" /> {t('activity.csvExport')}
-            </a>
+          <Button size="sm" variant="outline" onClick={() => triggerExport('csv')}>
+            <Download className="h-3 w-3" /> {t('activity.csvExport')}
           </Button>
-          <Button asChild size="sm" variant="outline">
-            <a href={exportUrl('json')}>
-              <Download className="h-3 w-3" /> {t('activity.jsonExport')}
-            </a>
+          <Button size="sm" variant="outline" onClick={() => triggerExport('json')}>
+            <Download className="h-3 w-3" /> {t('activity.jsonExport')}
           </Button>
         </div>
       </div>

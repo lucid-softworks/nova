@@ -636,7 +636,12 @@ function CsvButtons({
     if (exportParams.toDate) {
       params.set('toIso', new Date(`${exportParams.toDate}T23:59:59`).toISOString())
     }
-    window.location.href = `/api/posts/export?${params.toString()}`
+    const form = document.createElement('form')
+    form.method = 'POST'
+    form.action = `/api/posts/export?${params.toString()}`
+    document.body.appendChild(form)
+    form.submit()
+    form.remove()
     setTimeout(() => setBusy(null), 1500)
   }
 

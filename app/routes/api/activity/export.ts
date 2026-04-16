@@ -14,7 +14,7 @@ const querySchema = z.object({
 export const Route = createFileRoute('/api/activity/export')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      POST: async ({ request }) => {
         const url = new URL(request.url)
         const parsed = querySchema.safeParse(Object.fromEntries(url.searchParams))
         if (!parsed.success) {

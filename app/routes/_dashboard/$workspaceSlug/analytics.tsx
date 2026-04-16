@@ -106,7 +106,12 @@ function DownloadReportButton({
       params.set('fromIso', new Date(`${customFrom}T00:00:00`).toISOString())
       params.set('toIso', new Date(`${customTo}T23:59:59`).toISOString())
     }
-    window.location.href = `/api/reports/analytics?${params.toString()}`
+    const form = document.createElement('form')
+    form.method = 'POST'
+    form.action = `/api/reports/analytics?${params.toString()}`
+    document.body.appendChild(form)
+    form.submit()
+    form.remove()
   }
   return (
     <Button size="sm" variant="outline" onClick={download}>
