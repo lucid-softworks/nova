@@ -85,8 +85,16 @@ export async function fetchInbox(ctx: InboxAccountCtx): Promise<InboxFetchItem[]
 
   let token = ctx.accessToken
   if (ctx.refreshToken) {
+    logger.info({ accountId: ctx.id }, 'refreshing bluesky token via entryway')
     const fresh = await refreshAndPersist(entryway, ctx.id, ctx.refreshToken)
-    if (fresh) token = fresh
+    if (fresh) {
+      token = fresh
+      logger.info({ accountId: ctx.id }, 'bluesky token refreshed')
+    } else {
+      logger.warn({ accountId: ctx.id }, 'bluesky token refresh returned null')
+    }
+  } else {
+    logger.warn({ accountId: ctx.id, hasAccess: !!ctx.accessToken }, 'no bluesky refresh token')
   }
 
   const res = await fetch(

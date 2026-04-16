@@ -33,7 +33,8 @@ function safeDecrypt(v: string | null | undefined): string {
   if (!v) return ''
   try {
     return decrypt(v)
-  } catch {
+  } catch (e) {
+    logger.warn({ err: e instanceof Error ? e.message : String(e) }, 'token decrypt failed')
     return ''
   }
 }
