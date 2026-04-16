@@ -129,6 +129,9 @@ export const fr: Record<string, string> = {
   "compose.aiAssist": "Assistance IA",
   "compose.suggestHashtags": "Suggérer des hashtags avec l'IA",
   "compose.insertAll": "Tout insérer",
+  "compose.previewDescription": "Apercu par plateforme",
+  "compose.charLimit": "Depasse de {count} caracteres (max {limit})",
+  "compose.noPreview": "Selectionnez des plateformes pour voir un apercu",
 
   // ── Calendar ──────────────────────────────────────────
   "calendar.title": "Calendrier",
@@ -424,6 +427,13 @@ export const fr: Record<string, string> = {
   "whiteLabel.appName": "Nom de l'application",
   "whiteLabel.appNameHint": "Affiché dans l'onglet du navigateur et les e-mails",
   "whiteLabel.save": "Enregistrer",
+  "whiteLabel.customDomain": "Domaine personnalisé",
+  "whiteLabel.domainHint": "Associez votre propre domaine à cet espace de travail",
+  "whiteLabel.addTxtRecord": "Ajoutez un enregistrement TXT pour _nova-verify avec la valeur {workspaceId} dans votre DNS",
+  "whiteLabel.verify": "Vérifier",
+  "whiteLabel.verified": "Vérifié",
+  "whiteLabel.notVerified": "Non vérifié",
+  "whiteLabel.saveDomain": "Enregistrer le domaine",
 
   // ── Admin ─────────────────────────────────────────────
   "admin.title": "Administration",
@@ -457,6 +467,42 @@ export const fr: Record<string, string> = {
   "invitation.decline": "Refuser",
   "invitation.accept": "Accepter",
   "invitation.declined": "Invitation refusée",
+
+  // ── Recurring ─────────────────────────────────────────
+  "recurring.title": "Publication récurrente",
+  "recurring.description": "Republier automatiquement ce brouillon selon un calendrier",
+  "recurring.create": "Créer une règle récurrente",
+  "recurring.daily": "Quotidien",
+  "recurring.weekdays": "Jours ouvrés",
+  "recurring.weekly": "Hebdomadaire",
+  "recurring.monthly": "Mensuel",
+  "recurring.custom": "Personnalisé",
+  "recurring.timezone": "Fuseau horaire",
+  "recurring.selectAccounts": "Publier sur",
+  "recurring.active": "Actif",
+  "recurring.activeRules": "Règles actives",
+  "recurring.pause": "Mettre en pause",
+  "recurring.resume": "Reprendre",
+  "recurring.delete": "Supprimer",
+  "recurring.deleteConfirm": "Supprimer cette règle récurrente ?",
+  "recurring.noRules": "Aucune règle récurrente",
+  "recurring.nextFire": "Prochain",
+  "recurring.repeat": "Répéter",
+
+  // ── Content Series ─────────────────────────────────────
+  "series.title": "Séries de contenu",
+  "series.description": "Planifiez du contenu récurrent avec des modèles de séries réutilisables",
+  "series.create": "Créer une série",
+  "series.use": "Utiliser",
+  "series.startDate": "Date de début",
+  "series.slots": "Créneaux",
+  "series.delete": "Supprimer",
+  "series.builtIn": "Intégré",
+  "series.created": "{count} brouillon(s) créé(s)",
+  "series.launchWeek": "Semaine de lancement produit",
+  "series.weeklyMix": "Mix de contenu hebdomadaire",
+  "series.dailyTips": "Astuces quotidiennes",
+  "series.noSeries": "Aucune série de contenu",
 
   // ── Common ────────────────────────────────────────────
   "common.loading": "Chargement…",

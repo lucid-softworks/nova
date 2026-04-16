@@ -326,6 +326,8 @@ export const workspaces = pgTable(
     defaultLanguage: text('default_language').default('en').notNull(),
     requireApproval: boolean('require_approval').default(false).notNull(),
     calendarFeedToken: text('calendar_feed_token').unique(),
+    customDomain: text('custom_domain').unique(),
+    domainVerified: boolean('domain_verified').default(false).notNull(),
     utmDefaults: jsonb('utm_defaults').$type<Record<string, string>>().default({}).notNull(),
     createdAt: now(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -775,6 +777,16 @@ export const postMetricsSnapshots = pgTable(
     ),
   }),
 )
+
+export const contentSeries = pgTable('content_series', {
+  id: id(),
+  workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  description: text('description'),
+  slots: jsonb('slots').$type<Array<{ dayOffset: number; timeOfDay: string; contentHint: string; platforms: string[] }>>().default([]).notNull(),
+  isBuiltIn: boolean('is_built_in').default(false).notNull(),
+  createdAt: now(),
+})
 
 // The legacy per-workspace api_keys table has been replaced by Better Auth's
 // apikey table (defined above). Keys are issued to users; the API Key plugin

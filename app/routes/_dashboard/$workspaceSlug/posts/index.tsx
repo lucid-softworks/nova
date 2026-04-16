@@ -23,6 +23,8 @@ import {
 } from '~/server/posts'
 import { importPostsFromCsv, type ImportReport } from '~/server/csv'
 import { listMembers, type MemberRow } from '~/server/team'
+import { listAccounts, type AccountSummary } from '~/server/accounts'
+import { listRecurring, type RecurringRow } from '~/server/recurring'
 import { PLATFORM_KEYS, PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { cn } from '~/lib/utils'
 import { useT } from '~/lib/i18n'
@@ -39,7 +41,7 @@ const TAB_KEYS: { key: PostsTab; i18nKey: string }[] = [
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/posts/')({
   loader: async ({ params }) => {
-    const [rows, counts, campaigns, members] = await Promise.all([
+    const [rows, counts, campaigns, members, accounts, recurringRules] = await Promise.all([
       listPosts({
         data: {
           workspaceSlug: params.workspaceSlug,
@@ -55,8 +57,10 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/posts/')({
       countsByStatus({ data: { workspaceSlug: params.workspaceSlug } }),
       listCampaigns({ data: { workspaceSlug: params.workspaceSlug } }),
       listMembers({ data: { workspaceSlug: params.workspaceSlug } }),
+      listAccounts({ data: { workspaceSlug: params.workspaceSlug } }),
+      listRecurring({ data: { workspaceSlug: params.workspaceSlug } }),
     ])
-    return { rows, counts, campaigns, members }
+    return { rows, counts, campaigns, members, accounts, recurringRules }
   },
   component: PostsPage,
 })
@@ -71,6 +75,9 @@ function PostsPage() {
   const [counts, setCounts] = useState<CountsByStatus>(initial.counts)
   const [campaigns, setCampaigns] = useState<CampaignSummary[]>(initial.campaigns)
   const members: MemberRow[] = initial.members
+  const accounts: AccountSummary[] = initial.accounts
+  const [recurringRules, setRecurringRules] = useState<RecurringRow[]>(initial.recurringRules)
+  const recurringPostIds = new Set(recurringRules.map((r) => r.sourcePostId))
   const [tab, setTab] = useState<PostsTab>('all')
   const [view, setView] = useState<'flat' | 'grouped'>('flat')
   const [search, setSearch] = useState('')
@@ -85,7 +92,7 @@ function PostsPage() {
   const reload = async () => {
     setLoading(true)
     try {
-      const [r, c, cs] = await Promise.all([
+      const [r, c, cs, rr] = await Promise.all([
         listPosts({
           data: {
             workspaceSlug,
@@ -100,10 +107,12 @@ function PostsPage() {
         }),
         countsByStatus({ data: { workspaceSlug } }),
         listCampaigns({ data: { workspaceSlug } }),
+        listRecurring({ data: { workspaceSlug } }),
       ])
       setRows(r)
       setCounts(c)
       setCampaigns(cs)
+      setRecurringRules(rr)
     } finally {
       setLoading(false)
     }
@@ -345,6 +354,8 @@ function PostsPage() {
                 onToggleSelect={toggleSelect}
                 onChanged={reload}
                 userRole={userRole}
+                accounts={accounts}
+                hasRecurringRule={recurringPostIds.has(r.id)}
               />
             ))
           )}
@@ -360,6 +371,8 @@ function PostsPage() {
               onToggleSelect={toggleSelect}
               onChanged={reload}
               userRole={userRole}
+              accounts={accounts}
+              recurringPostIds={recurringPostIds}
             />
           ))}
           {standalonePosts.length > 0 ? (
@@ -372,6 +385,8 @@ function PostsPage() {
                   selected={selectedIds.has(r.id)}
                   onToggleSelect={toggleSelect}
                   onChanged={reload}
+                  accounts={accounts}
+                  hasRecurringRule={recurringPostIds.has(r.id)}
                 />
               ))}
             </div>
@@ -392,6 +407,8 @@ function CampaignGroupRow({
   onToggleSelect,
   onChanged,
   userRole,
+  accounts,
+  recurringPostIds,
 }: {
   campaign: CampaignSummary
   workspaceSlug: string
@@ -399,6 +416,8 @@ function CampaignGroupRow({
   onToggleSelect: (id: string) => void
   onChanged: () => Promise<void>
   userRole: import('~/server/types').WorkspaceRole
+  accounts: AccountSummary[]
+  recurringPostIds: Set<string>
 }) {
   const [expanded, setExpanded] = useState(false)
   const published = campaign.steps.filter((s) => s.status === 'published').length
@@ -469,6 +488,8 @@ function CampaignGroupRow({
                   onChanged={onChanged}
                   indent
                   userRole={userRole}
+                  accounts={accounts}
+                  hasRecurringRule={recurringPostIds.has(s.post.id)}
                 />
               </div>
             ) : null,

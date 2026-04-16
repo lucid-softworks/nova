@@ -6,7 +6,9 @@ import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import { PostStatusBadge, PostTypeBadge } from './badges'
+import { RecurringDialog } from './RecurringDialog'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 import { approvePost, requestChanges, schedulePost } from '~/server/scheduling'
 import {
   duplicatePost,
@@ -17,6 +19,7 @@ import {
   type PostRow as Row,
 } from '~/server/posts'
 import type { WorkspaceRole } from '~/server/types'
+import type { AccountSummary } from '~/server/accounts'
 
 export function PostRow({
   post,
@@ -26,6 +29,8 @@ export function PostRow({
   onChanged,
   indent = false,
   userRole,
+  accounts = [],
+  hasRecurringRule = false,
 }: {
   post: Row
   workspaceSlug: string
@@ -34,14 +39,19 @@ export function PostRow({
   onChanged: () => Promise<void>
   indent?: boolean
   userRole?: WorkspaceRole
+  accounts?: AccountSummary[]
+  hasRecurringRule?: boolean
 }) {
+  const t = useT()
   const [menuOpen, setMenuOpen] = useState(false)
   const [rescheduling, setRescheduling] = useState(false)
+  const [recurringOpen, setRecurringOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [requestChangesOpen, setRequestChangesOpen] = useState(false)
   const [note, setNote] = useState('')
   const canApprove = userRole === 'admin' || userRole === 'manager'
   const isPending = post.status === 'pending_approval'
+  const isDraft = post.status === 'draft'
 
   const [scheduleAt, setScheduleAt] = useState<string>(() => {
     const d = post.scheduledAt ? new Date(post.scheduledAt) : new Date(Date.now() + 60 * 60 * 1000)
@@ -130,6 +140,11 @@ export function PostRow({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
           <PostTypeBadge type={post.type} />
+          {hasRecurringRule ? (
+            <span className="inline-flex items-center gap-1 rounded bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+              <RotateCw className="h-2.5 w-2.5" /> {t('recurring.repeat')}
+            </span>
+          ) : null}
           {post.campaignName && !indent ? (
             <Link
               to="/$workspaceSlug/posts/campaigns/$campaignId"
@@ -260,6 +275,18 @@ export function PostRow({
             >
               <Copy className="h-3 w-3" /> Duplicate
             </button>
+            {isDraft ? (
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                onClick={() => {
+                  setMenuOpen(false)
+                  setRecurringOpen(true)
+                }}
+              >
+                <RotateCw className="h-3 w-3" /> {t('recurring.repeat')}
+              </button>
+            ) : null}
             {post.status === 'failed' ? (
               <button
                 type="button"
@@ -347,6 +374,15 @@ export function PostRow({
             </div>
           </div>
         </div>
+      ) : null}
+      {recurringOpen ? (
+        <RecurringDialog
+          open={recurringOpen}
+          onOpenChange={setRecurringOpen}
+          workspaceSlug={workspaceSlug}
+          postId={post.id}
+          accounts={accounts}
+        />
       ) : null}
     </div>
     {isPending ? (

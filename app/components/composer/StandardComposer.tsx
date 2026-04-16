@@ -25,6 +25,7 @@ import type { LoadedPost } from '~/server/composer'
 import { MediaZone } from './MediaZone'
 import { detectMismatches, MediaMismatchBanner } from './MediaMismatchBanner'
 import { PostPreview } from './PostPreview'
+import { PlatformPreview } from './PlatformPreview'
 import { AIAssistPanel } from './AIAssistPanel'
 import { EmojiPicker } from './EmojiPicker'
 import { HashtagPickerButton } from './HashtagPickerButton'
@@ -420,13 +421,21 @@ export function StandardComposer({
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{t('compose.preview')}</h3>
         {activeVersion && activeVersion.platforms.length > 0 ? (
-          <PreviewTabs
-            version={activeVersion}
-            accounts={accounts}
-            selectedAccountIds={state.selectedAccountIds}
-            mediaById={state.mediaById}
-            reddit={state.reddit}
-          />
+          <>
+            <PreviewTabs
+              version={activeVersion}
+              accounts={accounts}
+              selectedAccountIds={state.selectedAccountIds}
+              mediaById={state.mediaById}
+              reddit={state.reddit}
+            />
+            <PlatformPreviewSection
+              version={activeVersion}
+              accounts={accounts}
+              selectedAccountIds={state.selectedAccountIds}
+              mediaById={state.mediaById}
+            />
+          </>
         ) : (
           <Card>
             <div className="p-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
@@ -1037,6 +1046,54 @@ function RedditFields({
         </div>
       </div>
     </Card>
+  )
+}
+
+function PlatformPreviewSection({
+  version,
+  accounts,
+  selectedAccountIds,
+  mediaById,
+}: {
+  version: Version
+  accounts: ConnectedAccount[]
+  selectedAccountIds: string[]
+  mediaById: Record<string, import('./types').MediaAsset>
+}) {
+  const [open, setOpen] = useState(false)
+  const t = useT()
+
+  const platforms = version.platforms.length ? version.platforms : []
+  if (platforms.length === 0) return null
+
+  const account = accounts.find(
+    (a) => platforms.includes(a.platform) && selectedAccountIds.includes(a.id),
+  )
+  const firstMedia = version.mediaIds.length > 0 ? mediaById[version.mediaIds[0]!] : undefined
+  const firstImageUrl = firstMedia && firstMedia.mimeType.startsWith('image/') ? firstMedia.url : null
+
+  return (
+    <div className="border-t border-neutral-200 dark:border-neutral-800 pt-3">
+      <button
+        type="button"
+        className="flex w-full items-center gap-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} />
+        {t('compose.previewDescription')}
+      </button>
+      {open && (
+        <div className="mt-2">
+          <PlatformPreview
+            content={version.content}
+            platforms={platforms}
+            accountHandle={account?.accountHandle ?? 'you'}
+            accountName={account?.accountName ?? 'Your Account'}
+            firstImageUrl={firstImageUrl}
+          />
+        </div>
+      )}
+    </div>
   )
 }
 
