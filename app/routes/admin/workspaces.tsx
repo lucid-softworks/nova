@@ -8,6 +8,7 @@ import {
   deleteAdminWorkspace,
   type AdminWorkspaceRow,
 } from '~/server/admin'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/admin/workspaces')({
   loader: async () => ({ workspaces: await listAdminWorkspaces() }),
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/admin/workspaces')({
 })
 
 function WorkspacesPage() {
+  const t = useT()
   const initial = Route.useLoaderData()
   const [rows, setRows] = useState<AdminWorkspaceRow[]>(initial.workspaces)
 
@@ -30,9 +32,9 @@ function WorkspacesPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-              <th className="px-3 py-2">Workspace</th>
-              <th className="px-3 py-2">Members</th>
-              <th className="px-3 py-2">Created</th>
+              <th className="px-3 py-2">{t('admin.workspaces')}</th>
+              <th className="px-3 py-2">{t('billing.members')}</th>
+              <th className="px-3 py-2">{t('team.joined')}</th>
               <th className="px-3 py-2" />
             </tr>
           </thead>
@@ -54,7 +56,7 @@ function WorkspacesPage() {
                     className="text-red-600"
                     onClick={() => onDelete(w)}
                   >
-                    <Trash2 className="h-3 w-3" /> Delete
+                    <Trash2 className="h-3 w-3" /> {t('common.delete')}
                   </Button>
                 </td>
               </tr>

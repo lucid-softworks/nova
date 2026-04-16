@@ -5,17 +5,18 @@ import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 import { listInbox, markInboxRead, pollInboxNow, type InboxRow } from '~/server/inbox'
 
 type Kind = 'all' | 'mention' | 'reply' | 'like' | 'repost' | 'follow'
 
-const KINDS: { key: Kind; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'mention', label: 'Mentions' },
-  { key: 'reply', label: 'Replies' },
-  { key: 'like', label: 'Likes' },
-  { key: 'repost', label: 'Reposts' },
-  { key: 'follow', label: 'Follows' },
+const KINDS: { key: Kind; i18nKey: string }[] = [
+  { key: 'all', i18nKey: 'inbox.all' },
+  { key: 'mention', i18nKey: 'inbox.mentions' },
+  { key: 'reply', i18nKey: 'inbox.replies' },
+  { key: 'like', i18nKey: 'inbox.likes' },
+  { key: 'repost', i18nKey: 'inbox.reposts' },
+  { key: 'follow', i18nKey: 'inbox.follows' },
 ]
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/inbox')({
@@ -33,6 +34,7 @@ function canReplyInApp(item: InboxRow): boolean {
 }
 
 function InboxPage() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const navigate = useNavigate()
   const initial = Route.useLoaderData() as { items: InboxRow[] }
@@ -94,10 +96,10 @@ function InboxPage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-            Inbox
+            {t('inbox.title')}
           </h2>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            Mentions, replies, and reactions from your connected Bluesky + Mastodon accounts.
+            {t('inbox.inboxDescription')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -107,38 +109,38 @@ function InboxPage() {
               checked={unreadOnly}
               onChange={(e) => setUnreadOnly(e.target.checked)}
             />
-            Unread only
+            {t('inbox.unreadOnly')}
           </label>
           <Button size="sm" variant="ghost" onClick={syncNow} title="Fetch new inbox items now">
-            <RefreshCw className="h-3 w-3" /> Sync
+            <RefreshCw className="h-3 w-3" /> {t('inbox.sync')}
           </Button>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-1 border-b border-neutral-200 dark:border-neutral-800">
-        {KINDS.map((t) => (
+        {KINDS.map((tb) => (
           <button
-            key={t.key}
+            key={tb.key}
             type="button"
-            onClick={() => setKind(t.key)}
+            onClick={() => setKind(tb.key)}
             className={cn(
               'px-3 py-2 text-sm font-medium',
-              kind === t.key
+              kind === tb.key
                 ? 'border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400'
                 : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900',
             )}
           >
-            {t.label}
+            {t(tb.i18nKey)}
           </button>
         ))}
       </div>
 
       <Card>
         {loading ? (
-          <p className="p-4 text-sm text-neutral-500 dark:text-neutral-400">Loading…</p>
+          <p className="p-4 text-sm text-neutral-500 dark:text-neutral-400">{t('inbox.loading')}</p>
         ) : items.length === 0 ? (
           <p className="p-4 text-sm text-neutral-500 dark:text-neutral-400">
-            Nothing here yet. We poll every five minutes; Sync triggers it sooner.
+            {t('inbox.nothingHereYet')}
           </p>
         ) : (
           <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
@@ -187,7 +189,7 @@ function InboxPage() {
                         onClick={() => reply(i)}
                         className="inline-flex items-center gap-0.5 font-medium text-indigo-600 hover:underline dark:text-indigo-400"
                       >
-                        <Reply className="h-3 w-3" /> Reply
+                        <Reply className="h-3 w-3" /> {t('inbox.reply')}
                       </button>
                     ) : null}
                     {i.permalink ? (
@@ -197,7 +199,7 @@ function InboxPage() {
                         rel="noreferrer"
                         className="inline-flex items-center gap-0.5 hover:underline"
                       >
-                        Open <ExternalLink className="h-3 w-3" />
+                        {t('inbox.open')} <ExternalLink className="h-3 w-3" />
                       </a>
                     ) : null}
                     <button
@@ -205,7 +207,7 @@ function InboxPage() {
                       onClick={() => toggleRead(i.id, !i.readAt)}
                       className="inline-flex items-center gap-0.5 hover:underline"
                     >
-                      <Check className="h-3 w-3" /> {i.readAt ? 'Mark unread' : 'Mark read'}
+                      <Check className="h-3 w-3" /> {i.readAt ? t('inbox.markUnread2') : t('inbox.markRead2')}
                     </button>
                   </div>
                 </div>

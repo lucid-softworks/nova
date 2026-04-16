@@ -16,6 +16,7 @@ import {
   type RssFeedRow,
 } from '~/server/rss'
 import { listAccounts, type AccountSummary } from '~/server/accounts'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/rss')({
   loader: async ({ params }) => {
@@ -29,6 +30,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/rss')(
 })
 
 function RssSettings() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData() as { feeds: RssFeedRow[]; accounts: AccountSummary[] }
   const [feeds, setFeeds] = useState<RssFeedRow[]>(initial.feeds)
@@ -94,7 +96,7 @@ function RssSettings() {
       <SettingsNav workspaceSlug={workspaceSlug} active="rss" />
       <Card>
         <form className="space-y-3 p-4" onSubmit={add}>
-          <Field label="RSS feed URL" htmlFor="rss-url">
+          <Field label={t('rss.feedUrl')} htmlFor="rss-url">
             <Input
               id="rss-url"
               type="url"
@@ -106,7 +108,7 @@ function RssSettings() {
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <div>
             <Button type="submit" disabled={busy === 'add' || !url.trim()}>
-              {busy === 'add' ? <Spinner /> : null} Add feed
+              {busy === 'add' ? <Spinner /> : null} {t('rss.addFeed')}
             </Button>
           </div>
         </form>
@@ -115,7 +117,7 @@ function RssSettings() {
       <Card>
         {feeds.length === 0 ? (
           <p className="p-4 text-sm text-neutral-500 dark:text-neutral-400">
-            No feeds yet. Add one above — we poll every 15 min.
+            {t('rss.noFeeds')}
           </p>
         ) : (
           <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
@@ -129,8 +131,8 @@ function RssSettings() {
                     <div className="truncate text-xs text-neutral-500 dark:text-neutral-400">
                       {f.url} ·{' '}
                       {f.lastPolledAt
-                        ? `last polled ${new Date(f.lastPolledAt).toLocaleString()}`
-                        : 'never polled'}
+                        ? `${t('rss.lastPolled')} ${new Date(f.lastPolledAt).toLocaleString()}`
+                        : t('rss.neverPolled')}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
@@ -141,7 +143,7 @@ function RssSettings() {
                       disabled={busy === f.id}
                       title="Poll now"
                     >
-                      <RefreshCw className="h-3 w-3" /> Sync
+                      <RefreshCw className="h-3 w-3" /> {t('rss.sync')}
                     </Button>
                     <Button
                       size="sm"
@@ -161,7 +163,7 @@ function RssSettings() {
                       checked={f.active}
                       onChange={(e) => toggle(f.id, { active: e.target.checked })}
                     />
-                    Active
+                    {t('rss.active')}
                   </label>
                   <label className="inline-flex items-center gap-1">
                     <input
@@ -169,7 +171,7 @@ function RssSettings() {
                       checked={f.autoPublish}
                       onChange={(e) => toggle(f.id, { autoPublish: e.target.checked })}
                     />
-                    Auto-publish (else drafts)
+                    {t('rss.autoPublish')}
                   </label>
                   {f.autoPublish ? (
                     <AccountPicker
@@ -197,10 +199,11 @@ function AccountPicker({
   selected: string[]
   onChange: (next: string[]) => void
 }) {
+  const t = useT()
   return (
     <div className="flex flex-wrap items-center gap-1">
       {accounts.length === 0 ? (
-        <span className="text-neutral-500 dark:text-neutral-400">No connected accounts</span>
+        <span className="text-neutral-500 dark:text-neutral-400">{t('rss.noConnectedAccounts')}</span>
       ) : (
         accounts.map((a) => {
           const on = selected.includes(a.id)

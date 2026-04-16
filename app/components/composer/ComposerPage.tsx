@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 import { StandardComposer } from './StandardComposer'
 import { CampaignComposer } from './CampaignComposer'
 import type { ConnectedAccount } from './types'
@@ -23,6 +24,7 @@ export function ComposerPage({
   initialScheduledAt?: string | null
   reply?: { replyTo: string; handle: string; accountId: string | null } | null
 }) {
+  const t = useT()
   const [mode, setMode] = useState<'standard' | 'campaign'>('standard')
   return (
     <div className="space-y-4">
@@ -36,7 +38,7 @@ export function ComposerPage({
               mode === 'standard' ? 'bg-indigo-500 text-white' : 'text-neutral-600 dark:text-neutral-300',
             )}
           >
-            Standard Post
+            {t('compose.standardPostLabel')}
           </button>
           <button
             type="button"
@@ -46,12 +48,12 @@ export function ComposerPage({
               mode === 'campaign' ? 'bg-indigo-500 text-white' : 'text-neutral-600 dark:text-neutral-300',
             )}
           >
-            Campaign
+            {t('compose.campaignLabel')}
           </button>
         </div>
         {existing ? (
           <div className="rounded-full bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300">
-            Editing {existing.status} post
+            {t('compose.editingPost', { status: existing.status })}
           </div>
         ) : null}
       </div>

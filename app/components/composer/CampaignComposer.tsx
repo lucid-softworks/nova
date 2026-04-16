@@ -11,6 +11,7 @@ import { MediaZone } from './MediaZone'
 import { AIAssistPanel } from './AIAssistPanel'
 import { detectMismatches, MediaMismatchBanner } from './MediaMismatchBanner'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 import { saveCampaign } from '~/server/campaigns'
 import type { ConnectedAccount, MediaAsset } from './types'
 import { makeId } from './types'
@@ -50,6 +51,7 @@ export function CampaignComposer({
   workspaceSlug: string
   accounts: ConnectedAccount[]
 }) {
+  const t = useT()
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [steps, setSteps] = useState<CampaignStep[]>([newStep()])
@@ -94,22 +96,22 @@ export function CampaignComposer({
   const onSave = async (asDraft: boolean) => {
     setError(null)
     if (!name.trim()) {
-      setError('Campaign name is required')
+      setError(t('compose.campaignNameRequired'))
       return
     }
     if (!asDraft) {
       for (const s of steps) {
         if (s.selectedAccountIds.length === 0) {
-          setError('Every step needs at least one account selected')
+          setError(t('compose.everyStepNeedsAccount'))
           return
         }
         if (!s.dependsOn && !s.triggerScheduledAt) {
-          setError('Root steps need a scheduled date/time')
+          setError(t('compose.rootStepsNeedSchedule'))
           return
         }
       }
       if (anyMismatch) {
-        setError('Resolve media mismatches before scheduling')
+        setError(t('compose.resolveMediaMismatches'))
         return
       }
     }
@@ -149,7 +151,7 @@ export function CampaignComposer({
     <div className="space-y-4">
       <Card>
         <div className="p-4">
-          <Field label="Campaign name" htmlFor="campaign-name">
+          <Field label={t('compose.campaignName')} htmlFor="campaign-name">
             <Input
               id="campaign-name"
               value={name}
@@ -191,7 +193,7 @@ export function CampaignComposer({
       </ol>
 
       <Button type="button" variant="outline" onClick={addStep}>
-        <Plus className="h-4 w-4" /> Add Step
+        <Plus className="h-4 w-4" /> {t('compose.addStep')}
       </Button>
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
@@ -199,11 +201,11 @@ export function CampaignComposer({
       <div className="flex items-center justify-end gap-2 border-t border-neutral-200 dark:border-neutral-800 pt-4">
         <Button type="button" variant="ghost" onClick={() => onSave(true)} disabled={saving !== null}>
           {saving === 'draft' ? <Spinner /> : null}
-          Save Campaign Draft
+          {t('compose.saveCampaignDraft')}
         </Button>
         <Button type="button" onClick={() => onSave(false)} disabled={saving !== null || anyMismatch}>
           {saving === 'schedule' ? <Spinner /> : null}
-          Schedule Campaign
+          {t('compose.scheduleCampaign')}
         </Button>
       </div>
     </div>

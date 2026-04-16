@@ -13,6 +13,7 @@ import {
   deleteWorkspace,
   type WorkspaceSettings,
 } from '~/server/settings'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/')({
   loader: async ({ params }) => ({
@@ -46,6 +47,7 @@ const COMMON_TIMEZONES = [
 ]
 
 function GeneralSettings() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const { workspace } = Route.useRouteContext()
   const initial = Route.useLoaderData()
@@ -72,7 +74,7 @@ function GeneralSettings() {
           logoUrl: settings.logoUrl ?? '',
         },
       })
-      setMessage('Saved')
+      setMessage(t('settings.saved'))
       if (res.newSlug !== workspaceSlug) {
         navigate({
           to: '/$workspaceSlug/settings',
@@ -100,8 +102,8 @@ function GeneralSettings() {
       <SettingsNav workspaceSlug={workspaceSlug} active="general" />
       <Card>
         <div className="space-y-4 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">General</h3>
-          <Field label="Workspace name" htmlFor="name">
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('settings.general')}</h3>
+          <Field label={t('settings.workspaceName')} htmlFor="name">
             <Input
               id="name"
               value={settings.name}
@@ -109,7 +111,7 @@ function GeneralSettings() {
               onChange={(e) => setSettings((s) => ({ ...s, name: e.target.value }))}
             />
           </Field>
-          <Field label="URL slug" htmlFor="slug" hint="Lowercase letters, numbers, hyphens">
+          <Field label={t('settings.urlSlug')} htmlFor="slug" hint={t('onboarding.urlSlugHint')}>
             <Input
               id="slug"
               value={settings.slug}
@@ -117,7 +119,7 @@ function GeneralSettings() {
               onChange={(e) => setSettings((s) => ({ ...s, slug: e.target.value }))}
             />
           </Field>
-          <Field label="Logo" htmlFor="logo" hint="Square image works best">
+          <Field label={t('settings.logo')} htmlFor="logo" hint={t('settings.logoHint')}>
             <LogoUploader
               workspaceSlug={workspaceSlug}
               value={settings.logoUrl ?? ''}
@@ -125,7 +127,7 @@ function GeneralSettings() {
               disabled={!canEdit}
             />
           </Field>
-          <Field label="Timezone" htmlFor="tz">
+          <Field label={t('settings.timezone')} htmlFor="tz">
             <select
               id="tz"
               value={settings.timezone}
@@ -140,7 +142,7 @@ function GeneralSettings() {
               ))}
             </select>
           </Field>
-          <Field label="Default language" htmlFor="lang">
+          <Field label={t('settings.defaultLanguage')} htmlFor="lang">
             <select
               id="lang"
               value={settings.defaultLanguage}
@@ -158,7 +160,7 @@ function GeneralSettings() {
           {message ? <p className="text-sm text-neutral-600 dark:text-neutral-300">{message}</p> : null}
           <div className="flex justify-end">
             <Button onClick={save} disabled={saving || !canEdit}>
-              {saving ? <Spinner /> : null} Save
+              {saving ? <Spinner /> : null} {t('settings.save')}
             </Button>
           </div>
         </div>
@@ -167,13 +169,12 @@ function GeneralSettings() {
       {canEdit ? (
         <Card>
           <div className="space-y-3 p-4">
-            <h3 className="text-sm font-semibold text-red-700 dark:text-red-300">Danger zone</h3>
+            <h3 className="text-sm font-semibold text-red-700 dark:text-red-300">{t('settings.dangerZone')}</h3>
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              Deleting the workspace removes all posts, media, campaigns, and connected accounts.
-              This cannot be undone.
+              {t('settings.deleteWarning')}
             </p>
             <Button variant="outline" className="text-red-600" onClick={() => setDeleteOpen(true)}>
-              Delete Workspace
+              {t('settings.deleteWorkspace')}
             </Button>
           </div>
         </Card>
@@ -185,7 +186,7 @@ function GeneralSettings() {
           <div className="absolute left-1/2 top-1/2 w-[min(460px,95%)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-xl">
             <h3 className="text-sm font-semibold text-red-700 dark:text-red-300">Delete &quot;{settings.name}&quot;?</h3>
             <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-              Type the workspace name below to confirm. This cannot be undone.
+              {t('settings.typeNameToConfirm')}
             </p>
             <Input
               className="mt-3"
@@ -195,7 +196,7 @@ function GeneralSettings() {
             />
             <div className="mt-3 flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setDeleteOpen(false)}>
-                Cancel
+                {t('settings.cancel')}
               </Button>
               <Button
                 variant="outline"
@@ -203,7 +204,7 @@ function GeneralSettings() {
                 disabled={deleteConfirm !== settings.name}
                 onClick={onDelete}
               >
-                Delete forever
+                {t('settings.deleteForever')}
               </Button>
             </div>
           </div>

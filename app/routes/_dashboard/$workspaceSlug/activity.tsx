@@ -6,6 +6,7 @@ import { Card } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
 import { listMembers, type MemberRow } from '~/server/team'
 import { listWorkspaceActivity, type WorkspaceActivityRow } from '~/server/posts'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/activity')({
   loader: async ({ params }) => {
@@ -44,6 +45,7 @@ function isoForDate(d: string, endOfDay = false): string | null {
 }
 
 function ActivityPage() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData() as {
     activity: WorkspaceActivityRow[]
@@ -92,15 +94,15 @@ function ActivityPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-            Activity
+            {t('activity.title')}
           </h2>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            Recent changes across your workspace.
+            {t('activity.recentChanges')}
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
           <label className="text-xs text-neutral-600 dark:text-neutral-300">
-            From
+            {t('activity.from')}
             <Input
               type="date"
               value={fromDate}
@@ -109,7 +111,7 @@ function ActivityPage() {
             />
           </label>
           <label className="text-xs text-neutral-600 dark:text-neutral-300">
-            To
+            {t('activity.to')}
             <Input
               type="date"
               value={toDate}
@@ -118,13 +120,13 @@ function ActivityPage() {
             />
           </label>
           <label className="text-xs text-neutral-600 dark:text-neutral-300">
-            Actor
+            {t('activity.actor')}
             <select
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
               className="mt-0.5 h-8 rounded-md border border-neutral-200 bg-white px-2 text-sm dark:border-neutral-800 dark:bg-neutral-900"
             >
-              <option value="">Everyone</option>
+              <option value="">{t('activity.everyone')}</option>
               {initial.members.map((m) => (
                 <option key={m.userId} value={m.userId}>
                   {m.name}
@@ -134,22 +136,22 @@ function ActivityPage() {
           </label>
           <Button asChild size="sm" variant="outline">
             <a href={exportUrl('csv')}>
-              <Download className="h-3 w-3" /> CSV
+              <Download className="h-3 w-3" /> {t('activity.csvExport')}
             </a>
           </Button>
           <Button asChild size="sm" variant="outline">
             <a href={exportUrl('json')}>
-              <Download className="h-3 w-3" /> JSON
+              <Download className="h-3 w-3" /> {t('activity.jsonExport')}
             </a>
           </Button>
         </div>
       </div>
       <Card>
         {loading ? (
-          <p className="p-4 text-sm text-neutral-500 dark:text-neutral-400">Loading…</p>
+          <p className="p-4 text-sm text-neutral-500 dark:text-neutral-400">{t('activity.loading')}</p>
         ) : activity.length === 0 ? (
           <p className="p-4 text-sm text-neutral-500 dark:text-neutral-400">
-            No matching activity.
+            {t('activity.noMatchingActivity')}
           </p>
         ) : (
           <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
@@ -167,7 +169,7 @@ function ActivityPage() {
                       search={{ postId: a.postId } as never}
                       className="text-indigo-600 hover:underline"
                     >
-                      a post
+                      {t('activity.aPost')}
                     </Link>
                     {a.note ? (
                       <span className="text-neutral-500 dark:text-neutral-400">

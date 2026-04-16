@@ -27,6 +27,7 @@ import {
 import { PostStatusBadge } from '~/components/posts/badges'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 
 type View = 'month' | 'week'
 
@@ -51,6 +52,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/calendar')({
 })
 
 function CalendarPage() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const navigate = useNavigate()
   const initial = Route.useLoaderData()
@@ -138,7 +140,7 @@ function CalendarPage() {
 
     if (target.getTime() === source.getTime()) return
     if (post.status === 'published') {
-      alert("Can't reschedule a post that's already published.")
+      alert(t('calendar.cantRescheduleAlert'))
       return
     }
     // Optimistic update
@@ -155,7 +157,7 @@ function CalendarPage() {
       })
       await reload()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Reschedule failed')
+      alert(err instanceof Error ? err.message : t('calendar.rescheduleFailedAlert'))
       await reload()
     }
   }
@@ -197,21 +199,21 @@ function CalendarPage() {
               onClick={() => setView('month')}
               className={cn('rounded px-2 py-1', view === 'month' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
             >
-              Month
+              {t('calendar.month')}
             </button>
             <button
               type="button"
               onClick={() => setView('week')}
               className={cn('rounded px-2 py-1', view === 'week' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
             >
-              Week
+              {t('calendar.week')}
             </button>
           </div>
           <Button size="sm" variant="outline" onClick={goPrev} aria-label="Previous">
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button size="sm" variant="outline" onClick={goToday}>
-            Today
+            {t('calendar.today')}
           </Button>
           <Button size="sm" variant="outline" onClick={goNext} aria-label="Next">
             <ChevronRight className="h-4 w-4" />
@@ -221,7 +223,7 @@ function CalendarPage() {
         </div>
         <Button asChild size="sm">
           <Link to="/$workspaceSlug/compose" params={{ workspaceSlug }}>
-            New Post
+            {t('calendar.newPost')}
           </Link>
         </Button>
       </div>
@@ -552,6 +554,7 @@ function QuickViewPopover({
   onClose: () => void
   onChanged: () => Promise<void>
 }) {
+  const t = useT()
   const [rescheduleAt, setRescheduleAt] = useState<string>('')
   const [busy, setBusy] = useState(false)
 
@@ -584,7 +587,7 @@ function QuickViewPopover({
   }
 
   const onDelete = async () => {
-    if (!confirm('Delete this post?')) return
+    if (!confirm(t('calendar.deletePost'))) return
     setBusy(true)
     try {
       await deletePosts({ data: { workspaceSlug, postIds: [post.id] } })
@@ -622,7 +625,7 @@ function QuickViewPopover({
               <span className="text-neutral-600 dark:text-neutral-300">{post.reshareSource.preview}</span>
             </span>
           ) : (
-            post.defaultContent || <span className="italic text-neutral-400 dark:text-neutral-500">No content</span>
+            post.defaultContent || <span className="italic text-neutral-400 dark:text-neutral-500">{t('calendar.noContent')}</span>
           )}
         </div>
         {post.campaignId && post.campaignName ? (
@@ -647,7 +650,7 @@ function QuickViewPopover({
               className="h-8 flex-1"
             />
             <Button size="sm" onClick={confirmReschedule} disabled={busy}>
-              Reschedule
+              {t('calendar.reschedule')}
             </Button>
           </div>
         ) : null}
@@ -656,14 +659,14 @@ function QuickViewPopover({
           {liveUrl ? (
             <Button asChild size="sm" variant="outline">
               <a href={liveUrl} target="_blank" rel="noreferrer">
-                <ExternalLink className="h-3 w-3" /> View on platform
+                <ExternalLink className="h-3 w-3" /> {t('calendar.viewOnPlatform')}
               </a>
             </Button>
           ) : (
             <span />
           )}
           <Button size="sm" variant="outline" className="text-red-600" onClick={onDelete} disabled={busy}>
-            <Trash2 className="h-3 w-3" /> Delete
+            <Trash2 className="h-3 w-3" /> {t('common.delete')}
           </Button>
         </div>
       </div>

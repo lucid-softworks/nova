@@ -4,6 +4,7 @@ import { RotateCw } from 'lucide-react'
 import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
 import { getAdminJobStats, retryAdminJob, type AdminJobStats } from '~/server/admin'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/admin/jobs')({
   loader: async () => ({ stats: await getAdminJobStats() }),
@@ -11,6 +12,7 @@ export const Route = createFileRoute('/admin/jobs')({
 })
 
 function JobsPage() {
+  const t = useT()
   const initial = Route.useLoaderData()
   const [stats, setStats] = useState<AdminJobStats>(initial.stats)
   const [busy, setBusy] = useState<string | null>(null)
@@ -35,36 +37,24 @@ function JobsPage() {
             {q.queue} queue
           </div>
           <div className="grid gap-3 sm:grid-cols-5">
-            {(['Waiting', 'Active', 'Delayed', 'Completed', 'Failed'] as const).map((label) => {
-              const value =
-                label === 'Waiting'
-                  ? q.waiting
-                  : label === 'Active'
-                    ? q.active
-                    : label === 'Delayed'
-                      ? q.delayed
-                      : label === 'Completed'
-                        ? q.completed
-                        : q.failed
-              return (
-                <Card key={label}>
+            {([{ i18nKey: 'admin.waiting', field: 'waiting' as const }, { i18nKey: 'admin.active', field: 'active' as const }, { i18nKey: 'admin.delayed', field: 'delayed' as const }, { i18nKey: 'admin.completed', field: 'completed' as const }, { i18nKey: 'admin.failed', field: 'failed' as const }]).map(({ i18nKey, field }) => (
+                <Card key={field}>
                   <div className="space-y-1 p-3">
                     <div className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                      {label}
+                      {t(i18nKey)}
                     </div>
-                    <div className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{value}</div>
+                    <div className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{q[field]}</div>
                   </div>
                 </Card>
-              )
-            })}
+              ))}
           </div>
         </div>
       ))}
       <Card>
         <div className="p-3">
-          <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">Failed jobs</h3>
+          <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('admin.failedJobs')}</h3>
           {stats.failedJobs.length === 0 ? (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Nothing failed.</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('admin.nothingFailed')}</p>
           ) : (
             <div className="space-y-2">
               {stats.failedJobs.map((j) => (
@@ -90,7 +80,7 @@ function JobsPage() {
                     onClick={() => onRetry(j.id, j.queue)}
                     disabled={busy === j.id}
                   >
-                    <RotateCw className="h-3 w-3" /> Retry
+                    <RotateCw className="h-3 w-3" /> {t('admin.retry')}
                   </Button>
                 </div>
               ))}

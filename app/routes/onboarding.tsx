@@ -12,6 +12,7 @@ import { Input } from '~/components/ui/input'
 import { Field } from '~/components/ui/field'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Spinner } from '~/components/ui/spinner'
+import { useT } from '~/lib/i18n'
 
 const step1Schema = z.object({
   name: z.string().min(1, 'Required').max(80),
@@ -107,6 +108,7 @@ function OnboardingPage() {
 }
 
 function Step1({ initial, onNext }: { initial: Step1Values | null; onNext: (v: Step1Values) => void }) {
+  const t = useT()
   const form = useForm<Step1Values>({
     resolver: zodResolver(step1Schema),
     defaultValues: initial ?? { name: '', slug: '' },
@@ -123,24 +125,24 @@ function Step1({ initial, onNext }: { initial: Step1Values | null; onNext: (v: S
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create your workspace</CardTitle>
-        <CardDescription>You can rename or invite teammates anytime.</CardDescription>
+        <CardTitle>{t('onboarding.createWorkspace')}</CardTitle>
+        <CardDescription>{t('onboarding.renameAnytime')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={form.handleSubmit(onNext)}>
-          <Field label="Workspace name" htmlFor="name" error={form.formState.errors.name?.message}>
-            <Input id="name" value={nameValue} onChange={handleNameChange} placeholder="Acme Inc." />
+          <Field label={t('onboarding.workspaceName')} htmlFor="name" error={form.formState.errors.name?.message}>
+            <Input id="name" value={nameValue} onChange={handleNameChange} placeholder={t('onboarding.workspaceNamePlaceholder')} />
           </Field>
           <Field
-            label="URL slug"
+            label={t('onboarding.urlSlug')}
             htmlFor="slug"
             error={form.formState.errors.slug?.message}
-            hint="Used in your workspace URL"
+            hint={t('onboarding.urlSlugHint')}
           >
             <Input id="slug" {...form.register('slug')} placeholder="acme" />
           </Field>
           <Button type="submit" className="w-full">
-            Continue
+            {t('onboarding.continue')}
           </Button>
         </form>
       </CardContent>
@@ -159,6 +161,7 @@ function Step2({
   error: string | null
   isSubmitting: boolean
 }) {
+  const t = useT()
   const form = useForm<Step2Values>({
     resolver: zodResolver(step2Schema),
     defaultValues: { invites: [{ email: '', role: 'editor' }] },
@@ -168,8 +171,8 @@ function Step2({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Invite your team</CardTitle>
-        <CardDescription>You can add more people later from Settings.</CardDescription>
+        <CardTitle>{t('onboarding.inviteTeam')}</CardTitle>
+        <CardDescription>{t('onboarding.addMoreLater')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
@@ -184,10 +187,10 @@ function Step2({
                   className="h-10 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 text-sm"
                   {...form.register(`invites.${i}.role` as const)}
                 >
-                  <option value="admin">Admin</option>
-                  <option value="manager">Manager</option>
-                  <option value="editor">Editor</option>
-                  <option value="viewer">Viewer</option>
+                  <option value="admin">{t('team.admin')}</option>
+                  <option value="manager">{t('team.manager')}</option>
+                  <option value="editor">{t('team.editor')}</option>
+                  <option value="viewer">{t('team.viewer')}</option>
                 </select>
                 <Button
                   type="button"
@@ -206,13 +209,13 @@ function Step2({
               size="sm"
               onClick={() => append({ email: '', role: 'editor' })}
             >
-              <Plus className="h-4 w-4" /> Add another
+              <Plus className="h-4 w-4" /> {t('team.add')}
             </Button>
           </div>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <div className="flex items-center justify-between pt-2">
             <Button type="button" variant="ghost" onClick={onBack}>
-              Back
+              {t('common.back')}
             </Button>
             <div className="flex gap-2">
               <Button
@@ -221,11 +224,11 @@ function Step2({
                 onClick={() => onSubmit({ invites: [] })}
                 disabled={isSubmitting}
               >
-                Skip for now
+                {t('onboarding.skipForNow')}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? <Spinner /> : null}
-                Create workspace
+                {t('onboarding.createWorkspaceButton')}
               </Button>
             </div>
           </div>
@@ -236,11 +239,12 @@ function Step2({
 }
 
 function Step3({ onDone }: { onDone: () => void }) {
+  const t = useT()
   return (
     <Card>
       <CardHeader>
-        <CardTitle>You&apos;re all set!</CardTitle>
-        <CardDescription>Your workspace is ready.</CardDescription>
+        <CardTitle>{t('onboarding.allSet')}</CardTitle>
+        <CardDescription>{t('onboarding.workspaceReady')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-center">
@@ -249,7 +253,7 @@ function Step3({ onDone }: { onDone: () => void }) {
           </div>
         </div>
         <Button className="w-full" onClick={onDone}>
-          Go to dashboard
+          {t('onboarding.goToDashboard')}
         </Button>
       </CardContent>
     </Card>

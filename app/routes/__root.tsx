@@ -1,6 +1,7 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import globalsCss from '../styles/globals.css?url'
+import { I18nProvider } from '~/lib/i18n'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -21,20 +22,23 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   return (
-    <RootDocument>
-      <Outlet />
-    </RootDocument>
+    <I18nProvider>
+      <RootDocument>
+        <Outlet />
+      </RootDocument>
+    </I18nProvider>
   )
 }
 
-// Runs before React hydrates — applies the persisted theme so we don't
-// flash a light screen at users who chose dark. Kept deliberately tiny.
+// Applies dark mode from system preference before hydration.
 const THEME_INIT_SCRIPT = `
 try {
-  var t = localStorage.getItem('theme');
-  if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
     document.documentElement.classList.add('dark');
   }
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+    document.documentElement.classList.toggle('dark', e.matches);
+  });
 } catch (e) {}
 `
 

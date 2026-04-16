@@ -10,6 +10,7 @@ import {
   openBillingPortal,
   type BillingSummary,
 } from '~/server/billing'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/billing')({
   loader: async ({ params }) => ({
@@ -43,6 +44,7 @@ function UsageBar({ label, used, limit }: { label: string; used: number; limit: 
 }
 
 function BillingSettings() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const { workspace } = Route.useRouteContext()
   const { summary } = Route.useLoaderData() as { summary: BillingSummary }
@@ -82,17 +84,17 @@ function BillingSettings() {
       <Card>
         <div className="space-y-3 p-4">
           <div>
-            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Billing</h3>
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('billing.title')}</h3>
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              Provider: <span className="font-medium">{summary.provider}</span>
+              {t('billing.provider')}: <span className="font-medium">{summary.provider}</span>
             </p>
           </div>
           <div className="rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3 text-sm">
             <div>
-              Current plan: <span className="font-medium">{summary.plan ?? 'Free'}</span>
+              {t('billing.currentPlan')}: <span className="font-medium">{summary.plan ?? t('billing.free')}</span>
             </div>
             <div>
-              Status: <span className="font-medium">{summary.status}</span>
+              {t('billing.status')}: <span className="font-medium">{summary.status}</span>
             </div>
             {summary.currentPeriodEnd ? (
               <div className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -103,17 +105,17 @@ function BillingSettings() {
 
           <div className="grid gap-2 sm:grid-cols-3">
             <UsageBar
-              label="Members"
+              label={t('billing.members')}
               used={summary.usage.members}
               limit={summary.limits.maxMembers}
             />
             <UsageBar
-              label="Connected accounts"
+              label={t('billing.connectedAccounts')}
               used={summary.usage.connectedAccounts}
               limit={summary.limits.maxConnectedAccounts}
             />
             <UsageBar
-              label="Scheduled posts (this month)"
+              label={t('billing.scheduledPosts')}
               used={summary.usage.scheduledPostsThisPeriod}
               limit={summary.limits.maxScheduledPostsPerMonth}
             />
@@ -125,11 +127,11 @@ function BillingSettings() {
               enable Stripe, Polar, Dodo, Autumn, Creem, or Chargebee.
             </p>
           ) : !canManage ? (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Only workspace admins can manage billing.</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('billing.onlyAdmins')}</p>
           ) : summary.status === 'active' || summary.status === 'trialing' ? (
             <div>
               <Button onClick={manage} disabled={busy !== null}>
-                {busy === 'portal' ? <Spinner /> : null} Manage billing
+                {busy === 'portal' ? <Spinner /> : null} {t('billing.manageBilling')}
               </Button>
             </div>
           ) : (
@@ -142,7 +144,7 @@ function BillingSettings() {
                   disabled={busy !== null}
                 >
                   {busy === plan ? <Spinner /> : null}
-                  Upgrade to {plan}
+                  {t('billing.upgradeTo', { plan })}
                 </Button>
               ))}
             </div>

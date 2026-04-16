@@ -5,6 +5,7 @@ import { acceptInvitation, loadInvitation } from '~/server/invitations'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
 import { Spinner } from '~/components/ui/spinner'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/accept-invitation')({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -24,6 +25,7 @@ export const Route = createFileRoute('/accept-invitation')({
 })
 
 function AcceptInvitationPage() {
+  const t = useT()
   const { invitation, token } = Route.useLoaderData()
   const navigate = useNavigate()
   const [busy, setBusy] = useState<'accept' | 'reject' | null>(null)
@@ -71,9 +73,9 @@ function AcceptInvitationPage() {
       <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
         <Card>
           <div className="p-6 text-center">
-            <h1 className="text-lg font-semibold">Invitation not found</h1>
+            <h1 className="text-lg font-semibold">{t('invitation.notFound')}</h1>
             <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              It may have expired or already been used.
+              {t('invitation.expiredOrUsed')}
             </p>
           </div>
         </Card>
@@ -85,22 +87,21 @@ function AcceptInvitationPage() {
     <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
       <Card>
         <div className="w-[min(480px,95vw)] space-y-4 p-6">
-          <h1 className="text-xl font-semibold">You're invited to join {invitation.orgName}</h1>
+          <h1 className="text-xl font-semibold">{t('invitation.youreInvited')}</h1>
           <p className="text-sm text-neutral-600">
-            {invitation.inviterName ?? 'A workspace admin'} has invited you to join{' '}
-            <strong>{invitation.orgName}</strong> as a{' '}
-            <span className="font-medium">{invitation.role}</span>.
+            {t('invitation.hasInvited', { name: invitation.inviterName ?? 'A workspace admin', workspace: invitation.orgName })}{' '}
+            {t('invitation.asRole', { role: invitation.role })}
           </p>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           {done === 'rejected' ? (
-            <p className="text-sm text-neutral-500">Invitation declined.</p>
+            <p className="text-sm text-neutral-500">{t('invitation.declined')}</p>
           ) : (
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={onReject} disabled={busy !== null}>
-                {busy === 'reject' ? <Spinner /> : null} Decline
+                {busy === 'reject' ? <Spinner /> : null} {t('invitation.decline')}
               </Button>
               <Button onClick={onAccept} disabled={busy !== null}>
-                {busy === 'accept' ? <Spinner /> : null} Accept invitation
+                {busy === 'accept' ? <Spinner /> : null} {t('invitation.accept')}
               </Button>
             </div>
           )}

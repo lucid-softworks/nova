@@ -18,6 +18,7 @@ import {
   type ApiKeyRow,
   type WebhookRow,
 } from '~/server/settings'
+import { useT } from '~/lib/i18n'
 
 const EVENTS = [
   'post.published',
@@ -40,6 +41,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/api')(
 })
 
 function ApiSettings() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData()
   const [keys, setKeys] = useState<ApiKeyRow[]>(initial.keys)
@@ -121,9 +123,9 @@ function ApiSettings() {
 
       <Card>
         <div className="space-y-3 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">API keys</h3>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('api.apiKeys')}</h3>
           {keys.length === 0 ? (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">No API keys yet.</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('api.noKeys')}</p>
           ) : (
             <div className="space-y-2">
               {keys.map((k) => (
@@ -143,7 +145,7 @@ function ApiSettings() {
             </div>
           )}
           <div className="flex items-end gap-2">
-            <Field label="New key name" htmlFor="key-name" className="flex-1">
+            <Field label={t('api.newKeyName')} htmlFor="key-name" className="flex-1">
               <Input
                 id="key-name"
                 value={newKeyName}
@@ -152,12 +154,12 @@ function ApiSettings() {
               />
             </Field>
             <Button onClick={onCreateKey} disabled={creatingKey || !newKeyName.trim()}>
-              {creatingKey ? <Spinner /> : <Plus className="h-4 w-4" />} Create
+              {creatingKey ? <Spinner /> : <Plus className="h-4 w-4" />} {t('api.create')}
             </Button>
           </div>
           {revealed ? (
             <div className="rounded-md border border-indigo-200 bg-indigo-50 dark:bg-indigo-950/40 p-3 text-sm">
-              <div className="font-semibold text-indigo-800">Save this key — it won&apos;t be shown again.</div>
+              <div className="font-semibold text-indigo-800">{t('api.saveKeyWarning')}</div>
               <div className="mt-1 flex items-center gap-2">
                 <code className="flex-1 break-all rounded bg-white dark:bg-neutral-900 px-2 py-1 text-xs">
                   {revealed.plaintext}
@@ -169,7 +171,7 @@ function ApiSettings() {
                     navigator.clipboard.writeText(revealed.plaintext).catch(() => {})
                   }}
                 >
-                  <Copy className="h-3 w-3" /> Copy
+                  <Copy className="h-3 w-3" /> {t('api.copy')}
                 </Button>
               </div>
             </div>
@@ -179,9 +181,9 @@ function ApiSettings() {
 
       <Card>
         <div className="space-y-3 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Webhooks</h3>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('api.webhooks')}</h3>
           {webhooks.length === 0 ? (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">No webhooks yet.</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('api.noWebhooks')}</p>
           ) : (
             <div className="space-y-2">
               {webhooks.map((w) => (
@@ -194,7 +196,7 @@ function ApiSettings() {
                         checked={w.isActive}
                         onChange={(e) => onToggleWebhook(w, e.target.checked)}
                       />
-                      Active
+                      {t('rss.active')}
                     </label>
                     <Button size="sm" variant="ghost" className="text-red-600" onClick={() => onDeleteWebhook(w)}>
                       <Trash2 className="h-3 w-3" />
@@ -215,7 +217,7 @@ function ApiSettings() {
             </div>
           )}
           <div className="space-y-2">
-            <Field label="New webhook URL" htmlFor="wh-url">
+            <Field label={t('api.newWebhookUrl')} htmlFor="wh-url">
               <Input
                 id="wh-url"
                 value={newWebhookUrl}
@@ -224,7 +226,7 @@ function ApiSettings() {
               />
             </Field>
             <div>
-              <div className="mb-1 text-xs font-medium text-neutral-600 dark:text-neutral-300">Events</div>
+              <div className="mb-1 text-xs font-medium text-neutral-600 dark:text-neutral-300">{t('api.events')}</div>
               <div className="flex flex-wrap gap-2">
                 {EVENTS.map((e) => (
                   <label key={e} className="flex items-center gap-1 text-xs">
@@ -240,14 +242,14 @@ function ApiSettings() {
             </div>
             <div className="flex justify-end">
               <Button onClick={onCreateWebhook} disabled={creatingWebhook || !newWebhookUrl.trim()}>
-                {creatingWebhook ? <Spinner /> : <Plus className="h-4 w-4" />} Add webhook
+                {creatingWebhook ? <Spinner /> : <Plus className="h-4 w-4" />} {t('api.addWebhook')}
               </Button>
             </div>
           </div>
           {webhookSecret ? (
             <div className="rounded-md border border-indigo-200 bg-indigo-50 dark:bg-indigo-950/40 p-3 text-sm">
               <div className="font-semibold text-indigo-800">
-                Save this webhook secret — it won&apos;t be shown again.
+                {t('api.saveWebhookSecret')}
               </div>
               <div className="mt-1 flex items-center gap-2">
                 <code className="flex-1 break-all rounded bg-white dark:bg-neutral-900 px-2 py-1 text-xs">
@@ -260,7 +262,7 @@ function ApiSettings() {
                     navigator.clipboard.writeText(webhookSecret.secret).catch(() => {})
                   }}
                 >
-                  <Copy className="h-3 w-3" /> Copy
+                  <Copy className="h-3 w-3" /> {t('api.copy')}
                 </Button>
               </div>
               <p className="mt-2 text-xs text-indigo-700 dark:text-indigo-300">

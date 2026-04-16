@@ -9,6 +9,7 @@ import { Input } from '~/components/ui/input'
 import { Field } from '~/components/ui/field'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Spinner } from '~/components/ui/spinner'
+import { useT } from '~/lib/i18n'
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -19,6 +20,7 @@ type FormValues = z.infer<typeof schema>
 export const Route = createFileRoute('/_auth/login')({ component: LoginPage })
 
 function LoginPage() {
+  const t = useT()
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
   const form = useForm<FormValues>({
@@ -30,7 +32,7 @@ function LoginPage() {
     setError(null)
     const { error: e } = await authClient.signIn.email({ email: values.email, password: values.password })
     if (e) {
-      setError(e.message ?? 'Could not sign in')
+      setError(e.message ?? t('auth.couldNotSignIn'))
       return
     }
     navigate({ to: '/' })
@@ -39,26 +41,26 @@ function LoginPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sign in</CardTitle>
-        <CardDescription>Welcome back. Log in to your workspace.</CardDescription>
+        <CardTitle>{t('auth.signIn')}</CardTitle>
+        <CardDescription>{t('auth.loginDescription')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-          <Field label="Email" htmlFor="email" error={form.formState.errors.email?.message}>
+          <Field label={t('auth.email')} htmlFor="email" error={form.formState.errors.email?.message}>
             <Input id="email" type="email" autoComplete="email" {...form.register('email')} />
           </Field>
-          <Field label="Password" htmlFor="password" error={form.formState.errors.password?.message}>
+          <Field label={t('auth.password')} htmlFor="password" error={form.formState.errors.password?.message}>
             <Input id="password" type="password" autoComplete="current-password" {...form.register('password')} />
           </Field>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? <Spinner /> : null}
-            Sign in
+            {t('auth.signIn')}
           </Button>
         </form>
         <div className="my-4 flex items-center gap-2 text-xs text-neutral-400 dark:text-neutral-500">
           <div className="h-px flex-1 bg-neutral-200" />
-          or
+          {t('common.or')}
           <div className="h-px flex-1 bg-neutral-200" />
         </div>
         <div className="space-y-2">
@@ -68,16 +70,16 @@ function LoginPage() {
             onClick={async () => {
               const email = form.getValues('email')
               if (!email) {
-                setError('Enter your email first')
+                setError(t('auth.enterYourEmailFirst'))
                 return
               }
               setError(null)
               const res = await authClient.signIn.magicLink({ email, callbackURL: '/' })
-              if (res?.error) setError(res.error.message ?? 'Could not send link')
-              else setError('Check your inbox for a sign-in link.')
+              if (res?.error) setError(res.error.message ?? t('auth.couldNotSendLink'))
+              else setError(t('auth.checkInboxForLink'))
             }}
           >
-            Email me a magic link
+            {t('auth.emailMagicLink')}
           </Button>
           <Button
             variant="outline"
@@ -88,19 +90,19 @@ function LoginPage() {
                 await authClient.signIn.passkey()
                 navigate({ to: '/' })
               } catch (e) {
-                setError(e instanceof Error ? e.message : 'Passkey sign-in cancelled')
+                setError(e instanceof Error ? e.message : t('auth.passkeySignInCancelled'))
               }
             }}
           >
-            Sign in with a passkey
+            {t('auth.signInPasskey')}
           </Button>
         </div>
         <div className="mt-6 flex justify-between text-sm">
           <Link to="/forgot-password" className="text-indigo-600 hover:underline">
-            Forgot password?
+            {t('auth.forgotPassword')}
           </Link>
           <Link to="/register" className="text-indigo-600 hover:underline">
-            Create account
+            {t('auth.createAccount')}
           </Link>
         </div>
       </CardContent>

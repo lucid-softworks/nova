@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Check, ChevronsUpDown, Plus } from 'lucide-react'
 import type { WorkspaceSummary } from '~/server/auth-context'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 
 export function WorkspaceSwitcher({
   current,
@@ -11,6 +12,7 @@ export function WorkspaceSwitcher({
   current: WorkspaceSummary
   all: WorkspaceSummary[]
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   return (
     <div className="relative">
@@ -51,7 +53,7 @@ export function WorkspaceSwitcher({
             )}
           >
             <Plus className="h-4 w-4" />
-            Create new workspace
+            {t('nav.createNewWorkspace')}
           </Link>
         </div>
       ) : null}

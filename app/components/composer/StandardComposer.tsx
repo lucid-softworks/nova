@@ -32,6 +32,7 @@ import { SavedReplyPicker } from './SavedReplyPicker'
 import { saveDraft } from '~/server/composer'
 import { addToQueue, publishNow, schedulePost, submitForApproval } from '~/server/scheduling'
 import type { WorkspaceRole } from '~/server/types'
+import { useT } from '~/lib/i18n'
 
 export function StandardComposer({
   workspaceSlug,
@@ -50,6 +51,7 @@ export function StandardComposer({
   initialScheduledAt: string | null
   reply: { replyTo: string; handle: string; accountId: string | null } | null
 }) {
+  const t = useT()
   const needsApproval = requireApproval && userRole === 'editor'
   const [state, dispatch] = useReducer(
     composerReducer,
@@ -255,7 +257,7 @@ export function StandardComposer({
     const hasContent =
       state.versions.some((v) => v.content || v.firstComment || v.mediaIds.length > 0) ||
       state.selectedAccountIds.length > 0
-    if (hasContent && !confirm('Discard this draft? Your changes will be lost.')) return
+    if (hasContent && !confirm(t('compose.discardConfirm'))) return
     dispatch({ type: 'RESET', state: initialState() })
   }
 
@@ -316,7 +318,7 @@ export function StandardComposer({
 
         <div className="flex items-center justify-between border-t border-neutral-200 dark:border-neutral-800 pt-4">
           <Button type="button" variant="ghost" onClick={onDiscard}>
-            Discard
+            {t('compose.discard')}
           </Button>
           <div className="relative flex gap-2">
             <Button
@@ -326,7 +328,7 @@ export function StandardComposer({
               disabled={saving !== null || state.selectedAccountIds.length === 0}
             >
               {saving === 'draft' ? <Spinner /> : null}
-              Save Draft
+              {t('compose.saveDraft')}
             </Button>
             {needsApproval ? (
               <Button
@@ -335,7 +337,7 @@ export function StandardComposer({
                 disabled={saving !== null || hasMismatch || state.selectedAccountIds.length === 0}
               >
                 {saving === 'approval' ? <Spinner /> : null}
-                Submit for Approval
+                {t('compose.submitForApproval')}
               </Button>
             ) : (
               <>
@@ -346,7 +348,7 @@ export function StandardComposer({
                   disabled={saving !== null || hasMismatch || state.selectedAccountIds.length === 0}
                 >
                   {saving === 'queue' ? <Spinner /> : null}
-                  Add to Queue
+                  {t('compose.addToQueue')}
                 </Button>
                 <Button
                   type="button"
@@ -355,21 +357,21 @@ export function StandardComposer({
                   disabled={saving !== null || hasMismatch || state.selectedAccountIds.length === 0}
                 >
                   {saving === 'now' ? <Spinner /> : null}
-                  Publish Now
+                  {t('compose.publishNow')}
                 </Button>
                 <Button
                   type="button"
                   onClick={() => setScheduleOpen((o) => !o)}
                   disabled={saving !== null || hasMismatch || state.selectedAccountIds.length === 0}
                 >
-                  Schedule
+                  {t('compose.schedule')}
                 </Button>
               </>
             )}
             {scheduleOpen ? (
               <div className="absolute bottom-full right-0 z-20 mb-2 w-80 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-lg">
                 <div className="space-y-3">
-                  <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Schedule post</div>
+                  <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('compose.schedulePost')}</div>
                   <input
                     type="datetime-local"
                     value={scheduleAt}
@@ -383,7 +385,7 @@ export function StandardComposer({
                       size="sm"
                       onClick={() => setScheduleOpen(false)}
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                     <Button
                       type="button"
@@ -392,7 +394,7 @@ export function StandardComposer({
                       disabled={saving !== null || !scheduleAt}
                     >
                       {saving === 'schedule' ? <Spinner /> : null}
-                      Schedule Post
+                      {t('compose.schedulePostBtn')}
                     </Button>
                   </div>
                 </div>
@@ -415,7 +417,7 @@ export function StandardComposer({
       </div>
 
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">Preview</h3>
+        <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{t('compose.preview')}</h3>
         {activeVersion && activeVersion.platforms.length > 0 ? (
           <PreviewTabs
             version={activeVersion}
@@ -427,7 +429,7 @@ export function StandardComposer({
         ) : (
           <Card>
             <div className="p-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
-              Select accounts to see a live preview.
+              {t('compose.selectAccountsForPreview')}
             </div>
           </Card>
         )}
@@ -469,21 +471,22 @@ function StartFromSelector({
   mode: 'shared' | 'independent'
   onChange: (m: 'shared' | 'independent') => void
 }) {
+  const t = useT()
   return (
     <Card>
       <div className="space-y-2 p-4">
-        <div className="text-sm font-medium text-neutral-700 dark:text-neutral-200">Start from</div>
+        <div className="text-sm font-medium text-neutral-700 dark:text-neutral-200">{t('compose.startFrom')}</div>
         <div className="grid gap-2 sm:grid-cols-2">
           <RadioCard
             selected={mode === 'shared'}
-            label="Shared content"
-            description="One base, platform overrides via versions"
+            label={t('compose.sharedContent')}
+            description={t('compose.sharedContentDesc')}
             onSelect={() => onChange('shared')}
           />
           <RadioCard
             selected={mode === 'independent'}
-            label="Independent per platform"
-            description="Each platform is a blank slate"
+            label={t('compose.independentPerPlatform')}
+            description={t('compose.independentPerPlatformDesc')}
             onSelect={() => onChange('independent')}
           />
         </div>
@@ -537,6 +540,7 @@ function AccountPicker({
   onToggle: (id: string) => void
   workspaceSlug: string
 }) {
+  const t = useT()
   const selectedPlatforms = [
     ...new Set(
       selected.map((id) => accounts.find((a) => a.id === id)?.platform).filter(Boolean) as PlatformKey[],
@@ -550,12 +554,12 @@ function AccountPicker({
     return (
       <Card>
         <div className="p-4 text-sm">
-          No accounts connected yet.{' '}
+          {t('compose.noAccountsConnected')}{' '}
           <a
             className="text-indigo-600 hover:underline"
             href={`/${workspaceSlug}/accounts`}
           >
-            Connect one →
+            {t('compose.connectOne')}
           </a>
         </div>
       </Card>
@@ -566,7 +570,7 @@ function AccountPicker({
     <Card>
       <div className="space-y-2 p-4">
         <div className="flex items-center justify-between">
-          <div className="text-sm font-medium text-neutral-700 dark:text-neutral-200">Post to</div>
+          <div className="text-sm font-medium text-neutral-700 dark:text-neutral-200">{t('compose.postTo')}</div>
           {minLimit !== null ? (
             <div className="text-xs text-neutral-500 dark:text-neutral-400">
               Limit: {minLimit.toLocaleString()} chars
@@ -630,6 +634,7 @@ function VersionTabs({
   onRemove: (id: string) => void
   mismatchesByVersion: Record<string, { platform: PlatformKey; message: string }[]>
 }) {
+  const t = useT()
   const [addOpen, setAddOpen] = useState(false)
 
   return (
@@ -680,7 +685,7 @@ function VersionTabs({
             onClick={() => setAddOpen((o) => !o)}
             className="flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 hover:bg-indigo-50"
           >
-            <Plus className="h-3 w-3" /> Add Version
+            <Plus className="h-3 w-3" /> {t('compose.addVersion')}
             <ChevronDown className="h-3 w-3" />
           </button>
           {addOpen ? (
@@ -724,6 +729,7 @@ function Editor({
   workspaceSlug: string
   isReply?: boolean
 }) {
+  const t = useT()
   const minLimit = version.platforms.length
     ? Math.min(...version.platforms.map((p) => PLATFORMS[p].textLimit))
     : 280
@@ -758,7 +764,7 @@ function Editor({
             onChange={(e) =>
               dispatch({ type: 'UPDATE_CONTENT', versionId: version.id, content: e.target.value })
             }
-            placeholder="What do you want to say?"
+            placeholder={t('compose.whatDoYouWantToSay')}
             className="min-h-[160px] w-full resize-y rounded-md border border-neutral-200 dark:border-neutral-800 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         ) : (
@@ -814,7 +820,7 @@ function Editor({
               size="sm"
               onClick={() => dispatch({ type: 'THREAD_ADD', versionId: version.id })}
             >
-              <Plus className="h-3 w-3" /> Add part
+              <Plus className="h-3 w-3" /> {t('compose.addPart')}
             </Button>
           </div>
         )}
@@ -832,7 +838,7 @@ function Editor({
             />
           ) : null}
           <div className="relative">
-            <ToolbarBtn title="Variables" onClick={() => setShowVariables((o) => !o)}>
+            <ToolbarBtn title={t('compose.variables')} onClick={() => setShowVariables((o) => !o)}>
               <Code className="h-4 w-4" />
             </ToolbarBtn>
             {showVariables ? (
@@ -853,7 +859,7 @@ function Editor({
               </div>
             ) : null}
           </div>
-          <ToolbarBtn title="AI Assist" onClick={onOpenAI}>
+          <ToolbarBtn title={t('compose.aiAssist')} onClick={onOpenAI}>
             <Sparkles className="h-4 w-4" />
           </ToolbarBtn>
           <div className="ml-auto flex items-center gap-3 text-xs">
@@ -866,7 +872,7 @@ function Editor({
                     dispatch({ type: 'TOGGLE_THREAD', versionId: version.id, value: e.target.checked })
                   }
                 />
-                Thread
+                {t('compose.thread')}
               </label>
             ) : null}
             {!version.isThread ? (
@@ -896,7 +902,7 @@ function Editor({
                   })
                 }
               />
-              Add first comment
+              {t('compose.addFirstComment')}
             </label>
             {version.firstCommentEnabled ? (
               <textarea
@@ -968,10 +974,11 @@ function RedditFields({
   value: import('./types').RedditFields
   onChange: (patch: Partial<import('./types').RedditFields>) => void
 }) {
+  const t = useT()
   return (
     <Card>
       <div className="space-y-3 p-4">
-        <div className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">Reddit options</div>
+        <div className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{t('compose.redditOptions')}</div>
         <Field label="Title" htmlFor="reddit-title">
           <Input
             id="reddit-title"
@@ -991,7 +998,7 @@ function RedditFields({
         </Field>
         <div className="flex items-center gap-4 text-sm">
           <label className="flex items-center gap-1">
-            Post type
+            {t('compose.postType')}
             <select
               value={value.postType}
               onChange={(e) =>
@@ -1040,6 +1047,7 @@ function PreviewTabs({
   mediaById: Record<string, import('./types').MediaAsset>
   reddit: import('./types').RedditFields
 }) {
+  const t = useT()
   const [activePlatform, setActivePlatform] = useState<PlatformKey>(version.platforms[0] ?? 'x')
   const platforms = version.platforms.length ? version.platforms : ['x' as PlatformKey]
   const current = platforms.includes(activePlatform) ? activePlatform : platforms[0]!
@@ -1074,7 +1082,7 @@ function PreviewTabs({
       </div>
       {textLen > textLimit ? (
         <div className="text-xs text-red-600">
-          Over limit by {textLen - textLimit} characters.
+          {t('compose.overLimitBy', { count: textLen - textLimit })}
         </div>
       ) : null}
       <PostPreview

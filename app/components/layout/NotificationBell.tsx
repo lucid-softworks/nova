@@ -8,10 +8,12 @@ import {
   type NotificationRow,
 } from '~/server/notifications'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 
 const POLL_MS = 30_000
 
 export function NotificationBell() {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<NotificationRow[]>([])
   const [count, setCount] = useState(0)
@@ -99,13 +101,13 @@ export function NotificationBell() {
       {open ? (
         <div className="absolute right-0 top-full z-50 mt-1 w-[360px] overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-lg">
           <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 px-3 py-2">
-            <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Notifications</div>
+            <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('settings.notifications')}</div>
             <button
               type="button"
               onClick={markAll}
               className="flex items-center gap-1 text-xs text-indigo-600 hover:underline"
             >
-              <CheckCheck className="h-3 w-3" /> Mark all read
+              <CheckCheck className="h-3 w-3" /> {t('inbox.markRead')}
             </button>
           </div>
           {workspaceSlug ? (
@@ -116,16 +118,16 @@ export function NotificationBell() {
                 className="text-xs text-indigo-600 hover:underline"
                 onClick={() => setOpen(false)}
               >
-                See all
+                {t('inbox.all')}
               </Link>
             </div>
           ) : null}
           <div className="max-h-[500px] overflow-auto">
             {loading ? (
-              <div className="px-3 py-6 text-center text-xs text-neutral-500 dark:text-neutral-400">Loading…</div>
+              <div className="px-3 py-6 text-center text-xs text-neutral-500 dark:text-neutral-400">{t('common.loading')}</div>
             ) : items.length === 0 ? (
               <div className="px-3 py-10 text-center text-xs text-neutral-500 dark:text-neutral-400">
-                You&apos;re all caught up.
+                {t('inbox.nothingYet')}
               </div>
             ) : (
               items.map((n) => (

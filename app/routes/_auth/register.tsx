@@ -9,6 +9,7 @@ import { Input } from '~/components/ui/input'
 import { Field } from '~/components/ui/field'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Spinner } from '~/components/ui/spinner'
+import { useT } from '~/lib/i18n'
 
 const schema = z
   .object({
@@ -23,6 +24,7 @@ type FormValues = z.infer<typeof schema>
 export const Route = createFileRoute('/_auth/register')({ component: RegisterPage })
 
 function RegisterPage() {
+  const t = useT()
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
   const form = useForm<FormValues>({
@@ -47,33 +49,33 @@ function RegisterPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create your account</CardTitle>
-        <CardDescription>Start scheduling posts across every platform.</CardDescription>
+        <CardTitle>{t('auth.createAccount')}</CardTitle>
+        <CardDescription>{t('auth.loginDescription')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-          <Field label="Name" htmlFor="name" error={form.formState.errors.name?.message}>
+          <Field label={t('auth.name')} htmlFor="name" error={form.formState.errors.name?.message}>
             <Input id="name" autoComplete="name" {...form.register('name')} />
           </Field>
-          <Field label="Email" htmlFor="email" error={form.formState.errors.email?.message}>
+          <Field label={t('auth.email')} htmlFor="email" error={form.formState.errors.email?.message}>
             <Input id="email" type="email" autoComplete="email" {...form.register('email')} />
           </Field>
-          <Field label="Password" htmlFor="password" error={form.formState.errors.password?.message}>
+          <Field label={t('auth.password')} htmlFor="password" error={form.formState.errors.password?.message}>
             <Input id="password" type="password" autoComplete="new-password" {...form.register('password')} />
           </Field>
-          <Field label="Confirm password" htmlFor="confirm" error={form.formState.errors.confirm?.message}>
+          <Field label={t('auth.confirmPassword')} htmlFor="confirm" error={form.formState.errors.confirm?.message}>
             <Input id="confirm" type="password" autoComplete="new-password" {...form.register('confirm')} />
           </Field>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? <Spinner /> : null}
-            Create account
+            {t('auth.register')}
           </Button>
         </form>
         <p className="mt-6 text-sm text-neutral-500 dark:text-neutral-400">
-          Already have an account?{' '}
+          {t('auth.alreadyHaveAccount')}{' '}
           <Link to="/login" className="text-indigo-600 hover:underline">
-            Sign in
+            {t('auth.signInInstead')}
           </Link>
         </p>
       </CardContent>

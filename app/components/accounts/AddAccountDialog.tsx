@@ -14,6 +14,7 @@ import { Field } from '~/components/ui/field'
 import { Spinner } from '~/components/ui/spinner'
 import { PlatformIcon } from './PlatformIcon'
 import { PLATFORM_LIST, type PlatformKey, connectionModeFor } from '~/lib/platforms'
+import { useT } from '~/lib/i18n'
 import { connectBluesky, connectMastodon, startOAuth } from '~/server/accounts'
 
 type Mode = { kind: 'grid' } | { kind: 'bluesky' } | { kind: 'mastodon' }
@@ -27,6 +28,7 @@ export function AddAccountDialog({
   connectedCounts: Partial<Record<PlatformKey, number>>
   onConnected: () => void
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<Mode>({ kind: 'grid' })
   const [error, setError] = useState<string | null>(null)
@@ -68,15 +70,15 @@ export function AddAccountDialog({
     >
       <DialogTrigger asChild>
         <Button>
-          <Plus className="h-4 w-4" /> Add Account
+          <Plus className="h-4 w-4" /> {t('accounts.addAccount')}
         </Button>
       </DialogTrigger>
       <DialogContent>
         {mode.kind === 'grid' ? (
           <>
             <DialogHeader>
-              <DialogTitle>Connect an account</DialogTitle>
-              <DialogDescription>Choose a platform to link.</DialogDescription>
+              <DialogTitle>{t('accounts.connectAccount')}</DialogTitle>
+              <DialogDescription>{t('accounts.choosePlatform')}</DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-3 gap-3">
               {PLATFORM_LIST.map((p) => {
@@ -137,6 +139,7 @@ function BlueskyForm({
   onBack: () => void
   onSuccess: () => void
 }) {
+  const t = useT()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -193,11 +196,11 @@ function BlueskyForm({
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
         <div className="flex justify-between">
           <Button type="button" variant="ghost" onClick={onBack}>
-            Back
+            {t('common.back')}
           </Button>
           <Button type="submit" disabled={submitting || !identifier || !password}>
             {submitting ? <Spinner /> : null}
-            Connect
+            {t('accounts.connectAccount')}
           </Button>
         </div>
       </form>
@@ -212,6 +215,7 @@ function MastodonForm({
   workspaceSlug: string
   onBack: () => void
 }) {
+  const t = useT()
   const [instance, setInstance] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -255,11 +259,11 @@ function MastodonForm({
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
         <div className="flex justify-between">
           <Button type="button" variant="ghost" onClick={onBack}>
-            Back
+            {t('common.back')}
           </Button>
           <Button type="submit" disabled={submitting || !instance.trim()}>
             {submitting ? <Spinner /> : null}
-            Continue
+            {t('onboarding.continue')}
           </Button>
         </div>
       </form>

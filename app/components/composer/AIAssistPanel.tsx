@@ -4,6 +4,7 @@ import { Button } from '~/components/ui/button'
 import { Spinner } from '~/components/ui/spinner'
 import { PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 
 type Tone = 'professional' | 'casual' | 'funny' | 'persuasive' | 'inspirational'
 type Length = 'short' | 'medium' | 'long'
@@ -37,6 +38,7 @@ export function AIAssistPanel({
   existingContent: string
   onUseText: (text: string) => void
 }) {
+  const t = useT()
   const [prompt, setPrompt] = useState('')
   const [tone, setTone] = useState<Tone>('casual')
   const [length, setLength] = useState<Length>('medium')
@@ -109,8 +111,8 @@ export function AIAssistPanel({
   }
 
   const platformLabel = platforms.length
-    ? `Optimising for: ${platforms.map((p) => PLATFORMS[p].label).join(', ')}`
-    : 'Select platforms in the composer first'
+    ? t('ai.optimisingFor', { platforms: platforms.map((p) => PLATFORMS[p].label).join(', ') })
+    : t('ai.selectPlatformsFirst')
 
   const canGenerate = platforms.length > 0 && !streaming
 
@@ -121,7 +123,7 @@ export function AIAssistPanel({
         <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 p-4">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-indigo-500" />
-            <div className="text-lg font-semibold">AI Assist</div>
+            <div className="text-lg font-semibold">{t('ai.title')}</div>
           </div>
           <button
             type="button"
@@ -138,15 +140,15 @@ export function AIAssistPanel({
             <div className="text-xs text-neutral-500 dark:text-neutral-400">{platformLabel}</div>
             <div className="space-y-2">
               <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                Generate from scratch
+                {t('ai.generateFromScratch')}
               </div>
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe what you want to post about…"
+                placeholder={t('ai.describePlaceholder')}
                 className="min-h-[80px] w-full resize-y rounded-md border border-neutral-200 dark:border-neutral-800 p-2 text-sm"
               />
-              <ChipRow label="Tone">
+              <ChipRow label={t('ai.tone')}>
                 {(['professional', 'casual', 'funny', 'persuasive', 'inspirational'] as Tone[]).map(
                   (t) => (
                     <Chip key={t} active={tone === t} onClick={() => setTone(t)}>
@@ -155,7 +157,7 @@ export function AIAssistPanel({
                   ),
                 )}
               </ChipRow>
-              <ChipRow label="Length">
+              <ChipRow label={t('ai.length')}>
                 {(['short', 'medium', 'long'] as Length[]).map((l) => (
                   <Chip key={l} active={length === l} onClick={() => setLength(l)}>
                     {l}
@@ -169,7 +171,7 @@ export function AIAssistPanel({
                 className="w-full"
               >
                 {streaming ? <Spinner /> : <Sparkles className="h-4 w-4" />}
-                Generate
+                {t('ai.generate')}
               </Button>
             </div>
           </div>
@@ -177,24 +179,24 @@ export function AIAssistPanel({
           {existingContent.trim() ? (
             <div className="space-y-2">
               <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                Improve existing text
+                {t('ai.improveExistingText')}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <ImproveBtn onClick={() => run('improve', 'Shorter', 'shorten')}>
-                  Make it shorter
+                  {t('ai.makeItShorter')}
                 </ImproveBtn>
                 <ImproveBtn onClick={() => run('improve', 'More engaging', 'more_engaging')}>
-                  Make it more engaging
+                  {t('ai.makeItMoreEngaging')}
                 </ImproveBtn>
                 <ImproveBtn onClick={() => run('improve', 'Grammar', 'fix_grammar')}>
-                  Fix grammar & spelling
+                  {t('ai.fixGrammar')}
                 </ImproveBtn>
                 <ImproveBtn onClick={() => run('improve', 'Hashtags', 'add_hashtags')}>
-                  Add relevant hashtags
+                  {t('ai.addRelevantHashtags')}
                 </ImproveBtn>
                 <div className="relative">
                   <ImproveBtn onClick={() => setToneMenuOpen((o) => !o)}>
-                    Change tone →
+                    {t('ai.changeTone')}
                   </ImproveBtn>
                   {toneMenuOpen ? (
                     <div className="absolute left-0 top-full z-10 mt-1 w-48 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 text-sm shadow-lg">
@@ -217,7 +219,7 @@ export function AIAssistPanel({
                   ) : null}
                 </div>
                 <ImproveBtn onClick={() => run('improve', 'Rewrite', 'rewrite')}>
-                  Rewrite completely
+                  {t('ai.rewriteCompletely')}
                 </ImproveBtn>
               </div>
             </div>
@@ -227,7 +229,7 @@ export function AIAssistPanel({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                  Results
+                  {t('ai.results')}
                 </div>
                 <Button
                   size="sm"
@@ -235,7 +237,7 @@ export function AIAssistPanel({
                   onClick={() => run('hashtags', 'Hashtags')}
                   disabled={streaming || (!existingContent.trim() && !rows[0])}
                 >
-                  Suggest hashtags
+                  {t('ai.suggestHashtags')}
                 </Button>
               </div>
               {rows.map((row) => (
@@ -258,7 +260,7 @@ export function AIAssistPanel({
                           onClose()
                         }}
                       >
-                        Use this
+                        {t('ai.useThis')}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => copyRow(row)}>
                         {copiedId === row.id ? (
@@ -266,14 +268,14 @@ export function AIAssistPanel({
                         ) : (
                           <Copy className="h-3 w-3" />
                         )}
-                        Copy
+                        {t('ai.copy')}
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => run('generate', row.label)}
                       >
-                        <RotateCw className="h-3 w-3" /> Try again
+                        <RotateCw className="h-3 w-3" /> {t('ai.tryAgain')}
                       </Button>
                     </div>
                   ) : null}

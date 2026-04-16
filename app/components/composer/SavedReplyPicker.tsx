@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { MessageSquare } from 'lucide-react'
+import { useT } from '~/lib/i18n'
 import { listSavedReplies, type SavedReplyRow } from '~/server/savedReplies'
 
 export function SavedReplyPicker({
@@ -9,6 +10,7 @@ export function SavedReplyPicker({
   workspaceSlug: string
   onPick: (content: string) => void
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [replies, setReplies] = useState<SavedReplyRow[]>([])
   const [query, setQuery] = useState('')
@@ -51,13 +53,13 @@ export function SavedReplyPicker({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search replies…"
+            placeholder={t('compose.searchReplies')}
             className="mb-1 w-full rounded border border-neutral-200 bg-white px-2 py-1 text-sm dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100"
             autoFocus
           />
           {filtered.length === 0 ? (
             <p className="py-2 text-center text-xs text-neutral-500 dark:text-neutral-400">
-              {replies.length === 0 ? 'No saved replies yet' : 'No match'}
+              {replies.length === 0 ? t('compose.noRepliesYet') : t('compose.noMatch')}
             </p>
           ) : (
             <ul className="max-h-48 overflow-auto">

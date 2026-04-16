@@ -28,14 +28,15 @@ import {
 } from '~/server/team'
 import type { WorkspaceRole } from '~/server/types'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 
 type Role = WorkspaceRole
 
-const ROLE_LABELS: Record<Role, string> = {
-  admin: 'Admin',
-  manager: 'Manager',
-  editor: 'Editor',
-  viewer: 'Viewer',
+const ROLE_I18N_KEYS: Record<Role, string> = {
+  admin: 'team.admin',
+  manager: 'team.manager',
+  editor: 'team.editor',
+  viewer: 'team.viewer',
 }
 const ROLE_COLORS: Record<Role, string> = {
   admin: 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300',
@@ -59,6 +60,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/team')({
 })
 
 function TeamPage() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const { session, workspace } = Route.useRouteContext()
   const initial = Route.useLoaderData()
@@ -90,7 +92,7 @@ function TeamPage() {
   }
 
   const handleCancelInvitation = async (inv: InvitationRow) => {
-    if (!confirm(`Cancel invitation to ${inv.email}?`)) return
+    if (!confirm(t('team.cancelInvitationConfirm'))) return
     try {
       await cancelInvitation({ data: { workspaceSlug, invitationId: inv.id } })
       await reload()
@@ -109,7 +111,7 @@ function TeamPage() {
   }
 
   const handleRemove = async (member: MemberRow) => {
-    if (!confirm(`Remove ${member.name} from the workspace?`)) return
+    if (!confirm(t('team.removeMemberConfirm'))) return
     try {
       await removeMember({ data: { workspaceSlug, memberId: member.id } })
       await reload()
@@ -146,12 +148,12 @@ function TeamPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">Team</h2>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Manage who can see and edit this workspace.</p>
+          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{t('team.title')}</h2>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">{t('team.manageDescription')}</p>
         </div>
         {canManage ? (
           <Button onClick={() => setInviteOpen(true)}>
-            <Plus className="h-4 w-4" /> Invite Member
+            <Plus className="h-4 w-4" /> {t('team.inviteMember')}
           </Button>
         ) : null}
       </div>
@@ -161,9 +163,9 @@ function TeamPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-neutral-100 dark:border-neutral-800 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                <th className="px-4 py-2">Member</th>
-                <th className="px-4 py-2">Role</th>
-                <th className="px-4 py-2">Joined</th>
+                <th className="px-4 py-2">{t('team.member')}</th>
+                <th className="px-4 py-2">{t('team.role')}</th>
+                <th className="px-4 py-2">{t('team.joined')}</th>
                 <th className="px-4 py-2" />
               </tr>
             </thead>
@@ -182,7 +184,7 @@ function TeamPage() {
                       <div>
                         <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                           {m.name}
-                          {m.isSelf ? <span className="ml-1 text-xs text-neutral-500 dark:text-neutral-400">(you)</span> : null}
+                          {m.isSelf ? <span className="ml-1 text-xs text-neutral-500 dark:text-neutral-400">({t('team.you')})</span> : null}
                         </div>
                         <div className="text-xs text-neutral-500 dark:text-neutral-400">{m.email}</div>
                       </div>
@@ -200,13 +202,13 @@ function TeamPage() {
                       >
                         {(['admin', 'manager', 'editor', 'viewer'] as Role[]).map((r) => (
                           <option key={r} value={r} disabled={r === 'admin' && !isAdmin}>
-                            {ROLE_LABELS[r]}
+                            {t(ROLE_I18N_KEYS[r])}
                           </option>
                         ))}
                       </select>
                     ) : (
                       <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', ROLE_COLORS[m.role])}>
-                        {ROLE_LABELS[m.role]}
+                        {t(ROLE_I18N_KEYS[m.role])}
                       </span>
                     )}
                   </td>
@@ -236,14 +238,14 @@ function TeamPage() {
       {canManage && invitations.length > 0 ? (
         <Card>
           <div className="p-4">
-            <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">Pending invitations</h3>
+            <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('team.pendingInvitations')}</h3>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                  <th className="py-1">Email</th>
-                  <th className="py-1">Role</th>
-                  <th className="py-1">Invited by</th>
-                  <th className="py-1">Expires</th>
+                  <th className="py-1">{t('team.email')}</th>
+                  <th className="py-1">{t('team.role')}</th>
+                  <th className="py-1">{t('team.invitedBy')}</th>
+                  <th className="py-1">{t('team.expires')}</th>
                   <th className="py-1" />
                 </tr>
               </thead>
@@ -253,7 +255,7 @@ function TeamPage() {
                     <td className="py-1.5">{inv.email}</td>
                     <td className="py-1.5">
                       <span className={cn('rounded-full px-2 py-0.5 text-xs', ROLE_COLORS[inv.role])}>
-                        {ROLE_LABELS[inv.role]}
+                        {t(ROLE_I18N_KEYS[inv.role])}
                       </span>
                     </td>
                     <td className="py-1.5 text-xs text-neutral-500 dark:text-neutral-400">{inv.inviterName ?? '—'}</td>
@@ -277,9 +279,9 @@ function TeamPage() {
         <Card>
           <div className="space-y-3 p-4">
             <div>
-              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Approval workflow</h3>
+              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('team.approvalWorkflow')}</h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                When enabled, posts from Editors require approval before they publish.
+                {t('team.approvalDescription2')}
               </p>
             </div>
             <label className="flex items-center gap-2 text-sm">
@@ -288,14 +290,14 @@ function TeamPage() {
                 checked={requireApproval}
                 onChange={(e) => handleToggleApproval(e.target.checked)}
               />
-              Require approval before publishing
+              {t('team.requireApprovalLabel')}
             </label>
             {requireApproval ? (
               <div className="space-y-2">
-                <div className="text-xs font-medium text-neutral-600 dark:text-neutral-300">Approvers</div>
+                <div className="text-xs font-medium text-neutral-600 dark:text-neutral-300">{t('team.approvers')}</div>
                 {approverCandidates.length === 0 ? (
                   <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                    Promote a member to Manager or Admin to make them an approver.
+                    {t('team.promoteForApproval')}
                   </p>
                 ) : (
                   <div className="flex flex-wrap gap-1">
@@ -346,6 +348,7 @@ function InviteModal({
   workspaceSlug: string
   onAdded: () => Promise<void>
 }) {
+  const t = useT()
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<Role>('editor')
   const [submitting, setSubmitting] = useState(false)
@@ -360,7 +363,7 @@ function InviteModal({
         data: { workspaceSlug, email, role },
       })
       if (res.kind === 'already_member') {
-        setError('That user is already in this workspace.')
+        setError(t('team.alreadyInWorkspace'))
         return
       }
       if (res.kind === 'invited') {
@@ -382,9 +385,9 @@ function InviteModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Invite a member</DialogTitle>
+          <DialogTitle>{t('team.inviteAMember')}</DialogTitle>
           <DialogDescription>
-            Adds an existing SocialHub user to this workspace.
+            {t('team.inviteDialogDescription')}
           </DialogDescription>
         </DialogHeader>
         <form className="space-y-3" onSubmit={submit}>
@@ -413,11 +416,11 @@ function InviteModal({
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('team.cancel')}
             </Button>
             <Button type="submit" disabled={submitting || !email.trim()}>
               {submitting ? <Spinner /> : null}
-              Add
+              {t('team.add')}
             </Button>
           </div>
         </form>

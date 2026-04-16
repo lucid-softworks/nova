@@ -18,6 +18,7 @@ import type { ComponentType, SVGProps } from 'react'
 import type { SessionUser, WorkspaceSummary } from '~/server/auth-context'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 import { authClient } from '~/lib/auth-client'
+import { useT } from '~/lib/i18n'
 
 type NavItem = { label: string; to: string; icon: ComponentType<SVGProps<SVGSVGElement>> }
 type NavSection = {
@@ -28,39 +29,39 @@ type NavSection = {
 
 const sections: NavSection[] = [
   {
-    label: 'Publish',
+    label: 'nav.publish',
     items: [
-      { label: 'Compose', to: '/$workspaceSlug/compose', icon: PenSquare },
-      { label: 'Posts', to: '/$workspaceSlug/posts', icon: LayoutList },
-      { label: 'Calendar', to: '/$workspaceSlug/calendar', icon: CalendarDays },
+      { label: 'nav.compose', to: '/$workspaceSlug/compose', icon: PenSquare },
+      { label: 'nav.posts', to: '/$workspaceSlug/posts', icon: LayoutList },
+      { label: 'nav.calendar', to: '/$workspaceSlug/calendar', icon: CalendarDays },
     ],
   },
   {
-    label: 'Review',
-    items: [{ label: 'Approvals', to: '/$workspaceSlug/approvals', icon: CheckCircle }],
+    label: 'nav.review',
+    items: [{ label: 'nav.approvals', to: '/$workspaceSlug/approvals', icon: CheckCircle }],
     requiresRole: ['admin', 'manager'] as const,
   },
   {
-    label: 'Library',
+    label: 'nav.library',
     items: [
-      { label: 'Media', to: '/$workspaceSlug/media', icon: ImageIcon },
-      { label: 'Templates', to: '/$workspaceSlug/templates', icon: FileText },
+      { label: 'nav.media', to: '/$workspaceSlug/media', icon: ImageIcon },
+      { label: 'nav.templates', to: '/$workspaceSlug/templates', icon: FileText },
     ],
   },
   {
-    label: 'Insights',
+    label: 'nav.insights',
     items: [
-      { label: 'Inbox', to: '/$workspaceSlug/inbox', icon: Inbox },
-      { label: 'Analytics', to: '/$workspaceSlug/analytics', icon: BarChart2 },
-      { label: 'Activity', to: '/$workspaceSlug/activity', icon: History },
+      { label: 'nav.inbox', to: '/$workspaceSlug/inbox', icon: Inbox },
+      { label: 'nav.analytics', to: '/$workspaceSlug/analytics', icon: BarChart2 },
+      { label: 'nav.activity', to: '/$workspaceSlug/activity', icon: History },
     ],
   },
   {
-    label: 'Management',
+    label: 'nav.management',
     items: [
-      { label: 'Accounts', to: '/$workspaceSlug/accounts', icon: LinkIcon },
-      { label: 'Team', to: '/$workspaceSlug/team', icon: Users },
-      { label: 'Settings', to: '/$workspaceSlug/settings', icon: Settings },
+      { label: 'nav.accounts', to: '/$workspaceSlug/accounts', icon: LinkIcon },
+      { label: 'nav.team', to: '/$workspaceSlug/team', icon: Users },
+      { label: 'nav.settings', to: '/$workspaceSlug/settings', icon: Settings },
     ],
   },
 ]
@@ -74,6 +75,7 @@ export function Sidebar({
   workspace: WorkspaceSummary
   workspaces: WorkspaceSummary[]
 }) {
+  const t = useT()
   const appName = workspace.appName ?? 'SocialHub'
   const initials = user.name
     .split(' ')
@@ -111,11 +113,11 @@ export function Sidebar({
           .map((section) => (
           <div key={section.label}>
             <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">
-              {section.label}
+              {t(section.label)}
             </div>
             <div className="space-y-0.5">
               {section.items.map((item) => (
-                <NavLink key={item.to} to={item.to} label={item.label} Icon={item.icon} slug={workspace.slug} />
+                <NavLink key={item.to} to={item.to} label={t(item.label)} Icon={item.icon} slug={workspace.slug} />
               ))}
             </div>
           </div>
@@ -139,7 +141,7 @@ export function Sidebar({
             type="button"
             onClick={signOut}
             className="rounded p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
-            aria-label="Sign out"
+            aria-label={t('nav.signOut')}
           >
             <LogOut className="h-4 w-4" />
           </button>

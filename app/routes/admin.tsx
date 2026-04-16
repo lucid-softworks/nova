@@ -4,6 +4,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { db, schema } from '~/server/db'
 import { loadSessionContext } from '~/server/session.server'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 
 type AdminStatus =
   | { ok: true; userName: string }
@@ -30,14 +31,15 @@ export const Route = createFileRoute('/admin')({
 })
 
 const NAV = [
-  { to: '/admin', label: 'Overview' },
-  { to: '/admin/users', label: 'Users' },
-  { to: '/admin/workspaces', label: 'Workspaces' },
-  { to: '/admin/jobs', label: 'Jobs' },
-  { to: '/admin/webhooks', label: 'Webhooks' },
+  { to: '/admin', label: 'admin.overview' },
+  { to: '/admin/users', label: 'admin.users' },
+  { to: '/admin/workspaces', label: 'admin.workspaces' },
+  { to: '/admin/jobs', label: 'admin.jobs' },
+  { to: '/admin/webhooks', label: 'admin.webhooks' },
 ] as const
 
 function AdminLayout() {
+  const t = useT()
   const { userName } = Route.useRouteContext()
   const { pathname } = useLocation()
   return (
@@ -59,7 +61,7 @@ function AdminLayout() {
                       'font-semibold text-indigo-600 dark:text-indigo-400',
                   )}
                 >
-                  {n.label}
+                  {t(n.label)}
                 </Link>
               ))}
             </nav>
@@ -67,7 +69,7 @@ function AdminLayout() {
           <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
             <span>{userName}</span>
             <Link to="/" className="text-indigo-600 hover:underline dark:text-indigo-400">
-              ↩ App
+              {t('admin.backToApp')}
             </Link>
           </div>
         </div>

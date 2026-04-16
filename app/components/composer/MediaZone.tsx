@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { Upload, X, FolderOpen } from 'lucide-react'
+import { useT } from '~/lib/i18n'
 import { Button } from '~/components/ui/button'
 import { Spinner } from '~/components/ui/spinner'
 import { MediaLibraryPicker } from '~/components/media/MediaLibraryPicker'
@@ -18,6 +19,7 @@ export function MediaZone({
   onUploaded: (assets: MediaAsset[]) => void
   onRemove: (mediaId: string) => void
 }) {
+  const t = useT()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState<string[]>([])
   const [dragActive, setDragActive] = useState(false)
@@ -73,7 +75,7 @@ export function MediaZone({
         onDrop={handleDrop}
       >
         <Upload className="mx-auto mb-2 h-6 w-6 text-neutral-400 dark:text-neutral-500" />
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">Drag files here or</p>
+        <p className="text-sm text-neutral-600 dark:text-neutral-300">{t('compose.dragFilesHereOr')}</p>
         <div className="mt-2 flex items-center justify-center gap-2">
           <Button
             type="button"
@@ -81,10 +83,10 @@ export function MediaZone({
             size="sm"
             onClick={() => fileInputRef.current?.click()}
           >
-            Upload files
+            {t('compose.uploadFiles')}
           </Button>
           <Button type="button" variant="ghost" size="sm" onClick={() => setPickerOpen(true)}>
-            <FolderOpen className="h-4 w-4" /> Open Media Library
+            <FolderOpen className="h-4 w-4" /> {t('compose.openMediaLibrary')}
           </Button>
         </div>
         <input

@@ -8,6 +8,7 @@ import { Field } from '~/components/ui/field'
 import { Spinner } from '~/components/ui/spinner'
 import { SettingsNav } from '~/components/settings/SettingsNav'
 import { authClient } from '~/lib/auth-client'
+import { useT } from '~/lib/i18n'
 
 type Passkey = { id: string; name?: string | null; createdAt: string | Date }
 type SessionRow = { id: string; ipAddress?: string | null; userAgent?: string | null; createdAt: string | Date; current?: boolean }
@@ -31,6 +32,7 @@ function SecurityPage() {
 // -- 2FA -------------------------------------------------------------------
 
 function TwoFactorCard() {
+  const t = useT()
   const { data: session } = authClient.useSession()
   const enabled = (session?.user as unknown as { twoFactorEnabled?: boolean } | undefined)
     ?.twoFactorEnabled
@@ -91,12 +93,12 @@ function TwoFactorCard() {
           ) : (
             <Shield className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
           )}
-          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Two-factor authentication</h3>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('security.twoFactor')}</h3>
         </div>
         {enabled ? (
           <>
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">2FA is active on this account.</p>
-            <Field label="Confirm password to disable" htmlFor="tfa-pw">
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">{t('security.twoFactorActive')}</p>
+            <Field label={t('security.confirmPassword')} htmlFor="tfa-pw">
               <Input
                 id="tfa-pw"
                 type="password"
@@ -105,18 +107,18 @@ function TwoFactorCard() {
               />
             </Field>
             <Button variant="outline" className="text-red-600" onClick={disable} disabled={busy || !password}>
-              {busy ? <Spinner /> : null} Disable 2FA
+              {busy ? <Spinner /> : null} {t('security.disable2FA')}
             </Button>
           </>
         ) : qr ? (
           <>
             <p className="text-sm text-neutral-600 dark:text-neutral-300">
-              Scan the TOTP URI with your authenticator, then enter a code to finish enrolment.
+              {t('security.addTotpDescription')}
             </p>
             <code className="block break-all rounded bg-neutral-50 dark:bg-neutral-900 p-2 text-[11px]">{qr.totpURI}</code>
             {qr.backupCodes.length > 0 ? (
               <div>
-                <div className="mb-1 text-xs font-semibold">Backup codes (save these)</div>
+                <div className="mb-1 text-xs font-semibold">{t('security.backupCodes')}</div>
                 <div className="grid grid-cols-2 gap-1 font-mono text-xs">
                   {qr.backupCodes.map((c) => (
                     <div key={c}>{c}</div>
@@ -124,11 +126,11 @@ function TwoFactorCard() {
                 </div>
               </div>
             ) : null}
-            <Field label="Enter a 6-digit code" htmlFor="tfa-code">
+            <Field label={t('security.enterCode')} htmlFor="tfa-code">
               <Input id="tfa-code" value={totp} onChange={(e) => setTotp(e.target.value)} />
             </Field>
             <Button onClick={verify} disabled={busy || totp.length < 6}>
-              {busy ? <Spinner /> : null} Verify
+              {busy ? <Spinner /> : null} {t('security.verify')}
             </Button>
           </>
         ) : (
@@ -136,7 +138,7 @@ function TwoFactorCard() {
             <p className="text-sm text-neutral-600 dark:text-neutral-300">
               Add a time-based code from your authenticator app as a second factor.
             </p>
-            <Field label="Confirm password to enable" htmlFor="tfa-pw-enable">
+            <Field label={t('security.confirmPassword')} htmlFor="tfa-pw-enable">
               <Input
                 id="tfa-pw-enable"
                 type="password"
@@ -145,7 +147,7 @@ function TwoFactorCard() {
               />
             </Field>
             <Button onClick={enroll} disabled={busy || !password}>
-              {busy ? <Spinner /> : null} Enable 2FA
+              {busy ? <Spinner /> : null} {t('security.enable2FA')}
             </Button>
           </>
         )}
@@ -158,6 +160,7 @@ function TwoFactorCard() {
 // -- Passkeys --------------------------------------------------------------
 
 function PasskeyCard() {
+  const t = useT()
   const [keys, setKeys] = useState<Passkey[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -201,12 +204,12 @@ function PasskeyCard() {
       <div className="space-y-3 p-4">
         <div className="flex items-center gap-2">
           <KeyRound className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
-          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Passkeys</h3>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('security.passkeys')}</h3>
         </div>
         {loading ? (
           <Spinner />
         ) : keys.length === 0 ? (
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">No passkeys yet.</p>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">{t('security.noPasskeys')}</p>
         ) : (
           <div className="space-y-2">
             {keys.map((k) => (
@@ -215,7 +218,7 @@ function PasskeyCard() {
                 className="flex items-center justify-between rounded-md border border-neutral-200 dark:border-neutral-800 p-2 text-sm"
               >
                 <div>
-                  <div className="font-medium text-neutral-900 dark:text-neutral-100">{k.name ?? 'Unnamed passkey'}</div>
+                  <div className="font-medium text-neutral-900 dark:text-neutral-100">{k.name ?? t('security.unnamedPasskey')}</div>
                   <div className="text-xs text-neutral-500 dark:text-neutral-400">
                     Added {new Date(k.createdAt).toLocaleDateString()}
                   </div>
@@ -228,7 +231,7 @@ function PasskeyCard() {
           </div>
         )}
         <Button onClick={addPasskey} disabled={busy}>
-          {busy ? <Spinner /> : null} Add passkey
+          {busy ? <Spinner /> : null} {t('security.addPasskey')}
         </Button>
         {message ? <p className="text-xs text-neutral-500 dark:text-neutral-400">{message}</p> : null}
       </div>
@@ -239,6 +242,7 @@ function PasskeyCard() {
 // -- Sessions --------------------------------------------------------------
 
 function SessionsCard() {
+  const t = useT()
   const [sessions, setSessions] = useState<SessionRow[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -273,10 +277,10 @@ function SessionsCard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Smartphone className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
-            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Active sessions</h3>
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('security.activeSessions')}</h3>
           </div>
           <Button variant="outline" size="sm" className="text-red-600" onClick={revokeAll}>
-            Log out everywhere
+            {t('security.logOutEverywhere')}
           </Button>
         </div>
         {loading ? (
@@ -289,7 +293,7 @@ function SessionsCard() {
               <div key={s.id} className="flex items-center justify-between rounded-md border border-neutral-200 dark:border-neutral-800 p-2 text-sm">
                 <div className="min-w-0">
                   <div className="truncate text-xs text-neutral-600 dark:text-neutral-300">
-                    {s.userAgent ?? 'Unknown device'}
+                    {s.userAgent ?? t('security.unknownDevice')}
                   </div>
                   <div className="text-[11px] text-neutral-500 dark:text-neutral-400">
                     {s.ipAddress ?? '—'} · {new Date(s.createdAt).toLocaleString()}

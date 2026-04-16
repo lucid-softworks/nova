@@ -14,6 +14,7 @@ import {
   deleteSavedReply,
   type SavedReplyRow,
 } from '~/server/savedReplies'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/replies')({
   loader: async ({ params }) => ({
@@ -23,6 +24,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/replie
 })
 
 function SavedRepliesPage() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData() as { replies: SavedReplyRow[] }
   const [replies, setReplies] = useState<SavedReplyRow[]>(initial.replies)
@@ -89,10 +91,10 @@ function SavedRepliesPage() {
       <Card>
         <form className="space-y-3 p-4" onSubmit={save}>
           <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-            {editId ? 'Edit reply' : 'New saved reply'}
+            {editId ? t('replies.editReply') : t('replies.newReply')}
           </h3>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Title" htmlFor="sr-title">
+            <Field label={t('replies.titleLabel')} htmlFor="sr-title">
               <Input
                 id="sr-title"
                 value={title}
@@ -100,7 +102,7 @@ function SavedRepliesPage() {
                 placeholder="Thanks for reaching out"
               />
             </Field>
-            <Field label="Shortcut (optional)" htmlFor="sr-sc">
+            <Field label={t('replies.shortcut')} htmlFor="sr-sc">
               <Input
                 id="sr-sc"
                 value={shortcut}
@@ -109,7 +111,7 @@ function SavedRepliesPage() {
               />
             </Field>
           </div>
-          <Field label="Content" htmlFor="sr-body">
+          <Field label={t('replies.contentLabel')} htmlFor="sr-body">
             <textarea
               id="sr-body"
               rows={3}
@@ -122,7 +124,7 @@ function SavedRepliesPage() {
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <div className="flex gap-2">
             <Button type="submit" disabled={busy || !title.trim() || !content.trim()}>
-              {busy ? <Spinner /> : null} {editId ? 'Update' : 'Save'}
+              {busy ? <Spinner /> : null} {editId ? t('replies.update') : t('replies.save')}
             </Button>
             {editId ? (
               <Button
@@ -135,7 +137,7 @@ function SavedRepliesPage() {
                   setShortcut('')
                 }}
               >
-                Cancel
+                {t('replies.cancel')}
               </Button>
             ) : null}
           </div>
@@ -144,7 +146,7 @@ function SavedRepliesPage() {
       <Card>
         {replies.length === 0 ? (
           <p className="p-4 text-sm text-neutral-500 dark:text-neutral-400">
-            No saved replies yet.
+            {t('replies.noReplies')}
           </p>
         ) : (
           <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">

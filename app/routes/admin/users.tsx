@@ -7,6 +7,7 @@ import { Spinner } from '~/components/ui/spinner'
 import { listAdminUsers, type AdminUserRow } from '~/server/admin'
 import { authClient } from '~/lib/auth-client'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/admin/users')({
   loader: async () => ({ users: await listAdminUsers() }),
@@ -14,6 +15,7 @@ export const Route = createFileRoute('/admin/users')({
 })
 
 function UsersPage() {
+  const t = useT()
   const initial = Route.useLoaderData()
   const [rows, setRows] = useState<AdminUserRow[]>(initial.users)
   const [filter, setFilter] = useState('')
@@ -69,10 +71,10 @@ function UsersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                <th className="px-3 py-2">User</th>
-                <th className="px-3 py-2">Role</th>
-                <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2">Joined</th>
+                <th className="px-3 py-2">{t('admin.users')}</th>
+                <th className="px-3 py-2">{t('team.role')}</th>
+                <th className="px-3 py-2">{t('billing.status')}</th>
+                <th className="px-3 py-2">{t('team.joined')}</th>
                 <th className="px-3 py-2" />
               </tr>
             </thead>

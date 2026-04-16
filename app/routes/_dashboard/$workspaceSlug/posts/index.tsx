@@ -25,15 +25,16 @@ import { importPostsFromCsv, type ImportReport } from '~/server/csv'
 import { listMembers, type MemberRow } from '~/server/team'
 import { PLATFORM_KEYS, PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 
-const TABS: { key: PostsTab; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'scheduled', label: 'Scheduled' },
-  { key: 'published', label: 'Published' },
-  { key: 'drafts', label: 'Drafts' },
-  { key: 'pending_approval', label: 'Pending' },
-  { key: 'failed', label: 'Failed' },
-  { key: 'queue', label: 'Queue' },
+const TAB_KEYS: { key: PostsTab; i18nKey: string }[] = [
+  { key: 'all', i18nKey: 'posts.all' },
+  { key: 'scheduled', i18nKey: 'posts.scheduled' },
+  { key: 'published', i18nKey: 'posts.published' },
+  { key: 'drafts', i18nKey: 'posts.drafts' },
+  { key: 'pending_approval', i18nKey: 'posts.pending' },
+  { key: 'failed', i18nKey: 'posts.failed' },
+  { key: 'queue', i18nKey: 'posts.queue' },
 ]
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/posts/')({
@@ -61,6 +62,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/posts/')({
 })
 
 function PostsPage() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const { workspace } = Route.useRouteContext()
   const userRole = workspace.role
@@ -124,7 +126,7 @@ function PostsPage() {
     })
 
   const bulkDelete = async () => {
-    if (!confirm(`Delete ${selectedIds.size} post${selectedIds.size === 1 ? '' : 's'}?`)) return
+    if (!confirm(t('posts.deletePosts', { count: selectedIds.size }))) return
     await deletePosts({ data: { workspaceSlug, postIds: [...selectedIds] } })
     setSelectedIds(new Set())
     await reload()
@@ -143,7 +145,7 @@ function PostsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">Posts</h2>
+          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{t('posts.title')}</h2>
         </div>
         <div className="flex items-center gap-2">
           <CsvButtons
@@ -168,7 +170,7 @@ function PostsPage() {
                 view === 'flat' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300',
               )}
             >
-              Flat
+              {t('posts.flat')}
             </button>
             <button
               type="button"
@@ -178,7 +180,7 @@ function PostsPage() {
                 view === 'grouped' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300',
               )}
             >
-              Grouped
+              {t('posts.grouped')}
             </button>
           </div>
         </div>
@@ -193,9 +195,9 @@ function PostsPage() {
             >
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-700" />
               <div className="flex-1">
-                <div className="font-semibold text-yellow-900">&quot;{c.name}&quot; is on hold</div>
+                <div className="font-semibold text-yellow-900">{t('posts.isOnHold', { name: c.name })}</div>
                 <div className="text-yellow-800">
-                  One or more steps failed or missed their scheduled window.
+                  {t('posts.stepsFailedOrMissedDesc')}
                 </div>
               </div>
               <Button asChild size="sm" variant="outline">
@@ -203,7 +205,7 @@ function PostsPage() {
                   to="/$workspaceSlug/posts/campaigns/$campaignId"
                   params={{ workspaceSlug, campaignId: c.id }}
                 >
-                  View Campaign
+                  {t('posts.viewCampaignBtn')}
                 </Link>
               </Button>
             </div>
@@ -212,21 +214,21 @@ function PostsPage() {
       ) : null}
 
       <div className="flex flex-wrap gap-1 border-b border-neutral-200 dark:border-neutral-800">
-        {TABS.map((t) => (
+        {TAB_KEYS.map((tb) => (
           <button
-            key={t.key}
+            key={tb.key}
             type="button"
-            onClick={() => setTab(t.key)}
+            onClick={() => setTab(tb.key)}
             className={cn(
               'flex items-center gap-1.5 px-3 py-2 text-sm font-medium',
-              tab === t.key
+              tab === tb.key
                 ? 'border-b-2 border-indigo-500 text-indigo-600'
                 : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900',
             )}
           >
-            {t.label}
+            {t(tb.i18nKey)}
             <span className="rounded bg-neutral-100 dark:bg-neutral-800 px-1.5 text-xs text-neutral-600 dark:text-neutral-300">
-              {counts[t.key] ?? 0}
+              {counts[tb.key] ?? 0}
             </span>
           </button>
         ))}
@@ -238,19 +240,19 @@ function PostsPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search content or source"
+            placeholder={t('posts.searchContentOrSource')}
             className="pl-8"
           />
         </div>
         <div className="inline-flex rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0.5 text-xs">
-          {(['all', 'original', 'reshare'] as const).map((t) => (
+          {(['all', 'original', 'reshare'] as const).map((tp) => (
             <button
-              key={t}
+              key={tp}
               type="button"
-              onClick={() => setType(t)}
-              className={cn('rounded px-2 py-1 capitalize', type === t ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
+              onClick={() => setType(tp)}
+              className={cn('rounded px-2 py-1 capitalize', type === tp ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
             >
-              {t}
+              {tp === 'all' ? t('posts.all') : tp === 'original' ? t('posts.original') : t('posts.reshare')}
             </button>
           ))}
         </div>
@@ -276,7 +278,7 @@ function PostsPage() {
           className="rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 py-1 text-xs"
           title="Filter by author"
         >
-          <option value="">All authors</option>
+          <option value="">{t('posts.allAuthors')}</option>
           {members.map((m) => (
             <option key={m.userId} value={m.userId}>
               {m.name || m.email}
@@ -284,14 +286,14 @@ function PostsPage() {
           ))}
         </select>
         <div className="flex items-center gap-1 text-xs text-neutral-600 dark:text-neutral-300">
-          <span>From</span>
+          <span>{t('posts.from')}</span>
           <Input
             type="date"
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
             className="h-7 w-[140px] text-xs"
           />
-          <span>to</span>
+          <span>{t('posts.to')}</span>
           <Input
             type="date"
             value={toDate}
@@ -317,13 +319,13 @@ function PostsPage() {
 
       {selectedIds.size > 0 ? (
         <div className="flex items-center justify-between rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-2 text-sm">
-          <div>{selectedIds.size} selected</div>
+          <div>{t('media.selected', { count: selectedIds.size })}</div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={bulkToDraft}>
-              Change to Draft
+              {t('posts.changeToDraftBtn')}
             </Button>
             <Button size="sm" variant="outline" className="text-red-600" onClick={bulkDelete}>
-              <Trash2 className="h-4 w-4" /> Delete
+              <Trash2 className="h-4 w-4" /> {t('common.delete')}
             </Button>
           </div>
         </div>
@@ -332,7 +334,7 @@ function PostsPage() {
       {view === 'flat' ? (
         <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
           {rows.length === 0 ? (
-            <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">No posts.</div>
+            <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">{t('posts.noPosts')}</div>
           ) : (
             rows.map((r) => (
               <PostRow
@@ -375,7 +377,7 @@ function PostsPage() {
             </div>
           ) : null}
           {campaigns.length === 0 && standalonePosts.length === 0 ? (
-            <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">No posts.</div>
+            <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">{t('posts.noPosts')}</div>
           ) : null}
         </div>
       )}
@@ -486,6 +488,7 @@ function CampaignActionsMenu({
   workspaceSlug: string
   onChanged: () => Promise<void>
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const terminal = campaign.status === 'published' || campaign.status === 'cancelled'
@@ -525,20 +528,20 @@ function CampaignActionsMenu({
             }
             disabled={busy || !pauseable}
           >
-            <Pause className="h-3 w-3" /> Pause campaign
+            <Pause className="h-3 w-3" /> {t('posts.pauseCampaign')}
           </button>
           <button
             type="button"
             className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-red-600 hover:bg-red-50 disabled:opacity-50"
             onClick={() => {
-              if (!confirm(`Cancel "${campaign.name}"? Remaining steps will stop.`)) return
+              if (!confirm(t('posts.cancelCampaignConfirm', { name: campaign.name }))) return
               void run(() =>
                 cancelCampaign({ data: { workspaceSlug, campaignId: campaign.id } }),
               )
             }}
             disabled={busy || terminal}
           >
-            <X className="h-3 w-3" /> Cancel campaign
+            <X className="h-3 w-3" /> {t('posts.cancelCampaign')}
           </button>
           <button
             type="button"
@@ -550,7 +553,7 @@ function CampaignActionsMenu({
             }
             disabled={busy}
           >
-            <Copy className="h-3 w-3" /> Duplicate campaign
+            <Copy className="h-3 w-3" /> {t('posts.duplicateCampaign')}
           </button>
         </div>
       ) : null}
@@ -575,6 +578,7 @@ function CsvButtons({
     toDate: string
   }
 }) {
+  const t = useT()
   const [busy, setBusy] = useState<'import' | 'export' | null>(null)
   const [report, setReport] = useState<ImportReport | null>(null)
 
@@ -624,7 +628,7 @@ function CsvButtons({
         )}
         title="Import posts from CSV"
       >
-        {busy === 'import' ? <Spinner /> : <Upload className="h-3 w-3" />} Import
+        {busy === 'import' ? <Spinner /> : <Upload className="h-3 w-3" />} {t('posts.importBtn')}
         <input type="file" accept=".csv,text/csv" className="hidden" onChange={onFile} />
       </label>
       <Button
@@ -634,11 +638,11 @@ function CsvButtons({
         disabled={busy !== null}
         title="Export current list"
       >
-        {busy === 'export' ? <Spinner /> : <Download className="h-3 w-3" />} Export
+        {busy === 'export' ? <Spinner /> : <Download className="h-3 w-3" />} {t('posts.exportBtn')}
       </Button>
       {report ? (
         <span className="ml-2 text-xs text-neutral-500 dark:text-neutral-400">
-          {report.created} created · {report.skipped} skipped
+          {t('posts.createdAndSkipped', { created: report.created, skipped: report.skipped })}
         </span>
       ) : null}
     </div>

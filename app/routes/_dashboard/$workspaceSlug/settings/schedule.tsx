@@ -16,6 +16,7 @@ import {
   regenerateCalendarFeedToken,
 } from '~/server/calendarFeed'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -27,6 +28,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/schedu
 })
 
 function SchedulePage() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData()
   const [schedule, setSchedule] = useState<PostingSchedule[]>(initial.schedule)
@@ -61,7 +63,7 @@ function SchedulePage() {
     setMessage(null)
     try {
       await setPostingSchedule({ data: { workspaceSlug, schedule } })
-      setMessage('Saved')
+      setMessage(t('settings.saved'))
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Save failed')
     } finally {
@@ -78,9 +80,9 @@ function SchedulePage() {
       <Card>
         <div className="space-y-3 p-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Posting schedule</h3>
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('schedule.postingSchedule')}</h3>
             <Button variant="outline" size="sm" onClick={copyMondayToAll}>
-              Copy Monday to all days
+              {t('schedule.copyMondayToAll')}
             </Button>
           </div>
           {schedule
@@ -106,13 +108,13 @@ function SchedulePage() {
                       className="h-8 w-32"
                     />
                     <Button size="sm" variant="outline" onClick={() => addSlot(d.dayOfWeek)}>
-                      <Plus className="h-3 w-3" /> Add
+                      <Plus className="h-3 w-3" /> {t('schedule.add')}
                     </Button>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {d.times.length === 0 ? (
-                    <span className="text-xs text-neutral-400 dark:text-neutral-500">No slots</span>
+                    <span className="text-xs text-neutral-400 dark:text-neutral-500">{t('schedule.noSlots')}</span>
                   ) : (
                     d.times.map((t) => (
                       <span
@@ -137,7 +139,7 @@ function SchedulePage() {
           {message ? <p className="text-sm text-neutral-600 dark:text-neutral-300">{message}</p> : null}
           <div className="flex justify-end">
             <Button onClick={save} disabled={saving}>
-              {saving ? <Spinner /> : null} Save schedule
+              {saving ? <Spinner /> : null} {t('schedule.saveSchedule')}
             </Button>
           </div>
         </div>
@@ -145,9 +147,9 @@ function SchedulePage() {
 
       <Card>
         <div className="space-y-2 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Next 5 queue slots</h3>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('schedule.next5Slots')}</h3>
           {upcoming.length === 0 ? (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Add some slots above to preview.</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('schedule.addSlotsAbove')}</p>
           ) : (
             <ul className={cn('text-sm text-neutral-700 dark:text-neutral-200')}>
               {upcoming.map((d) => (
@@ -194,6 +196,7 @@ function previewNextSlots(schedule: PostingSchedule[], n: number): Date[] {
 
 
 function CalendarFeedCard({ workspaceSlug }: { workspaceSlug: string }) {
+  const t = useT()
   const [url, setUrl] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -234,9 +237,9 @@ function CalendarFeedCard({ workspaceSlug }: { workspaceSlug: string }) {
     <Card>
       <div className="space-y-3 p-4">
         <div>
-          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Calendar feed</h3>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('schedule.calendarFeed')}</h3>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            Subscribe from Google / Apple / Outlook to see scheduled posts as calendar events.
+            {t('schedule.calendarFeedDescription')}
           </p>
         </div>
         {url ? (
@@ -244,16 +247,16 @@ function CalendarFeedCard({ workspaceSlug }: { workspaceSlug: string }) {
             <Input readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" onClick={copy}>
-                {copied ? "Copied" : "Copy URL"}
+                {copied ? t('schedule.copied') : t('schedule.copyUrl')}
               </Button>
               <Button size="sm" variant="ghost" onClick={rotate} disabled={busy}>
-                Regenerate
+                {t('schedule.regenerate')}
               </Button>
             </div>
           </>
         ) : (
           <Button size="sm" onClick={generate} disabled={busy}>
-            {busy ? <Spinner /> : null} Generate feed URL
+            {busy ? <Spinner /> : null} {t('schedule.generateFeedUrl')}
           </Button>
         )}
       </div>

@@ -2,10 +2,10 @@ import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { ChevronDown, Menu, Share2 } from 'lucide-react'
 import { Button } from '~/components/ui/button'
-import { ThemeToggle } from '~/components/ui/ThemeToggle'
 import { NotificationBell } from './NotificationBell'
 import { ReshareBrowser, type ReshareAccount } from '~/components/reshare/ReshareBrowser'
 import { listAccounts } from '~/server/accounts'
+import { useT } from '~/lib/i18n'
 
 export function TopBar({
   title,
@@ -16,6 +16,7 @@ export function TopBar({
   workspaceSlug: string
   onOpenSidebar: () => void
 }) {
+  const t = useT()
   const [menuOpen, setMenuOpen] = useState(false)
   const [reshareOpen, setReshareOpen] = useState(false)
   const [accounts, setAccounts] = useState<ReshareAccount[]>([])
@@ -58,13 +59,12 @@ export function TopBar({
       </div>
 
       <div className="flex items-center gap-2">
-        <ThemeToggle />
         <NotificationBell />
 
         <div className="relative flex">
           <Button asChild className="rounded-r-none">
             <Link to="/$workspaceSlug/compose" params={{ workspaceSlug }}>
-              New Post
+              {t('nav.newPost')}
             </Link>
           </Button>
           <button
@@ -85,7 +85,7 @@ export function TopBar({
                 }}
                 className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-neutral-100 dark:hover:bg-white/10"
               >
-                <Share2 className="h-4 w-4" /> Queue Reshares
+                <Share2 className="h-4 w-4" /> {t('nav.queueReshares')}
               </button>
             </div>
           ) : null}

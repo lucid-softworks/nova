@@ -19,6 +19,7 @@ import {
   type TemplateRow,
 } from '~/server/templates'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/templates')({
   loader: async ({ params }) => {
@@ -32,6 +33,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/templates')({
 })
 
 function TemplatesPage() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData()
   const [tab, setTab] = useState<'templates' | 'hashtags'>('templates')
@@ -47,14 +49,14 @@ function TemplatesPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">Templates</h2>
+        <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{t('templates.title')}</h2>
       </div>
       <div className="flex gap-1 border-b border-neutral-200 dark:border-neutral-800">
         <TabBtn active={tab === 'templates'} onClick={() => setTab('templates')}>
-          Templates
+          {t('templates.templates')}
         </TabBtn>
         <TabBtn active={tab === 'hashtags'} onClick={() => setTab('hashtags')}>
-          Hashtag Groups
+          {t('templates.hashtagGroups')}
         </TabBtn>
       </div>
 
@@ -116,6 +118,7 @@ function TemplatesTab({
   onReload: () => Promise<void>
   onUse: (t: TemplateRow) => void
 }) {
+  const t = useT()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<TemplateRow | null>(null)
 
@@ -128,13 +131,13 @@ function TemplatesTab({
             setModalOpen(true)
           }}
         >
-          <Plus className="h-4 w-4" /> Create Template
+          <Plus className="h-4 w-4" /> {t('templates.createTemplate')}
         </Button>
       </div>
       {templates.length === 0 ? (
         <Card>
           <div className="p-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
-            No templates yet. Click &quot;Create Template&quot; to make your first.
+            {t('templates.noTemplates')}
           </div>
         </Card>
       ) : (
@@ -187,6 +190,7 @@ function TemplateCard({
   onUse: () => void
   onDelete: () => Promise<void>
 }) {
+  const t = useT()
   const [menuOpen, setMenuOpen] = useState(false)
   return (
     <Card>
@@ -209,7 +213,7 @@ function TemplateCard({
                 onEdit()
               }}
             >
-              <Pencil className="h-3 w-3" /> Edit
+              <Pencil className="h-3 w-3" /> {t('common.edit')}
             </button>
             <button
               type="button"
@@ -219,24 +223,24 @@ function TemplateCard({
                 await onDelete()
               }}
             >
-              <Trash2 className="h-3 w-3" /> Delete
+              <Trash2 className="h-3 w-3" /> {t('common.delete')}
             </button>
           </div>
         ) : null}
         <div className="pr-8 text-sm font-semibold text-neutral-900 dark:text-neutral-100">{template.name}</div>
         <div className="line-clamp-3 whitespace-pre-wrap text-xs text-neutral-600 dark:text-neutral-300">
-          {template.content || <span className="italic text-neutral-400 dark:text-neutral-500">No content</span>}
+          {template.content || <span className="italic text-neutral-400 dark:text-neutral-500">{t('templates.noContent')}</span>}
         </div>
         <div className="flex items-center gap-0.5">
           {template.platforms.slice(0, 6).map((p) => (
             <PlatformIcon key={p} platform={p} size={14} />
           ))}
           {template.platforms.length === 0 ? (
-            <span className="text-xs text-neutral-400 dark:text-neutral-500">No platforms</span>
+            <span className="text-xs text-neutral-400 dark:text-neutral-500">{t('templates.noPlatforms')}</span>
           ) : null}
         </div>
         <Button type="button" variant="outline" size="sm" onClick={onUse} className="w-full">
-          Use Template
+          {t('templates.useTemplate')}
         </Button>
       </div>
     </Card>
@@ -252,6 +256,7 @@ function HashtagsTab({
   workspaceSlug: string
   onReload: () => Promise<void>
 }) {
+  const t = useT()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<HashtagGroupRow | null>(null)
 
@@ -264,13 +269,13 @@ function HashtagsTab({
             setModalOpen(true)
           }}
         >
-          <Plus className="h-4 w-4" /> Create Group
+          <Plus className="h-4 w-4" /> {t('templates.createGroup')}
         </Button>
       </div>
       {groups.length === 0 ? (
         <Card>
           <div className="p-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
-            No hashtag groups yet.
+            {t('templates.noHashtagGroups')}
           </div>
         </Card>
       ) : (

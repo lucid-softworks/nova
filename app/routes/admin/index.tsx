@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Card } from '~/components/ui/card'
+import { useT } from '~/lib/i18n'
 import {
   getAdminJobStats,
   listAdminUsers,
@@ -19,14 +20,15 @@ export const Route = createFileRoute('/admin/')({
 })
 
 function AdminOverview() {
+  const t = useT()
   const { users, workspaces, jobs } = Route.useLoaderData()
   const cards = [
-    { label: 'Users', value: users },
-    { label: 'Workspaces', value: workspaces },
-    { label: 'Jobs waiting', value: jobs.waiting },
-    { label: 'Jobs active', value: jobs.active },
-    { label: 'Jobs failed', value: jobs.failed },
-    { label: 'Jobs completed', value: jobs.completed },
+    { label: t('admin.users'), value: users },
+    { label: t('admin.workspaces'), value: workspaces },
+    { label: t('admin.waiting'), value: jobs.waiting },
+    { label: t('admin.active'), value: jobs.active },
+    { label: t('admin.failed'), value: jobs.failed },
+    { label: t('admin.completed'), value: jobs.completed },
   ]
   return (
     <div className="grid gap-3 sm:grid-cols-3">

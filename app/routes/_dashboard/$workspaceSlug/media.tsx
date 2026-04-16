@@ -5,6 +5,7 @@ import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 import { FolderTree, type SelectedFolder } from '~/components/media/FolderTree'
 import { MediaAssetCard } from '~/components/media/MediaAssetCard'
 import { MediaPreviewModal } from '~/components/media/MediaPreviewModal'
@@ -44,6 +45,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/media')({
 })
 
 function MediaPage() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData()
   const [folders, setFolders] = useState<FolderNode[]>(initial.folders)
@@ -171,7 +173,7 @@ function MediaPage() {
   }
 
   const onDeleteSelected = async () => {
-    if (!confirm(`Delete ${selectedIds.size} asset${selectedIds.size === 1 ? '' : 's'}?`)) return
+    if (!confirm(t('media.deleteAssets', { count: selectedIds.size }))) return
     await deleteAssets({ data: { workspaceSlug, assetIds: [...selectedIds] } })
     clearSelection()
     await reloadAssets()
@@ -219,36 +221,36 @@ function MediaPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search filenames"
+              placeholder={t('media.searchFilenames')}
               className="pl-8"
             />
           </div>
           <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
-            All
+            {t('media.all')}
           </FilterChip>
           <FilterChip active={filter === 'image'} onClick={() => setFilter('image')}>
-            Images
+            {t('media.images')}
           </FilterChip>
           <FilterChip active={filter === 'video'} onClick={() => setFilter('video')}>
-            Videos
+            {t('media.videos')}
           </FilterChip>
           <FilterChip active={filter === 'gif'} onClick={() => setFilter('gif')}>
-            GIFs
+            {t('media.gifs')}
           </FilterChip>
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as Sort)}
             className="h-8 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 text-xs"
           >
-            <option value="date_desc">Newest first</option>
-            <option value="date_asc">Oldest first</option>
-            <option value="name">Name</option>
-            <option value="size">Size</option>
+            <option value="date_desc">{t('media.newestFirst')}</option>
+            <option value="date_asc">{t('media.oldestFirst')}</option>
+            <option value="name">{t('media.name')}</option>
+            <option value="size">{t('media.size')}</option>
           </select>
           <div className="ml-auto flex items-center gap-2">
             <SizeToggle size={size} onChange={setSize} />
             <Button type="button" onClick={() => fileInputRef.current?.click()}>
-              <Upload className="h-4 w-4" /> Upload
+              <Upload className="h-4 w-4" /> {t('media.upload')}
             </Button>
             <input
               ref={fileInputRef}
@@ -271,14 +273,14 @@ function MediaPage() {
               <button type="button" onClick={clearSelection} className="rounded p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800">
                 <X className="h-4 w-4" />
               </button>
-              {selectedIds.size} selected
+              {t('media.selected', { count: selectedIds.size })}
               <button type="button" onClick={selectAll} className="text-indigo-600 hover:underline">
-                Select all
+                {t('media.selectAll')}
               </button>
             </div>
             <div className="relative flex gap-2">
               <Button variant="outline" size="sm" onClick={() => setMoveOpen((o) => !o)}>
-                <FolderInput className="h-4 w-4" /> Move to folder
+                <FolderInput className="h-4 w-4" /> {t('media.moveToFolderBtn')}
               </Button>
               {moveOpen ? (
                 <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 text-sm shadow-lg">
@@ -287,7 +289,7 @@ function MediaPage() {
                     className="block w-full rounded px-2 py-1.5 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
                     onClick={() => onMove(null)}
                   >
-                    (Uncategorized)
+                    {t('media.uncategorizedParen')}
                   </button>
                   {folders.map((f) => (
                     <button
@@ -302,7 +304,7 @@ function MediaPage() {
                 </div>
               ) : null}
               <Button variant="outline" size="sm" className="text-red-600" onClick={onDeleteSelected}>
-                <Trash2 className="h-4 w-4" /> Delete
+                <Trash2 className="h-4 w-4" /> {t('common.delete')}
               </Button>
             </div>
           </div>
@@ -310,14 +312,14 @@ function MediaPage() {
 
         {refreshing ? (
           <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-            <Spinner /> Loading
+            <Spinner /> {t('media.loading')}
           </div>
         ) : null}
 
         {assets.length === 0 && uploading.length === 0 ? (
           <div className="rounded-md border border-dashed border-neutral-300 p-10 text-center">
             <Upload className="mx-auto mb-2 h-8 w-8 text-neutral-400 dark:text-neutral-500" />
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">Drop files anywhere or click Upload.</p>
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">{t('media.dropFilesOrClickUpload')}</p>
           </div>
         ) : (
           <div className={cn('grid gap-3', gridCols)}>
@@ -347,7 +349,7 @@ function MediaPage() {
         <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-indigo-500/10">
           <div className="rounded-lg border-2 border-dashed border-indigo-400 bg-white dark:bg-neutral-900 px-8 py-6 text-center shadow">
             <Upload className="mx-auto mb-2 h-8 w-8 text-indigo-500" />
-            <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">Drop to upload</p>
+            <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">{t('media.dropToUpload')}</p>
           </div>
         </div>
       ) : null}

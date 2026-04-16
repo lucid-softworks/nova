@@ -8,6 +8,7 @@ import { Spinner } from '~/components/ui/spinner'
 import { LogoUploader } from '~/components/settings/LogoUploader'
 import { SettingsNav } from '~/components/settings/SettingsNav'
 import { getWorkspaceSettings, updateWorkspaceGeneral } from '~/server/settings'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/white-label')({
   loader: async ({ params }) => ({
@@ -17,6 +18,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/white-
 })
 
 function WhiteLabelPage() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const { workspace } = Route.useRouteContext()
   const initial = Route.useLoaderData()
@@ -33,7 +35,7 @@ function WhiteLabelPage() {
       await updateWorkspaceGeneral({
         data: { workspaceSlug, appName, logoUrl },
       })
-      setMessage('Saved')
+      setMessage(t('settings.saved'))
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Save failed')
     } finally {
@@ -49,8 +51,8 @@ function WhiteLabelPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <div className="space-y-3 p-4">
-            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">White label</h3>
-            <Field label="App name" htmlFor="app-name" hint="Replaces SocialHub in the sidebar">
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('whiteLabel.title')}</h3>
+            <Field label={t('whiteLabel.appName')} htmlFor="app-name" hint={t('whiteLabel.appNameHint')}>
               <Input
                 id="app-name"
                 value={appName}
@@ -58,7 +60,7 @@ function WhiteLabelPage() {
                 onChange={(e) => setAppName(e.target.value)}
               />
             </Field>
-            <Field label="Logo" htmlFor="logo-url" hint="Square image works best">
+            <Field label={t('settings.logo')} htmlFor="logo-url" hint={t('settings.logoHint')}>
               <LogoUploader
                 workspaceSlug={workspaceSlug}
                 value={logoUrl}
@@ -69,14 +71,14 @@ function WhiteLabelPage() {
             {message ? <p className="text-sm text-neutral-600 dark:text-neutral-300">{message}</p> : null}
             <div className="flex justify-end">
               <Button onClick={save} disabled={saving || !canEdit}>
-                {saving ? <Spinner /> : null} Save
+                {saving ? <Spinner /> : null} {t('whiteLabel.save')}
               </Button>
             </div>
           </div>
         </Card>
         <Card>
           <div className="space-y-2 p-4">
-            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Sidebar preview</h3>
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('whiteLabel.title')}</h3>
             <div className="overflow-hidden rounded-md">
               <div className="flex items-center gap-2 bg-[#0f1117] px-3 py-3 text-white">
                 {logoUrl ? (

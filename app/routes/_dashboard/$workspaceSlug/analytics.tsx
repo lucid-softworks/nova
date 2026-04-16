@@ -22,6 +22,7 @@ import { Spinner } from '~/components/ui/spinner'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 import {
   getSummary,
   getFollowerSeries,
@@ -61,6 +62,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/analytics')({
 })
 
 function SyncNowButton({ workspaceSlug }: { workspaceSlug: string }) {
+  const t = useT()
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const trigger = async () => {
@@ -78,12 +80,13 @@ function SyncNowButton({ workspaceSlug }: { workspaceSlug: string }) {
   return (
     <Button size="sm" variant="ghost" onClick={trigger} disabled={busy} title="Run analytics sync now">
       <RefreshCw className={cn('h-4 w-4', busy ? 'animate-spin' : '')} />
-      {done ? 'Queued' : 'Sync'}
+      {done ? t('analytics.queued') : t('analytics.sync')}
     </Button>
   )
 }
 
 function AnalyticsPage() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData()
   const [range, setRange] = useState<AnalyticsRange>('30d')
@@ -138,8 +141,8 @@ function AnalyticsPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">Analytics</h2>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Performance across your connected accounts.</p>
+          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{t('analytics.title')}</h2>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">{t('analytics.description')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <RangeToggle value={range} onChange={setRange} />
@@ -175,30 +178,30 @@ function AnalyticsPage() {
       <SummaryCards summary={data.summary} />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <ChartCard title="Follower Growth">
+        <ChartCard title={t('analytics.followerGrowth')}>
           <FollowerChart data={data.followers} accounts={initial.accounts} />
         </ChartCard>
-        <ChartCard title="Daily Engagements">
+        <ChartCard title={t('analytics.dailyEngagements')}>
           <DailyBars data={data.engagements} />
         </ChartCard>
-        <ChartCard title="Engagement Breakdown">
+        <ChartCard title={t('analytics.engagementBreakdown')}>
           <EngagementPie summary={data.summary} />
         </ChartCard>
-        <ChartCard title="Best Posting Times">
+        <ChartCard title={t('analytics.bestPostingTimes')}>
           <Heatmap data={data.heatmap} />
         </ChartCard>
       </div>
 
       <Card>
         <div className="p-4">
-          <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">Per-platform</h3>
+          <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('analytics.perPlatform')}</h3>
           <PlatformTable rows={data.platformTable} />
         </div>
       </Card>
 
       <Card>
         <div className="p-4">
-          <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">Top performing posts</h3>
+          <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('analytics.topPosts')}</h3>
           <TopPosts rows={data.topPosts} />
         </div>
       </Card>
@@ -249,13 +252,14 @@ function AccountFilter({
   value: string | null
   onChange: (v: string | null) => void
 }) {
+  const t = useT()
   return (
     <select
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value || null)}
       className="h-8 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 text-xs"
     >
-      <option value="">All accounts</option>
+      <option value="">{t('analytics.allAccounts')}</option>
       {accounts.map((a) => (
         <option key={a.id} value={a.id}>
           {PLATFORMS[a.platform].label} · @{a.accountHandle}
@@ -266,18 +270,19 @@ function AccountFilter({
 }
 
 function SummaryCards({ summary }: { summary: AnalyticsSummary }) {
+  const t = useT()
   const items: Array<{ label: string; value: string; delta: number }> = [
-    { label: 'Posts', value: summary.totalPosts.toLocaleString(), delta: summary.delta.totalPosts },
-    { label: 'Reshares', value: summary.totalReshares.toLocaleString(), delta: summary.delta.totalReshares },
-    { label: 'Reach', value: summary.totalReach.toLocaleString(), delta: summary.delta.totalReach },
-    { label: 'Engagements', value: summary.totalEngagements.toLocaleString(), delta: summary.delta.totalEngagements },
+    { label: t('analytics.posts'), value: summary.totalPosts.toLocaleString(), delta: summary.delta.totalPosts },
+    { label: t('analytics.reshares'), value: summary.totalReshares.toLocaleString(), delta: summary.delta.totalReshares },
+    { label: t('analytics.reach'), value: summary.totalReach.toLocaleString(), delta: summary.delta.totalReach },
+    { label: t('analytics.engagements'), value: summary.totalEngagements.toLocaleString(), delta: summary.delta.totalEngagements },
     {
-      label: 'Engagement rate',
+      label: t('analytics.engagementRate'),
       value: `${summary.avgEngagementRate.toFixed(1)}%`,
       delta: summary.delta.avgEngagementRate,
     },
     {
-      label: 'Follower growth',
+      label: t('analytics.followerGrowth'),
       value: summary.followerGrowth.toLocaleString(),
       delta: summary.delta.followerGrowth,
     },
@@ -333,7 +338,8 @@ function FollowerChart({
   data: FollowerPoint[]
   accounts: AccountOption[]
 }) {
-  if (data.length === 0) return <EmptyState label="No follower snapshots yet" />
+  const t = useT()
+  if (data.length === 0) return <EmptyState label={t('analytics.noFollowerSnapshots')} />
   const series = accounts.map((a) => ({
     id: a.id,
     label: `@${a.accountHandle}`,
@@ -371,7 +377,8 @@ function FollowerChart({
 }
 
 function DailyBars({ data }: { data: DailyEngagementRow[] }) {
-  if (data.length === 0) return <EmptyState label="No engagement data yet" />
+  const t = useT()
+  if (data.length === 0) return <EmptyState label={t('analytics.noEngagementData')} />
   return (
     <ResponsiveContainer>
       <BarChart data={data}>
@@ -393,7 +400,8 @@ function EngagementPie({ summary }: { summary: AnalyticsSummary }) {
   // We only have totals on the summary, not per-category, so approximate from
   // the daily engagements series when present. For a simple always-working
   // pie, return totalEngagements as a single slice when empty.
-  if (summary.totalEngagements === 0) return <EmptyState label="No engagements yet" />
+  const t = useT()
+  if (summary.totalEngagements === 0) return <EmptyState label={t('analytics.noEngagementsYet')} />
   const data = [
     { name: 'Engagements', value: summary.totalEngagements },
   ]
@@ -425,7 +433,8 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
 
 function Heatmap({ data }: { data: HeatmapRow[] }) {
-  if (data.length === 0) return <EmptyState label="No posts in the window" />
+  const t = useT()
+  if (data.length === 0) return <EmptyState label={t('analytics.noPostsInWindow')} />
   const max = Math.max(...data.map((d) => d.posts), 1)
   const get = (d: number, h: number) => data.find((r) => r.dayOfWeek === d && r.hour === h)
 
@@ -465,7 +474,8 @@ function Heatmap({ data }: { data: HeatmapRow[] }) {
 }
 
 function PlatformTable({ rows }: { rows: PlatformTableRow[] }) {
-  if (rows.length === 0) return <EmptyState label="No connected accounts" />
+  const t = useT()
+  if (rows.length === 0) return <EmptyState label={t('analytics.noConnectedAccounts')} />
   return (
     <div className="overflow-auto">
       <table className="w-full text-sm">
@@ -512,7 +522,8 @@ function PlatformTable({ rows }: { rows: PlatformTableRow[] }) {
 }
 
 function TopPosts({ rows }: { rows: TopPostRow[] }) {
-  if (rows.length === 0) return <EmptyState label="No posts in the window" />
+  const t = useT()
+  if (rows.length === 0) return <EmptyState label={t('analytics.noPostsInWindow')} />
   return (
     <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
       {rows.map((p) => (
@@ -520,7 +531,7 @@ function TopPosts({ rows }: { rows: TopPostRow[] }) {
           <div className="h-10 w-10 shrink-0 rounded bg-neutral-100 dark:bg-neutral-800" />
           <div className="min-w-0 flex-1">
             <div className="line-clamp-2 text-sm text-neutral-900 dark:text-neutral-100">
-              {p.content || <span className="italic text-neutral-400 dark:text-neutral-500">No content</span>}
+              {p.content || <span className="italic text-neutral-400 dark:text-neutral-500">{t('approvals.noContent')}</span>}
             </div>
             <div className="mt-0.5 flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
               {p.platforms.map((pl) => (
@@ -538,7 +549,7 @@ function TopPosts({ rows }: { rows: TopPostRow[] }) {
               rel="noreferrer"
               className="flex items-center gap-1 text-xs text-indigo-600 hover:underline"
             >
-              <ExternalLink className="h-3 w-3" /> View
+              <ExternalLink className="h-3 w-3" /> {t('analytics.view')}
             </a>
           ) : null}
         </div>

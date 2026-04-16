@@ -11,6 +11,7 @@ import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { StatusBadge } from '~/components/accounts/StatusBadge'
 import { AddAccountDialog } from '~/components/accounts/AddAccountDialog'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/accounts')({
   loader: async ({ params }) => ({
@@ -20,6 +21,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/accounts')({
 })
 
 function AccountsPage() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData()
   const [accounts, setAccounts] = useState<AccountSummary[]>(initial.accounts)
@@ -51,8 +53,8 @@ function AccountsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">Connected Accounts</h2>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Link the platforms you want to publish to.</p>
+          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{t('accounts.connectedAccounts')}</h2>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">{t('accounts.linkPlatformsDesc')}</p>
         </div>
         <AddAccountDialog
           workspaceSlug={workspaceSlug}
@@ -65,9 +67,9 @@ function AccountsPage() {
         <Card>
           <CardContent className="py-10 text-center">
             <Plug className="mx-auto mb-3 h-8 w-8 text-neutral-300" />
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">No accounts connected yet.</p>
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">{t('accounts.noAccounts')}</p>
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              Click &quot;Add Account&quot; to connect your first platform.
+              {t('accounts.addAccountDesc')}
             </p>
           </CardContent>
         </Card>
@@ -149,13 +151,14 @@ function AccountRow({
   onReload: () => Promise<void>
   workspaceSlug: string
 }) {
+  const t = useT()
   const [busy, setBusy] = useState(false)
   const expiring = account.tokenExpiresAt
     ? new Date(account.tokenExpiresAt).getTime() - Date.now() < 7 * 24 * 60 * 60 * 1000
     : false
 
   const handleDisconnect = async () => {
-    if (!confirm(`Disconnect @${account.accountHandle}?`)) return
+    if (!confirm(t('accounts.disconnectConfirm'))) return
     setBusy(true)
     try {
       await disconnectAccount({ data: { workspaceSlug, accountId: account.id } })
@@ -183,7 +186,7 @@ function AccountRow({
       </div>
       {expiring && account.status === 'connected' ? (
         <span className="inline-flex items-center gap-1 rounded-full bg-yellow-50 dark:bg-yellow-950/40 px-2 py-0.5 text-xs font-medium text-yellow-700">
-          Token expiring soon
+          {t('accounts.tokenExpiring')}
         </span>
       ) : null}
       <StatusBadge status={account.status} />
@@ -193,11 +196,11 @@ function AccountRow({
       {account.status === 'connected' ? (
         <Button variant="outline" size="sm" onClick={handleDisconnect} disabled={busy}>
           {busy ? <Spinner /> : null}
-          Disconnect
+          {t('accounts.disconnect')}
         </Button>
       ) : (
         <Button variant="outline" size="sm" disabled>
-          <RotateCw className="h-3 w-3" /> Reconnect
+          <RotateCw className="h-3 w-3" /> {t('accounts.reconnect')}
         </Button>
       )}
     </div>
@@ -211,11 +214,12 @@ function BackfillButton({
   workspaceSlug: string
   accountId: string
 }) {
+  const t = useT()
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<BackfillResult | null>(null)
 
   const run = async () => {
-    if (!confirm('Import up to 250 recent posts from this Bluesky account?')) return
+    if (!confirm(t('accounts.backfillConfirm'))) return
     setBusy(true)
     try {
       const res = await backfillBluesky({
@@ -233,11 +237,11 @@ function BackfillButton({
     <>
       <Button variant="outline" size="sm" onClick={run} disabled={busy}>
         {busy ? <Spinner /> : <Download className="h-3 w-3" />}
-        Backfill
+        {t('accounts.backfill')}
       </Button>
       {result ? (
         <span className="text-xs text-neutral-500 dark:text-neutral-400">
-          {result.imported} imported · {result.skipped} skipped
+          {t('accounts.imported', { count: result.imported })} · {t('accounts.skipped', { count: result.skipped })}
         </span>
       ) : null}
     </>

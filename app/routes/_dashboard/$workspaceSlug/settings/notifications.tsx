@@ -15,6 +15,7 @@ import {
   type MeSettings,
 } from '~/server/me'
 import { getDigestOptIn, setDigestOptIn } from '~/server/digests'
+import { useT } from '~/lib/i18n'
 
 const TYPES: Array<{
   key:
@@ -27,13 +28,13 @@ const TYPES: Array<{
     | 'campaign_on_hold'
   label: string
 }> = [
-  { key: 'post_published', label: 'Post published' },
-  { key: 'post_failed', label: 'Post failed' },
-  { key: 'approval_requested', label: 'Approval requested' },
-  { key: 'post_approved', label: 'Post approved' },
-  { key: 'post_rejected', label: 'Changes requested' },
-  { key: 'member_joined', label: 'Member joined workspace' },
-  { key: 'campaign_on_hold', label: 'Campaign on hold' },
+  { key: 'post_published', label: 'notifSettings.postPublished' },
+  { key: 'post_failed', label: 'notifSettings.postFailed' },
+  { key: 'approval_requested', label: 'notifSettings.approvalRequested' },
+  { key: 'post_approved', label: 'notifSettings.postApproved' },
+  { key: 'post_rejected', label: 'notifSettings.changesRequested' },
+  { key: 'member_joined', label: 'notifSettings.memberJoined' },
+  { key: 'campaign_on_hold', label: 'notifSettings.campaignOnHold' },
 ]
 
 const DEFAULTS: Record<
@@ -55,6 +56,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/notifi
 })
 
 function NotificationsSettings() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData()
   const [settings, setSettings] = useState<MeSettings>(initial.settings)
@@ -117,17 +119,16 @@ function NotificationsSettings() {
 
       <Card>
         <div className="space-y-3 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">brrr.now push</h3>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('notifSettings.brrrPush')}</h3>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            Paste the webhook secret from your brrr.now app to receive push notifications on
-            your iPhone/iPad. Secret is encrypted at rest.
+            {t('notifSettings.brrrDescription')}
           </p>
           {settings.brrrConnected ? (
             <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
-              <Check className="h-4 w-4" /> Connected
+              <Check className="h-4 w-4" /> {t('notifSettings.brrrConnected')}
             </div>
           ) : null}
-          <Field label="brrr.now secret" htmlFor="brrr">
+          <Field label={t('notifSettings.brrrSecret')} htmlFor="brrr">
             <Input
               id="brrr"
               value={brrrSecret}
@@ -138,12 +139,12 @@ function NotificationsSettings() {
           </Field>
           <div className="flex gap-2">
             <Button onClick={onSaveBrrr} disabled={savingBrrr}>
-              {savingBrrr ? <Spinner /> : null} Save
+              {savingBrrr ? <Spinner /> : null} {t('common.save')}
             </Button>
             {settings.brrrConnected ? (
               <>
                 <Button variant="outline" onClick={onTestPush} disabled={testing}>
-                  {testing ? <Spinner /> : <Send className="h-3 w-3" />} Test push
+                  {testing ? <Spinner /> : <Send className="h-3 w-3" />} {t('notifSettings.testPush')}
                 </Button>
                 <Button
                   variant="ghost"
@@ -153,7 +154,7 @@ function NotificationsSettings() {
                     setSettings((s) => ({ ...s, brrrConnected: false }))
                   }}
                 >
-                  Disconnect
+                  {t('notifSettings.disconnect')}
                 </Button>
               </>
             ) : null}
@@ -163,42 +164,42 @@ function NotificationsSettings() {
 
       <Card>
         <div className="space-y-3 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Event preferences</h3>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('notifSettings.eventPreferences')}</h3>
           <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                  <th className="px-3 py-2 text-left">Event</th>
-                  <th className="px-3 py-2 text-center">In-app</th>
-                  <th className="px-3 py-2 text-center">Email</th>
-                  <th className="px-3 py-2 text-center">Push</th>
+                  <th className="px-3 py-2 text-left">{t('notifSettings.eventPreferences')}</th>
+                  <th className="px-3 py-2 text-center">{t('notifSettings.inApp')}</th>
+                  <th className="px-3 py-2 text-center">{t('notifSettings.email')}</th>
+                  <th className="px-3 py-2 text-center">{t('notifSettings.push')}</th>
                 </tr>
               </thead>
               <tbody>
-                {TYPES.map((t) => {
-                  const p = getPrefs(t.key)
+                {TYPES.map((tp) => {
+                  const p = getPrefs(tp.key)
                   return (
-                    <tr key={t.key} className="border-b border-neutral-100 dark:border-neutral-800 last:border-0">
-                      <td className="px-3 py-2">{t.label}</td>
+                    <tr key={tp.key} className="border-b border-neutral-100 dark:border-neutral-800 last:border-0">
+                      <td className="px-3 py-2">{t(tp.label)}</td>
                       <td className="px-3 py-2 text-center">
                         <input
                           type="checkbox"
                           checked={p.inApp}
-                          onChange={() => toggle(t.key, 'inApp')}
+                          onChange={() => toggle(tp.key, 'inApp')}
                         />
                       </td>
                       <td className="px-3 py-2 text-center">
                         <input
                           type="checkbox"
                           checked={p.email}
-                          onChange={() => toggle(t.key, 'email')}
+                          onChange={() => toggle(tp.key, 'email')}
                         />
                       </td>
                       <td className="px-3 py-2 text-center">
                         <input
                           type="checkbox"
                           checked={p.push}
-                          onChange={() => toggle(t.key, 'push')}
+                          onChange={() => toggle(tp.key, 'push')}
                           disabled={!settings.brrrConnected}
                           title={settings.brrrConnected ? '' : 'Connect brrr.now to enable push'}
                         />
@@ -223,6 +224,7 @@ function NotificationsSettings() {
 
 
 function DigestCard() {
+  const t = useT()
   const [optIn, setOptIn] = useState<boolean | null>(null)
   const [busy, setBusy] = useState(false)
   useEffect(() => {
@@ -242,9 +244,9 @@ function DigestCard() {
   return (
     <Card>
       <div className="space-y-2 p-4">
-        <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Weekly digest</h3>
+        <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('notifSettings.weeklyDigest')}</h3>
         <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          A Monday-morning email summarising what was published, upcoming posts, and unread inbox.
+          {t('notifSettings.digestDescription')}
         </p>
         <label className="inline-flex items-center gap-2 text-sm">
           <input
@@ -253,7 +255,7 @@ function DigestCard() {
             disabled={optIn === null || busy}
             onChange={(e) => toggle(e.target.checked)}
           />
-          Send me the weekly digest
+          {t('notifSettings.sendMeDigest')}
         </label>
       </div>
     </Card>

@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/digest/unsubscribe')({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -14,6 +15,7 @@ export const Route = createFileRoute('/digest/unsubscribe')({
 })
 
 function UnsubscribePage() {
+  const t = useT()
   const state = Route.useLoaderData() as { ok: boolean; reason?: string }
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-[#0b0d12] p-4">
@@ -21,20 +23,19 @@ function UnsubscribePage() {
         {state.ok ? (
           <>
             <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              Unsubscribed
+              {t('digest.unsubscribed')}
             </h1>
             <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              You won't receive weekly SocialHub digests anymore. You can re-enable them in
-              Settings → Notifications.
+              {t('digest.unsubscribedDescription')}
             </p>
           </>
         ) : (
           <>
             <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              Invalid link
+              {t('digest.invalidLink')}
             </h1>
             <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              {state.reason ?? 'We couldn\u2019t verify this unsubscribe link.'}
+              {state.reason ?? t('digest.couldNotVerify')}
             </p>
           </>
         )}

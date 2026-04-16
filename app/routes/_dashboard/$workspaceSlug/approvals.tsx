@@ -8,6 +8,7 @@ import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { listPosts, type PostRow } from '~/server/posts'
 import { approvePost, requestChanges } from '~/server/scheduling'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/approvals')({
   beforeLoad: ({ context }) => {
@@ -34,6 +35,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/approvals')({
 })
 
 function ApprovalsPage() {
+  const t = useT()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData() as { rows: PostRow[] }
   const [rows, setRows] = useState<PostRow[]>(initial.rows)
@@ -89,7 +91,7 @@ function ApprovalsPage() {
 
   const rejectSelected = async () => {
     if (selected.size === 0) return
-    const note = prompt('What needs to change?')
+    const note = prompt(t('approvals.whatNeedsToChange2'))
     if (!note) return
     setBusy('reject')
     setError(null)
@@ -110,15 +112,15 @@ function ApprovalsPage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-            Approvals
+            {t('approvals.title')}
           </h2>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            Posts awaiting review before they publish.
+            {t('approvals.postsAwaitingReview')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-neutral-500 dark:text-neutral-400">
-            {selected.size} selected
+            {t('approvals.selected', { count: selected.size })}
           </span>
           <Button
             variant="outline"
@@ -126,10 +128,10 @@ function ApprovalsPage() {
             onClick={rejectSelected}
             disabled={selected.size === 0 || busy !== null}
           >
-            {busy === 'reject' ? <Spinner /> : <X className="h-3 w-3" />} Request changes
+            {busy === 'reject' ? <Spinner /> : <X className="h-3 w-3" />} {t('approvals.requestChanges')}
           </Button>
           <Button size="sm" onClick={approveSelected} disabled={selected.size === 0 || busy !== null}>
-            {busy === 'approve' ? <Spinner /> : <Check className="h-3 w-3" />} Approve
+            {busy === 'approve' ? <Spinner /> : <Check className="h-3 w-3" />} {t('approvals.approve')}
           </Button>
         </div>
       </div>
@@ -137,13 +139,13 @@ function ApprovalsPage() {
       <Card>
         {rows.length === 0 ? (
           <p className="p-4 text-sm text-neutral-500 dark:text-neutral-400">
-            Nothing to approve right now.{' '}
+            {t('approvals.nothingToApproveNow')}{' '}
             <Link
               to="/$workspaceSlug/posts"
               params={{ workspaceSlug }}
               className="text-indigo-600 hover:underline dark:text-indigo-400"
             >
-              Back to posts
+              {t('approvals.backToPosts')}
             </Link>
             .
           </p>
@@ -154,10 +156,10 @@ function ApprovalsPage() {
                 <th className="px-3 py-2">
                   <input type="checkbox" checked={allSelected} onChange={toggleAll} />
                 </th>
-                <th className="px-3 py-2 text-left">Post</th>
-                <th className="px-3 py-2 text-left">Author</th>
-                <th className="px-3 py-2 text-left">Targets</th>
-                <th className="px-3 py-2 text-left">Submitted</th>
+                <th className="px-3 py-2 text-left">{t('approvals.post')}</th>
+                <th className="px-3 py-2 text-left">{t('approvals.author')}</th>
+                <th className="px-3 py-2 text-left">{t('approvals.targets')}</th>
+                <th className="px-3 py-2 text-left">{t('approvals.submitted')}</th>
               </tr>
             </thead>
             <tbody>
@@ -177,7 +179,7 @@ function ApprovalsPage() {
                       search={{ postId: r.id } as never}
                       className="text-neutral-900 hover:underline dark:text-neutral-100"
                     >
-                      {r.defaultContent ? r.defaultContent.slice(0, 120) : '(no content)'}
+                      {r.defaultContent ? r.defaultContent.slice(0, 120) : t('approvals.noContent')}
                     </Link>
                   </td>
                   <td className="px-3 py-2 align-top text-neutral-600 dark:text-neutral-300">
