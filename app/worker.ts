@@ -23,6 +23,11 @@ import {
   getDigestWorker,
   startDigestSchedule,
 } from './server/digests/schedule'
+import {
+  getRecurringQueue,
+  getRecurringWorker,
+  startRecurringPolling,
+} from './server/recurring/schedule'
 import { logger } from './lib/logger'
 import { initSentry } from './lib/sentry'
 
@@ -43,6 +48,8 @@ const inboxQueue = getInboxQueue()
 const inboxWorker = getInboxWorker()
 const digestQueue = getDigestQueue()
 const digestWorker = getDigestWorker()
+const recurringQueue = getRecurringQueue()
+const recurringWorker = getRecurringWorker()
 startScheduler()
 // Scheduling the repeatables is idempotent — BullMQ dedupes on the jobId,
 // so running this on every worker boot (any replica count) is safe.
@@ -57,6 +64,9 @@ startInboxPolling().catch((e) =>
 )
 startDigestSchedule().catch((e) =>
   logger.error({ err: e instanceof Error ? e.message : String(e) }, 'digest schedule failed'),
+)
+startRecurringPolling().catch((e) =>
+  logger.error({ err: e instanceof Error ? e.message : String(e) }, 'recurring schedule failed'),
 )
 logger.info(
   { replicaId: process.env.HOSTNAME ?? 'local' },
@@ -73,6 +83,7 @@ const shutdown = async (signal: string) => {
       rssWorker.close(),
       inboxWorker.close(),
       digestWorker.close(),
+      recurringWorker.close(),
     ])
     await Promise.all([
       postQueue.close(),
@@ -80,6 +91,7 @@ const shutdown = async (signal: string) => {
       rssQueue.close(),
       inboxQueue.close(),
       digestQueue.close(),
+      recurringQueue.close(),
     ])
   } catch (e) {
     logger.error({ err: e instanceof Error ? e.message : String(e) }, 'worker drain error')

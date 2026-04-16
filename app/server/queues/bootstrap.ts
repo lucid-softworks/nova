@@ -22,6 +22,12 @@ import {
   resetDigest,
   startDigestSchedule,
 } from '~/server/digests/schedule'
+import {
+  getRecurringQueue,
+  getRecurringWorker,
+  resetRecurring,
+  startRecurringPolling,
+} from '~/server/recurring/schedule'
 import { logger } from '~/lib/logger'
 import { initSentry } from '~/lib/sentry'
 
@@ -53,6 +59,8 @@ export function bootQueues() {
   const inboxWorker = getInboxWorker()
   const digestQueue = getDigestQueue()
   const digestWorker = getDigestWorker()
+  const recurringQueue = getRecurringQueue()
+  const recurringWorker = getRecurringWorker()
   startScheduler()
   startAnalyticsSync().catch((e) =>
     logger.error({ err: e instanceof Error ? e.message : String(e) }, 'analytics schedule failed'),
@@ -66,13 +74,18 @@ export function bootQueues() {
   startDigestSchedule().catch((e) =>
     logger.error({ err: e instanceof Error ? e.message : String(e) }, 'digest schedule failed'),
   )
-  logger.info('queues online: posts + analytics + rss + inbox + digest + scheduler')
+  startRecurringPolling().catch((e) =>
+    logger.error({ err: e instanceof Error ? e.message : String(e) }, 'recurring schedule failed'),
+  )
+  logger.info('queues online: posts + analytics + rss + inbox + digest + recurring + scheduler')
   void rssQueue
   void rssWorker
   void inboxQueue
   void inboxWorker
   void digestQueue
   void digestWorker
+  void recurringQueue
+  void recurringWorker
 
   globalThis.__socialhubQueueCleanup = async () => {
     stopScheduler()
@@ -82,6 +95,7 @@ export function bootQueues() {
       rssWorker.close(),
       inboxWorker.close(),
       digestWorker.close(),
+      recurringWorker.close(),
     ])
     await Promise.all([
       queue.close(),
@@ -89,6 +103,7 @@ export function bootQueues() {
       rssQueue.close(),
       inboxQueue.close(),
       digestQueue.close(),
+      recurringQueue.close(),
     ])
     resetPostWorker()
     resetPostQueue()
@@ -97,6 +112,7 @@ export function bootQueues() {
     resetRss()
     resetInbox()
     resetDigest()
+    resetRecurring()
     globalThis.__socialhubQueuesBooted = false
   }
 }

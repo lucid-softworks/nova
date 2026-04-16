@@ -682,6 +682,24 @@ export const rssFeedItems = pgTable(
   }),
 )
 
+export const recurringPosts = pgTable('recurring_posts', {
+  id: id(),
+  workspaceId: uuid('workspace_id')
+    .notNull()
+    .references(() => workspaces.id, { onDelete: 'cascade' }),
+  sourcePostId: uuid('source_post_id')
+    .notNull()
+    .references(() => posts.id, { onDelete: 'cascade' }),
+  cronExpression: text('cron_expression').notNull(),
+  timezone: text('timezone').notNull().default('UTC'),
+  socialAccountIds: jsonb('social_account_ids').$type<string[]>().default([]).notNull(),
+  active: boolean('active').default(true).notNull(),
+  lastFiredAt: timestamp('last_fired_at', { withTimezone: true }),
+  nextFireAt: timestamp('next_fire_at', { withTimezone: true }),
+  createdById: text('created_by_id').references(() => user.id, { onDelete: 'set null' }),
+  createdAt: now(),
+})
+
 export const savedReplies = pgTable('saved_replies', {
   id: id(),
   workspaceId: uuid('workspace_id')
