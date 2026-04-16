@@ -22,7 +22,7 @@ export default defineConfig({
     react(),
   ],
   server: {
-    port: 3000,
+    port: 4000,
   },
   ssr: {
     // Keep server-only packages out of the SSR bundle so Rollup doesn't
