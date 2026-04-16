@@ -89,7 +89,12 @@ export async function fetchInbox(ctx: InboxAccountCtx): Promise<InboxFetchItem[]
 
   const res = await fetch(
     `${pdsUrl}/xrpc/app.bsky.notification.listNotifications?limit=50`,
-    { headers: { Authorization: `Bearer ${token}` } },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'atproto-proxy': 'did:web:api.bsky.app#bsky_appview',
+      },
+    },
   )
   if (!res.ok) {
     logger.warn(
