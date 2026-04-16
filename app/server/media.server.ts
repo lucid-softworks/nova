@@ -2,6 +2,7 @@ import { and, asc, desc, eq, inArray, like, or } from 'drizzle-orm'
 import { db, schema } from './db'
 import { requireWorkspaceAccess } from './session.server'
 import { getStorage } from './storage'
+import { escapeLike } from '~/lib/utils'
 
 export type FolderNode = {
   id: string
@@ -146,8 +147,8 @@ export async function listAssetsImpl(q: AssetListQuery): Promise<AssetSummary[]>
         : eq(schema.mediaAssets.folderId, q.folderId)
   const searchFilter = q.search
     ? or(
-        like(schema.mediaAssets.originalName, `%${q.search}%`),
-        like(schema.mediaAssets.filename, `%${q.search}%`),
+        like(schema.mediaAssets.originalName, `%${escapeLike(q.search)}%`),
+        like(schema.mediaAssets.filename, `%${escapeLike(q.search)}%`),
       )
     : undefined
 

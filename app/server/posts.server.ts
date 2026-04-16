@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, gte, inArray, isNotNull, lte, or, sql } from 'drizzle-orm'
 import { db, schema } from './db'
 import { requireWorkspaceAccess } from './session.server'
+import { escapeLike } from '~/lib/utils'
 import type { PlatformKey } from '~/lib/platforms'
 import type {
   PostsTab,
@@ -53,11 +54,11 @@ export async function listPostsImpl(q: PostListQuery): Promise<PostRow[]> {
     ? sql`EXISTS (
         SELECT 1 FROM ${schema.postVersions}
          WHERE ${schema.postVersions.postId} = ${schema.posts.id}
-           AND ${schema.postVersions.content} ILIKE ${`%${q.search}%`}
+           AND ${schema.postVersions.content} ILIKE ${`%${escapeLike(q.search)}%`}
       ) OR EXISTS (
         SELECT 1 FROM ${schema.postReshareDetails}
          WHERE ${schema.postReshareDetails.postId} = ${schema.posts.id}
-           AND ${schema.postReshareDetails.sourceAuthorHandle} ILIKE ${`%${q.search}%`}
+           AND ${schema.postReshareDetails.sourceAuthorHandle} ILIKE ${`%${escapeLike(q.search)}%`}
       )`
     : undefined
 
