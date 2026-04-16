@@ -42,17 +42,15 @@ try {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
     document.documentElement.classList.toggle('dark', e.matches);
   });
-  // Locale
+  // Locale — detect from browser, persist to cookie, hide until React renders
   var lang = (navigator.language || 'en').slice(0, 2);
   var supported = { en: 1, fr: 1, zh: 1 };
   var locale = supported[lang] ? lang : 'en';
   document.documentElement.lang = locale;
   document.documentElement.dataset.locale = locale;
-  if (!document.cookie.match('(^|;)\\\\s*locale=')) {
-    document.cookie = 'locale=' + locale + ';path=/;max-age=31536000;samesite=lax';
-  }
-  // Hide body until React hydrates to prevent locale flash
-  document.documentElement.style.visibility = 'hidden';
+  document.cookie = 'locale=' + locale + ';path=/;max-age=31536000;samesite=lax';
+  // Hide until React hydrates in the correct locale
+  if (locale !== 'en') document.documentElement.style.visibility = 'hidden';
 } catch (e) {}
 `
 
