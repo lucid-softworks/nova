@@ -11,6 +11,7 @@ import { Input } from '~/components/ui/input'
 import { Field } from '~/components/ui/field'
 import { Spinner } from '~/components/ui/spinner'
 import { normalizeHashtags, type HashtagGroupRow } from '~/server/templates'
+import { useT } from '~/lib/i18n'
 
 export function HashtagGroupModal({
   open,
@@ -23,6 +24,7 @@ export function HashtagGroupModal({
   initial: HashtagGroupRow | null
   onSubmit: (input: { name: string; hashtags: string[] }) => Promise<void>
 }) {
+  const t = useT()
   const [name, setName] = useState('')
   const [raw, setRaw] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -40,7 +42,7 @@ export function HashtagGroupModal({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) {
-      setError('Name is required')
+      setError(t('hashtags.nameRequired'))
       return
     }
     setSubmitting(true)
@@ -58,16 +60,16 @@ export function HashtagGroupModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{initial ? 'Edit group' : 'Create hashtag group'}</DialogTitle>
+          <DialogTitle>{initial ? t('hashtags.editGroup') : t('hashtags.createGroup')}</DialogTitle>
           <DialogDescription>
-            Paste your hashtags — one per line, space-separated, with or without #.
+            {t('hashtags.description')}
           </DialogDescription>
         </DialogHeader>
         <form className="space-y-3" onSubmit={submit}>
-          <Field label="Group name" htmlFor="grp-name">
+          <Field label={t('hashtags.groupName')} htmlFor="grp-name">
             <Input id="grp-name" value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
-          <Field label="Hashtags" htmlFor="grp-tags">
+          <Field label={t('hashtags.hashtagsLabel')} htmlFor="grp-tags">
             <textarea
               id="grp-tags"
               value={raw}

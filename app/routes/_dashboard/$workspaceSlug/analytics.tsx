@@ -78,7 +78,7 @@ function SyncNowButton({ workspaceSlug }: { workspaceSlug: string }) {
     }
   }
   return (
-    <Button size="sm" variant="ghost" onClick={trigger} disabled={busy} title="Run analytics sync now">
+    <Button size="sm" variant="ghost" onClick={trigger} disabled={busy} title={t('analytics.syncTitle')}>
       <RefreshCw className={cn('h-4 w-4', busy ? 'animate-spin' : '')} />
       {done ? t('analytics.queued') : t('analytics.sync')}
     </Button>

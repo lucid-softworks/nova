@@ -165,13 +165,13 @@ function BlueskyForm({
         <div className="flex items-center gap-3">
           <PlatformIcon platform="bluesky" size={36} />
           <div>
-            <DialogTitle>Connect Bluesky</DialogTitle>
-            <DialogDescription>Use an app password, not your account password.</DialogDescription>
+            <DialogTitle>{t('accounts.blueskyTitle')}</DialogTitle>
+            <DialogDescription>{t('accounts.blueskyHint')}</DialogDescription>
           </div>
         </div>
       </DialogHeader>
       <form onSubmit={submit} className="space-y-4">
-        <Field label="Handle or email" htmlFor="bsky-id">
+        <Field label={t('accounts.handleOrEmail')} htmlFor="bsky-id">
           <Input
             id="bsky-id"
             value={identifier}
@@ -181,9 +181,9 @@ function BlueskyForm({
           />
         </Field>
         <Field
-          label="App password"
+          label={t('accounts.appPassword')}
           htmlFor="bsky-pw"
-          hint="Create one at bsky.app → Settings → App passwords"
+          hint={t('accounts.appPasswordHint')}
         >
           <Input
             id="bsky-pw"
@@ -228,7 +228,7 @@ function MastodonForm({
       const { url } = await connectMastodon({ data: { workspaceSlug, instance } })
       window.location.href = url
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not start Mastodon connection')
+      setError(err instanceof Error ? err.message : t('accounts.mastodonError'))
       setSubmitting(false)
     }
   }
@@ -239,15 +239,15 @@ function MastodonForm({
         <div className="flex items-center gap-3">
           <PlatformIcon platform="mastodon" size={36} />
           <div>
-            <DialogTitle>Connect Mastodon</DialogTitle>
+            <DialogTitle>{t('accounts.mastodonTitle')}</DialogTitle>
             <DialogDescription>
-              Enter your instance URL. We&apos;ll register an app and redirect you to sign in.
+              {t('accounts.mastodonDescription')}
             </DialogDescription>
           </div>
         </div>
       </DialogHeader>
       <form className="space-y-4" onSubmit={submit}>
-        <Field label="Instance URL" htmlFor="mastodon-instance">
+        <Field label={t('accounts.instanceUrl')} htmlFor="mastodon-instance">
           <Input
             id="mastodon-instance"
             value={instance}

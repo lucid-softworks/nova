@@ -123,8 +123,7 @@ function BillingSettings() {
 
           {disabled ? (
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              Billing is disabled. Set <code>BILLING_PROVIDER</code> in your environment to
-              enable Stripe, Polar, Dodo, Autumn, Creem, or Chargebee.
+              {t('billing.billingDisabledMessage')}
             </p>
           ) : !canManage ? (
             <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('billing.onlyAdmins')}</p>

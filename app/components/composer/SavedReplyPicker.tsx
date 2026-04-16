@@ -43,7 +43,7 @@ export function SavedReplyPicker({
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="inline-flex h-8 w-8 items-center justify-center rounded text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-white/10"
-        title="Insert saved reply"
+        title={t('compose.insertSavedReply')}
       >
         <MessageSquare className="h-4 w-4" />
       </button>

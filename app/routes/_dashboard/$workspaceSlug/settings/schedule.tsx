@@ -212,7 +212,7 @@ function CalendarFeedCard({ workspaceSlug }: { workspaceSlug: string }) {
   }
 
   const rotate = async () => {
-    if (!confirm("This invalidates the current URL. Existing subscribers stop syncing. Continue?")) return
+    if (!confirm(t('schedule.invalidateConfirm'))) return
     setBusy(true)
     try {
       const res = await regenerateCalendarFeedToken({ data: { workspaceSlug } })

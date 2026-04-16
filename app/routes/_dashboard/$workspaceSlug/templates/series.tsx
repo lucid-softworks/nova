@@ -306,13 +306,13 @@ function CreateSeriesDialog({
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              Description
+              {t('series.descriptionLabel')}
             </label>
             <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-              placeholder="Optional description"
+              placeholder={t('series.descriptionPlaceholder')}
             />
           </div>
 
@@ -322,7 +322,7 @@ function CreateSeriesDialog({
                 {t('series.slots')}
               </label>
               <Button type="button" variant="outline" size="sm" onClick={addSlot}>
-                <Plus className="h-3 w-3" /> Add slot
+                <Plus className="h-3 w-3" /> {t('series.addSlot')}
               </Button>
             </div>
             <div className="space-y-2">
@@ -339,7 +339,7 @@ function CreateSeriesDialog({
                       updateSlot(idx, { dayOffset: parseInt(e.target.value) || 0 })
                     }
                     className="w-14 rounded border border-neutral-300 bg-white px-2 py-1 text-xs dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
-                    title="Day offset"
+                    title={t('series.dayOffsetTitle')}
                   />
                   <span className="text-xs text-neutral-400">d</span>
                   <input
@@ -351,7 +351,7 @@ function CreateSeriesDialog({
                   <input
                     value={slot.contentHint}
                     onChange={(e) => updateSlot(idx, { contentHint: e.target.value })}
-                    placeholder="Content hint"
+                    placeholder={t('series.contentHintPlaceholder')}
                     className="min-w-0 flex-1 rounded border border-neutral-300 bg-white px-2 py-1 text-xs dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
                   />
                   {slots.length > 1 && (

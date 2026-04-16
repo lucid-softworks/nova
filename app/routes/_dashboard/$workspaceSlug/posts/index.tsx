@@ -285,7 +285,7 @@ function PostsPage() {
           value={authorId}
           onChange={(e) => setAuthorId(e.target.value)}
           className="rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 py-1 text-xs"
-          title="Filter by author"
+          title={t('posts.filterByAuthor')}
         >
           <option value="">{t('posts.allAuthors')}</option>
           {members.map((m) => (
@@ -317,7 +317,7 @@ function PostsPage() {
                 setToDate('')
               }}
               className="rounded px-1 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-              title="Clear dates"
+              title={t('posts.clearDates')}
             >
               ×
             </button>
@@ -647,7 +647,7 @@ function CsvButtons({
           'inline-flex h-8 cursor-pointer items-center gap-2 rounded-md border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-900 hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800',
           busy !== null && 'pointer-events-none opacity-50',
         )}
-        title="Import posts from CSV"
+        title={t('posts.importTitle')}
       >
         {busy === 'import' ? <Spinner /> : <Upload className="h-3 w-3" />} {t('posts.importBtn')}
         <input type="file" accept=".csv,text/csv" className="hidden" onChange={onFile} />
@@ -657,7 +657,7 @@ function CsvButtons({
         variant="outline"
         onClick={exportNow}
         disabled={busy !== null}
-        title="Export current list"
+        title={t('posts.exportTitle')}
       >
         {busy === 'export' ? <Spinner /> : <Download className="h-3 w-3" />} {t('posts.exportBtn')}
       </Button>

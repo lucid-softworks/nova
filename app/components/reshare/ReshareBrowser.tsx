@@ -272,7 +272,7 @@ export function ReshareBrowser({
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Keyword or #hashtag"
+                  placeholder={t('reshare.searchPlaceholder')}
                   className="pl-8"
                 />
               </div>

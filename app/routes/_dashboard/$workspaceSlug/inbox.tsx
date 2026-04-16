@@ -111,7 +111,7 @@ function InboxPage() {
             />
             {t('inbox.unreadOnly')}
           </label>
-          <Button size="sm" variant="ghost" onClick={syncNow} title="Fetch new inbox items now">
+          <Button size="sm" variant="ghost" onClick={syncNow} title={t('inbox.syncTitle')}>
             <RefreshCw className="h-3 w-3" /> {t('inbox.sync')}
           </Button>
         </div>

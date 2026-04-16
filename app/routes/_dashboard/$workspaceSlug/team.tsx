@@ -391,7 +391,7 @@ function InviteModal({
           </DialogDescription>
         </DialogHeader>
         <form className="space-y-3" onSubmit={submit}>
-          <Field label="Email" htmlFor="inv-email">
+          <Field label={t('team.email')} htmlFor="inv-email">
             <Input
               id="inv-email"
               type="email"
@@ -400,7 +400,7 @@ function InviteModal({
               placeholder="teammate@example.com"
             />
           </Field>
-          <Field label="Role" htmlFor="inv-role">
+          <Field label={t('team.role')} htmlFor="inv-role">
             <select
               id="inv-role"
               value={role}

@@ -929,7 +929,7 @@ function Editor({
                     value: e.target.value,
                   })
                 }
-                placeholder="First comment posted after your main post"
+                placeholder={t('compose.firstCommentPlaceholder')}
                 className="mt-2 min-h-[60px] w-full resize-y rounded border border-neutral-200 dark:border-neutral-800 p-2 text-sm"
               />
             ) : null}
@@ -994,16 +994,16 @@ function RedditFields({
     <Card>
       <div className="space-y-3 p-4">
         <div className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{t('compose.redditOptions')}</div>
-        <Field label="Title" htmlFor="reddit-title">
+        <Field label={t('compose.redditTitle')} htmlFor="reddit-title">
           <Input
             id="reddit-title"
             maxLength={300}
             value={value.title}
             onChange={(e) => onChange({ title: e.target.value })}
-            placeholder="Post title (required, max 300 chars)"
+            placeholder={t('compose.redditTitlePlaceholder')}
           />
         </Field>
-        <Field label="Subreddit" htmlFor="reddit-sub">
+        <Field label={t('compose.redditSubreddit')} htmlFor="reddit-sub">
           <Input
             id="reddit-sub"
             value={value.subreddit}

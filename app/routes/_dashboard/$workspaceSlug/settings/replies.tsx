@@ -99,7 +99,7 @@ function SavedRepliesPage() {
                 id="sr-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Thanks for reaching out"
+                placeholder={t('replies.titlePlaceholder')}
               />
             </Field>
             <Field label={t('replies.shortcut')} htmlFor="sr-sc">
@@ -118,7 +118,7 @@ function SavedRepliesPage() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100"
-              placeholder="Hi! Thanks for reaching out — we'll get back to you shortly."
+              placeholder={t('replies.contentPlaceholder')}
             />
           </Field>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}

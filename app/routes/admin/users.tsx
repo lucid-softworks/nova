@@ -63,7 +63,7 @@ function UsersPage() {
       <Input
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
-        placeholder="Filter by name or email"
+        placeholder={t('admin.filterPlaceholder')}
         className="max-w-sm"
       />
       <Card>

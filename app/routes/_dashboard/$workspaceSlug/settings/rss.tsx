@@ -141,7 +141,7 @@ function RssSettings() {
                       variant="ghost"
                       onClick={() => syncNow(f.id)}
                       disabled={busy === f.id}
-                      title="Poll now"
+                      title={t('rss.pollNowTitle')}
                     >
                       <RefreshCw className="h-3 w-3" /> {t('rss.sync')}
                     </Button>
@@ -150,7 +150,7 @@ function RssSettings() {
                       variant="ghost"
                       onClick={() => remove(f.id)}
                       disabled={busy === f.id}
-                      title="Remove"
+                      title={t('rss.removeTitle')}
                     >
                       <Trash2 className="h-3 w-3 text-red-600" />
                     </Button>

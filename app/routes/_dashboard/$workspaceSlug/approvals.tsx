@@ -380,7 +380,7 @@ function InviteReviewerDialog({
               <Label htmlFor="rev-name">{t('approvals.reviewerName')}</Label>
               <Input
                 id="rev-name"
-                placeholder="Jane Smith"
+                placeholder={t('approvals.namePlaceholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />

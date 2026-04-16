@@ -150,7 +150,7 @@ function ApiSettings() {
                 id="key-name"
                 value={newKeyName}
                 onChange={(e) => setNewKeyName(e.target.value)}
-                placeholder="e.g. Production CLI"
+                placeholder={t('api.keyNamePlaceholder')}
               />
             </Field>
             <Button onClick={onCreateKey} disabled={creatingKey || !newKeyName.trim()}>

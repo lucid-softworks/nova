@@ -251,6 +251,7 @@ function StepCard({
   const isRoot = !step.dependsOn
   const availableDeps = allSteps.slice(0, index).filter((s) => s.clientId !== step.clientId)
 
+  const t = useT()
   const priorSteps = allSteps.slice(0, index)
   const urlVariables = useMemo(() => {
     if (!step.dependsOn) return []
@@ -326,7 +327,7 @@ function StepCard({
           </div>
 
           {isRoot ? (
-            <Field label="Scheduled at" htmlFor={`root-${step.clientId}`}>
+            <Field label={t('compose.scheduledAtLabel')} htmlFor={`root-${step.clientId}`}>
               <Input
                 id={`root-${step.clientId}`}
                 type="datetime-local"
@@ -441,6 +442,7 @@ function StepContent({
   workspaceSlug: string
   platforms: PlatformKey[]
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -467,7 +469,7 @@ function StepContent({
         ref={textareaRef}
         value={content}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Step content"
+        placeholder={t('compose.stepContentPlaceholder')}
         className="min-h-[120px] w-full resize-y rounded-md border border-neutral-200 dark:border-neutral-800 p-3 text-sm"
       />
       <div className="flex items-center gap-2">

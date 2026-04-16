@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Smile } from 'lucide-react'
+import { useT } from '~/lib/i18n'
 
 const CATEGORIES: { label: string; emojis: string[] }[] = [
   {
@@ -31,6 +32,7 @@ const CATEGORIES: { label: string; emojis: string[] }[] = [
 ]
 
 export function EmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -47,7 +49,7 @@ export function EmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
     <div className="relative" ref={rootRef}>
       <button
         type="button"
-        title="Emoji"
+        title={t('compose.emoji')}
         onClick={() => setOpen((o) => !o)}
         className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
       >

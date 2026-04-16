@@ -338,7 +338,7 @@ export function PostRow({
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="What should change?"
+              placeholder={t('postRow.requestChangesNote')}
               className="min-h-[100px] w-full resize-y rounded border border-neutral-200 dark:border-neutral-800 p-2 text-sm"
             />
             <div className="mt-3 flex justify-end gap-2">
