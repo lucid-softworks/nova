@@ -41,5 +41,7 @@ Split into sections under [`plan/`](./plan/).
 - [Stage 25 — Real analytics sync](./plan/stage-25-analytics-sync.md)
 - [Stage 26 — Polish + remaining deferred items](./plan/stage-26-polish.md)
 
+- [Stage 58 — Security hardening](./plan/stage-58-security-hardening.md)
+
 ## Cross-cutting
 - [General requirements (all stages)](./plan/general-requirements.md)
