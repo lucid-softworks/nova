@@ -1,6 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import { db, schema } from '~/server/db'
 import { logger } from '~/lib/logger'
+import { safeFetch } from '~/lib/safe-fetch'
 import { applyTemplate, parseFeed } from './parse'
 
 /**
@@ -14,7 +15,7 @@ export async function pollFeed(feedId: string): Promise<{ created: number; seen:
   })
   if (!feed || !feed.active) return { created: 0, seen: 0 }
 
-  const res = await fetch(feed.url, { headers: { 'User-Agent': 'nova-rss/1.0' } })
+  const res = await safeFetch(feed.url, { headers: { 'User-Agent': 'nova-rss/1.0' } })
   if (!res.ok) {
     logger.warn({ feedId, url: feed.url, status: res.status }, 'rss fetch failed')
     return { created: 0, seen: 0 }

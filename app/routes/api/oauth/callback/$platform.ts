@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getCookie, setCookie } from '@tanstack/react-start/server'
 import { decrypt } from '~/lib/encryption'
+import { safeFetch } from '~/lib/safe-fetch'
 import type { PlatformKey } from '~/lib/platforms'
 import {
   exchangeCode,
@@ -114,7 +115,7 @@ async function handleMastodonCallback(
   code: string,
   redirectUri: string,
 ) {
-  const tokenRes = await fetch(`${pending.instance}/oauth/token`, {
+  const tokenRes = await safeFetch(`${pending.instance}/oauth/token`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -136,7 +137,7 @@ async function handleMastodonCallback(
   const tokenJson = (await tokenRes.json()) as { access_token?: string }
   if (!tokenJson.access_token) throw new Error('Mastodon returned no access_token')
 
-  const meRes = await fetch(`${pending.instance}/api/v1/accounts/verify_credentials`, {
+  const meRes = await safeFetch(`${pending.instance}/api/v1/accounts/verify_credentials`, {
     headers: { Authorization: `Bearer ${tokenJson.access_token}` },
   })
   if (!meRes.ok) throw new Error(`Mastodon verify_credentials failed (${meRes.status})`)

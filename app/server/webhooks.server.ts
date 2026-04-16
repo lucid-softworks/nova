@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto'
 import { and, eq, sql } from 'drizzle-orm'
 import { db, schema } from './db'
+import { safeFetch } from '~/lib/safe-fetch'
 
 export type WebhookEvent =
   | 'post.published'
@@ -71,7 +72,7 @@ async function deliverOnce(
   let responseBody: string | null = null
   let success = false
   try {
-    const res = await fetch(url, {
+    const res = await safeFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

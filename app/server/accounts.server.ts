@@ -4,6 +4,7 @@ import { setCookie } from '@tanstack/react-start/server'
 import { db, schema } from './db'
 import { requireWorkspaceAccess } from './session.server'
 import { encrypt } from '~/lib/encryption'
+import { safeFetch } from '~/lib/safe-fetch'
 import type { PlatformKey } from '~/lib/platforms'
 import { buildAuthorizeUrl, getProvider, makePkce, saveSocialAccount } from './oauth/flow.server'
 import { assertWithinLimit } from '~/lib/billing/limits'
@@ -147,7 +148,7 @@ export async function startMastodonOAuthImpl(slug: string, instanceRaw: string) 
   // Dynamic app registration — Mastodon's open federation means there's no
   // central directory of client credentials; every instance requires us to
   // register before the OAuth dance.
-  const regRes = await fetch(`${instance}/api/v1/apps`, {
+  const regRes = await safeFetch(`${instance}/api/v1/apps`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
