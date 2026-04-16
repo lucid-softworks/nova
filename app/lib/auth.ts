@@ -190,6 +190,17 @@ const plugins = [
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
   secret: requireEnv('BETTER_AUTH_SECRET'),
+  rateLimit: {
+    window: 60,
+    max: 10,
+    customRules: {
+      '/sign-in/*': { window: 60, max: 5 },
+      '/sign-up/*': { window: 60, max: 5 },
+      '/forget-password': { window: 60, max: 3 },
+      '/magic-link/*': { window: 60, max: 5 },
+      '/email-otp/*': { window: 60, max: 5 },
+    },
+  },
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: {
