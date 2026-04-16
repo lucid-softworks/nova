@@ -6,8 +6,12 @@ import globalsCss from '../styles/globals.css?url'
 import { I18nProvider, parseAcceptLanguage, type Locale } from '~/lib/i18n'
 
 const detectLocale = createServerFn({ method: 'GET' }).handler(async (): Promise<Locale> => {
-  const header = getRequest().headers.get('accept-language')
-  return parseAcceptLanguage(header)
+  try {
+    const header = getRequest().headers.get('accept-language')
+    return parseAcceptLanguage(header)
+  } catch {
+    return 'en'
+  }
 })
 
 export const Route = createRootRoute({

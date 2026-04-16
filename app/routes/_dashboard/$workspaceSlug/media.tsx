@@ -386,17 +386,24 @@ function FilterChip({
   )
 }
 
+const SIZE_LABELS = {
+  sm: 'media.sizeSmall',
+  md: 'media.sizeMedium',
+  lg: 'media.sizeLarge',
+} as const
+
 function SizeToggle({ size, onChange }: { size: Size; onChange: (s: Size) => void }) {
+  const t = useT()
   return (
     <div className="flex rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0.5 text-xs">
-      {(['sm', 'md', 'lg'] as Size[]).map((s) => (
+      {(['sm', 'md', 'lg'] as const).map((s) => (
         <button
           key={s}
           type="button"
           onClick={() => onChange(s)}
           className={cn('rounded px-2 py-0.5', size === s && 'bg-neutral-900 text-white')}
         >
-          {s.toUpperCase()}
+          {t(SIZE_LABELS[s])}
         </button>
       ))}
     </div>
