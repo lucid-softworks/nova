@@ -6,10 +6,12 @@ import { useT } from '~/lib/i18n'
 export function HashtagSuggestButton({
   content,
   platforms,
+  workspaceSlug,
   onInsert,
 }: {
   content: string
   platforms: string[]
+  workspaceSlug: string
   onInsert: (text: string) => void
 }) {
   const t = useT()
@@ -25,7 +27,7 @@ export function HashtagSuggestButton({
       const res = await fetch('/api/ai/hashtags', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, platforms }),
+        body: JSON.stringify({ workspaceSlug, content, platforms }),
       })
       if (res.ok) {
         const json = (await res.json()) as { hashtags: string[] }

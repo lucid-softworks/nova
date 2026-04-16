@@ -844,6 +844,7 @@ function Editor({
           <HashtagSuggestButton
             content={version.content}
             platforms={version.platforms}
+            workspaceSlug={workspaceSlug}
             onInsert={(text) => insertAtCursor(text)}
           />
           {isReply ? (
