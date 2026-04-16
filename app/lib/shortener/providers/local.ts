@@ -20,6 +20,10 @@ function publicUrl(slug: string): string {
 export const local: ShortenerProvider = {
   name: 'local',
   async shorten(ctx: ShortenCtx): Promise<ShortenResult> {
+    const parsed = new URL(ctx.targetUrl)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new Error('Only http and https URLs can be shortened')
+    }
     const existing = await db.query.shortLinks.findFirst({
       where: and(
         eq(schema.shortLinks.workspaceId, ctx.workspaceId),

@@ -66,7 +66,10 @@ const upsertInput = z.object({
   avatarUrl: z.string().max(2000).nullable().default(null),
   bio: z.string().max(5000).nullable().default(null),
   theme: z.enum(['default', 'dark', 'minimal']).default('default'),
-  links: z.array(z.object({ title: z.string().max(200), url: z.string().max(2000) })).default([]),
+  links: z.array(z.object({
+    title: z.string().max(200),
+    url: z.string().max(2000).url().refine((u) => /^https?:\/\//.test(u), { message: 'Only http and https URLs are allowed' }),
+  })).default([]),
   showRecentPosts: z.boolean().default(true),
   recentPostCount: z.number().int().min(0).max(50).default(6),
 })
