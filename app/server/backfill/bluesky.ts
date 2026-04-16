@@ -171,14 +171,16 @@ export async function backfillBlueskyImpl(
     if (!cursor) break
   }
 
-  // Trigger an immediate analytics sync so engagement numbers show up
-  // without waiting for the 02:00 UTC cron.
+  // Trigger immediate analytics sync + inbox poll so engagement numbers
+  // and notifications show up without waiting for the cron schedules.
   try {
     const { enqueueManualSync } = await import('~/server/queues/analyticsSync')
     await enqueueManualSync({ workspaceId: r.workspace.id, socialAccountId })
-  } catch {
-    // Non-fatal — analytics will catch up on the next scheduled run.
-  }
+  } catch {}
+  try {
+    const { getInboxQueue } = await import('~/server/inbox/schedule')
+    await getInboxQueue().add('inbox:backfill', {} as never)
+  } catch {}
 
   logger.info(
     { socialAccountId, imported, skipped, total },
