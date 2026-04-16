@@ -328,7 +328,8 @@ function safeDecrypt(v: string): string {
   if (!v) return ''
   try {
     return decrypt(v)
-  } catch {
+  } catch (err) {
+    logger.warn({ err }, 'Token decryption failed — possible key rotation issue')
     return ''
   }
 }
