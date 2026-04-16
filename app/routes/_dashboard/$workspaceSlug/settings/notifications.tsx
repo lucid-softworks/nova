@@ -17,17 +17,7 @@ import {
 import { getDigestOptIn, setDigestOptIn } from '~/server/digests'
 import { useT } from '~/lib/i18n'
 
-const TYPES: Array<{
-  key:
-    | 'post_published'
-    | 'post_failed'
-    | 'approval_requested'
-    | 'post_approved'
-    | 'post_rejected'
-    | 'member_joined'
-    | 'campaign_on_hold'
-  label: string
-}> = [
+const TYPES = [
   { key: 'post_published', label: 'notifSettings.postPublished' },
   { key: 'post_failed', label: 'notifSettings.postFailed' },
   { key: 'approval_requested', label: 'notifSettings.approvalRequested' },
@@ -35,12 +25,9 @@ const TYPES: Array<{
   { key: 'post_rejected', label: 'notifSettings.changesRequested' },
   { key: 'member_joined', label: 'notifSettings.memberJoined' },
   { key: 'campaign_on_hold', label: 'notifSettings.campaignOnHold' },
-]
+] as const
 
-const DEFAULTS: Record<
-  (typeof TYPES)[number]['key'],
-  { inApp: boolean; email: boolean; push: boolean }
-> = {
+const DEFAULTS = {
   post_published: { inApp: true, email: false, push: false },
   post_failed: { inApp: true, email: true, push: true },
   approval_requested: { inApp: true, email: true, push: true },
@@ -48,7 +35,7 @@ const DEFAULTS: Record<
   post_rejected: { inApp: true, email: true, push: false },
   member_joined: { inApp: true, email: false, push: false },
   campaign_on_hold: { inApp: true, email: true, push: true },
-}
+} as const
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/notifications')({
   loader: async () => ({ settings: await getMySettings() }),

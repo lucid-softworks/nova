@@ -20,14 +20,7 @@ import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 import { authClient } from '~/lib/auth-client'
 import { useT } from '~/lib/i18n'
 
-type NavItem = { label: string; to: string; icon: ComponentType<SVGProps<SVGSVGElement>> }
-type NavSection = {
-  label: string
-  items: NavItem[]
-  requiresRole?: readonly ('admin' | 'manager' | 'editor' | 'viewer')[]
-}
-
-const sections: NavSection[] = [
+const sections = [
   {
     label: 'nav.publish',
     items: [
@@ -64,7 +57,7 @@ const sections: NavSection[] = [
       { label: 'nav.settings', to: '/$workspaceSlug/settings', icon: Settings },
     ],
   },
-]
+] as const
 
 export function Sidebar({
   user,
@@ -108,7 +101,7 @@ export function Sidebar({
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-4">
         {sections
           .filter(
-            (s) => !s.requiresRole || s.requiresRole.includes(workspace.role),
+            (s) => !('requiresRole' in s) || (s.requiresRole as readonly string[]).includes(workspace.role),
           )
           .map((section) => (
           <div key={section.label}>

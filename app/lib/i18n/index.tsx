@@ -1,13 +1,18 @@
 import { createContext, useContext, useCallback, type ReactNode } from 'react'
-import { en } from './en'
+import { en, type TranslationKey } from './en'
 import { fr } from './fr'
 import { zh } from './zh'
 
 export type Locale = 'en' | 'fr' | 'zh'
+export type { TranslationKey }
 
-export type Translations = Record<string, string>
+type Translations = Record<string, string>
 
-const DICTIONARIES: Record<Locale, Translations> = { en, fr, zh }
+const DICTIONARIES: Record<Locale, Translations> = {
+  en: en as Translations,
+  fr,
+  zh,
+}
 
 export const SUPPORTED_LOCALES: Record<string, Locale> = { en: 'en', fr: 'fr', zh: 'zh' }
 
@@ -26,7 +31,7 @@ export function parseAcceptLanguage(header: string | null): Locale {
 
 type I18nCtx = {
   locale: Locale
-  t: (key: string, params?: Record<string, string | number>) => string
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string
 }
 
 const I18nContext = createContext<I18nCtx>({
@@ -42,7 +47,7 @@ export function I18nProvider({
   children: ReactNode
 }) {
   const t = useCallback(
-    (key: string, params?: Record<string, string | number>): string => {
+    (key: TranslationKey, params?: Record<string, string | number>): string => {
       let str = DICTIONARIES[locale][key] ?? DICTIONARIES.en[key] ?? key
       if (params) {
         for (const [k, v] of Object.entries(params)) {

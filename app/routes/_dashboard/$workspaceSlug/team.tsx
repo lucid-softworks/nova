@@ -32,12 +32,12 @@ import { useT } from '~/lib/i18n'
 
 type Role = WorkspaceRole
 
-const ROLE_I18N_KEYS: Record<Role, string> = {
+const ROLE_I18N_KEYS = {
   admin: 'team.admin',
   manager: 'team.manager',
   editor: 'team.editor',
   viewer: 'team.viewer',
-}
+} as const
 const ROLE_COLORS: Record<Role, string> = {
   admin: 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300',
   manager: 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300',

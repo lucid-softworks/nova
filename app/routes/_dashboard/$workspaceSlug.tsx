@@ -29,7 +29,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug')({
   component: WorkspaceLayout,
 })
 
-const TITLE_KEYS: Record<string, string> = {
+const TITLE_KEYS = {
   compose: 'nav.compose',
   posts: 'nav.posts',
   calendar: 'nav.calendar',
@@ -42,7 +42,7 @@ const TITLE_KEYS: Record<string, string> = {
   inbox: 'nav.inbox',
   activity: 'nav.activity',
   approvals: 'nav.approvals',
-}
+} as const
 
 function WorkspaceLayout() {
   const t = useT()
@@ -52,7 +52,8 @@ function WorkspaceLayout() {
 
   const path = location.pathname
   const segment = path.split('/').filter(Boolean)[1] ?? 'compose'
-  const title = t(TITLE_KEYS[segment] ?? 'nav.compose')
+  const key = TITLE_KEYS[segment as keyof typeof TITLE_KEYS] ?? 'nav.compose'
+  const title = t(key)
 
   if (!session.user) return null
 

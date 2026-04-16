@@ -29,7 +29,7 @@ import { PLATFORM_KEYS, PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { cn } from '~/lib/utils'
 import { useT } from '~/lib/i18n'
 
-const TAB_KEYS: { key: PostsTab; i18nKey: string }[] = [
+const TAB_KEYS = [
   { key: 'all', i18nKey: 'posts.all' },
   { key: 'scheduled', i18nKey: 'posts.scheduled' },
   { key: 'published', i18nKey: 'posts.published' },
@@ -37,7 +37,7 @@ const TAB_KEYS: { key: PostsTab; i18nKey: string }[] = [
   { key: 'pending_approval', i18nKey: 'posts.pending' },
   { key: 'failed', i18nKey: 'posts.failed' },
   { key: 'queue', i18nKey: 'posts.queue' },
-]
+] as const
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/posts/')({
   loader: async ({ params }) => {

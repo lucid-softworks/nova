@@ -10,14 +10,14 @@ import { listInbox, markInboxRead, pollInboxNow, type InboxRow } from '~/server/
 
 type Kind = 'all' | 'mention' | 'reply' | 'like' | 'repost' | 'follow'
 
-const KINDS: { key: Kind; i18nKey: string }[] = [
+const KINDS = [
   { key: 'all', i18nKey: 'inbox.all' },
   { key: 'mention', i18nKey: 'inbox.mentions' },
   { key: 'reply', i18nKey: 'inbox.replies' },
   { key: 'like', i18nKey: 'inbox.likes' },
   { key: 'repost', i18nKey: 'inbox.reposts' },
   { key: 'follow', i18nKey: 'inbox.follows' },
-]
+] as const
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/inbox')({
   loader: async ({ params }) => ({

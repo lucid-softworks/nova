@@ -37,7 +37,7 @@ function JobsPage() {
             {q.queue} queue
           </div>
           <div className="grid gap-3 sm:grid-cols-5">
-            {([{ i18nKey: 'admin.waiting', field: 'waiting' as const }, { i18nKey: 'admin.active', field: 'active' as const }, { i18nKey: 'admin.delayed', field: 'delayed' as const }, { i18nKey: 'admin.completed', field: 'completed' as const }, { i18nKey: 'admin.failed', field: 'failed' as const }]).map(({ i18nKey, field }) => (
+            {([{ i18nKey: 'admin.waiting', field: 'waiting' }, { i18nKey: 'admin.active', field: 'active' }, { i18nKey: 'admin.delayed', field: 'delayed' }, { i18nKey: 'admin.completed', field: 'completed' }, { i18nKey: 'admin.failed', field: 'failed' }] as const).map(({ i18nKey, field }) => (
                 <Card key={field}>
                   <div className="space-y-1 p-3">
                     <div className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">

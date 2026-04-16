@@ -37,17 +37,12 @@ const COMMON_TIMEZONES = [
   'Australia/Sydney',
 ]
 
-type CronPreset = {
-  i18nKey: string
-  expr: string
-}
-
-const CRON_PRESETS: CronPreset[] = [
+const CRON_PRESETS = [
   { i18nKey: 'recurring.daily', expr: '0 9 * * *' },
   { i18nKey: 'recurring.weekdays', expr: '0 9 * * 1-5' },
   { i18nKey: 'recurring.weekly', expr: '0 9 * * 1' },
   { i18nKey: 'recurring.monthly', expr: '0 9 1 * *' },
-]
+] as const
 
 export function RecurringDialog({
   open,

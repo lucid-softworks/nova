@@ -1,4 +1,4 @@
-export const en: Record<string, string> = {
+export const en = {
   // ── Auth ──────────────────────────────────────────────
   "auth.signIn": "Sign in",
   "auth.loginDescription": "Enter your credentials to continue",
@@ -831,4 +831,6 @@ export const en: Record<string, string> = {
   "notifications.markAllRead": "Mark all read",
   "notifications.allCaughtUp": "You're all caught up.",
   "notifications.noNotificationsYet": "No notifications yet.",
-}
+} as const
+
+export type TranslationKey = keyof typeof en
