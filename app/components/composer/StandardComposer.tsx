@@ -28,6 +28,7 @@ import { PostPreview } from './PostPreview'
 import { AIAssistPanel } from './AIAssistPanel'
 import { EmojiPicker } from './EmojiPicker'
 import { HashtagPickerButton } from './HashtagPickerButton'
+import { HashtagSuggestButton } from './HashtagSuggestButton'
 import { SavedReplyPicker } from './SavedReplyPicker'
 import { saveDraft } from '~/server/composer'
 import { addToQueue, publishNow, schedulePost, submitForApproval } from '~/server/scheduling'
@@ -830,6 +831,11 @@ function Editor({
           <HashtagPickerButton
             workspaceSlug={workspaceSlug}
             onInsert={(text) => insertAtCursor(` ${text}`)}
+          />
+          <HashtagSuggestButton
+            content={version.content}
+            platforms={version.platforms}
+            onInsert={(text) => insertAtCursor(text)}
           />
           {isReply ? (
             <SavedReplyPicker

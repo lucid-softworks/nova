@@ -127,6 +127,8 @@ export const fr: Record<string, string> = {
   "compose.noRepliesYet": "Aucune réponse enregistrée",
   "compose.noMatch": "Aucun résultat",
   "compose.aiAssist": "Assistance IA",
+  "compose.suggestHashtags": "Suggérer des hashtags avec l'IA",
+  "compose.insertAll": "Tout insérer",
 
   // ── Calendar ──────────────────────────────────────────
   "calendar.title": "Calendrier",

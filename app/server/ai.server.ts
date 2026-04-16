@@ -116,3 +116,24 @@ export function startGeneration(req: GenerateRequest) {
   })
   return result
 }
+
+export async function suggestHashtagsImpl(
+  content: string,
+  platforms: PlatformKey[],
+): Promise<string[]> {
+  const platformNote = platforms.length
+    ? `Target platforms: ${platforms.join(', ')}. Note: Bluesky doesn't use hashtags.`
+    : ''
+  const result = await streamText({
+    model: anthropic('claude-haiku-4-5-20251001'),
+    prompt: `Suggest 5-8 relevant hashtags for this social media post. Return ONLY the hashtags separated by spaces, no explanation. ${platformNote}\n\nPost: ${content.slice(0, 500)}`,
+    maxTokens: 200,
+    temperature: 0.6,
+  })
+  const text = await result.text
+  return text
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.startsWith('#') && t.length > 1)
+    .slice(0, 10)
+}
