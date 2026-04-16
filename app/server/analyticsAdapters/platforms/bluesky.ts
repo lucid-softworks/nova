@@ -1,13 +1,24 @@
 import type { AccountSnapshot, AnalyticsAccountCtx, PostSnapshot } from '../types'
 
-const SERVICE = 'https://bsky.social'
+const PLC_DIRECTORY = 'https://plc.directory'
+
+async function resolvePds(did: string): Promise<string> {
+  const res = await fetch(`${PLC_DIRECTORY}/${encodeURIComponent(did)}`)
+  if (!res.ok) return 'https://bsky.social'
+  const doc = (await res.json()) as {
+    service?: Array<{ id: string; serviceEndpoint: string }>
+  }
+  const pds = doc.service?.find((s) => s.id === '#atproto_pds')
+  return pds?.serviceEndpoint?.replace(/\/+$/, '') ?? 'https://bsky.social'
+}
 
 async function xrpc<T>(
+  pdsUrl: string,
   nsid: string,
   token: string,
   params: Record<string, string>,
 ): Promise<T | null> {
-  const url = new URL(`${SERVICE}/xrpc/${nsid}`)
+  const url = new URL(`${pdsUrl}/xrpc/${nsid}`)
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v)
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },
@@ -18,8 +29,9 @@ async function xrpc<T>(
 
 export async function syncAccount(ctx: AnalyticsAccountCtx): Promise<AccountSnapshot> {
   const did = (ctx.metadata.did as string) ?? ctx.accountHandle
+  const pdsUrl = await resolvePds(did)
   type ProfileResponse = { followersCount?: number; followsCount?: number; postsCount?: number }
-  const profile = await xrpc<ProfileResponse>('app.bsky.actor.getProfile', ctx.accessToken, {
+  const profile = await xrpc<ProfileResponse>(pdsUrl, 'app.bsky.actor.getProfile', ctx.accessToken, {
     actor: did,
   })
   if (!profile) return {}
@@ -32,6 +44,8 @@ export async function syncAccount(ctx: AnalyticsAccountCtx): Promise<AccountSnap
 
 export async function syncPosts(ctx: AnalyticsAccountCtx): Promise<PostSnapshot[]> {
   if (ctx.platformPostIds.length === 0) return []
+  const did = (ctx.metadata.did as string) ?? ctx.accountHandle
+  const pdsUrl = await resolvePds(did)
   type PostView = {
     uri: string
     likeCount?: number
@@ -40,10 +54,9 @@ export async function syncPosts(ctx: AnalyticsAccountCtx): Promise<PostSnapshot[
   }
   type PostsResponse = { posts?: PostView[] }
   const out: PostSnapshot[] = []
-  // getPosts accepts up to 25 uris per call.
   for (let i = 0; i < ctx.platformPostIds.length; i += 25) {
     const batch = ctx.platformPostIds.slice(i, i + 25)
-    const url = new URL(`${SERVICE}/xrpc/app.bsky.feed.getPosts`)
+    const url = new URL(`${pdsUrl}/xrpc/app.bsky.feed.getPosts`)
     for (const uri of batch) url.searchParams.append('uris', uri)
     const res = await fetch(url.toString(), {
       headers: { Authorization: `Bearer ${ctx.accessToken}` },
