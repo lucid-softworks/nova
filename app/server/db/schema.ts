@@ -326,6 +326,7 @@ export const workspaces = pgTable(
     defaultLanguage: text('default_language').default('en').notNull(),
     requireApproval: boolean('require_approval').default(false).notNull(),
     calendarFeedToken: text('calendar_feed_token').unique(),
+    utmDefaults: jsonb('utm_defaults').$type<Record<string, string>>().default({}).notNull(),
     createdAt: now(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

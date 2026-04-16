@@ -23,6 +23,7 @@ import { notifyUser } from '~/server/notifications.server'
 import { publishWebhookEvent } from '~/server/webhooks.server'
 import { logger } from '~/lib/logger'
 import { captureError } from '~/lib/sentry'
+import { appendUtmParams, mergeUtmParams, type UtmParams } from '~/lib/utm'
 
 let worker: Worker<PostJobData> | null = null
 
@@ -153,6 +154,20 @@ async function processJob(job: { data: PostJobData }) {
       ),
       mediaIds: [],
       platformVariables: (version.platformVariables as Record<string, string>) ?? {},
+    }
+
+    // UTM: merge workspace defaults + per-post overrides, then rewrite links.
+    const ws = await db.query.workspaces.findFirst({
+      where: eq(schema.workspaces.id, post.workspaceId),
+      columns: { utmDefaults: true },
+    })
+    const utmParams = mergeUtmParams(
+      (ws?.utmDefaults ?? {}) as UtmParams,
+      publishVersion.platformVariables,
+    )
+    publishVersion.content = appendUtmParams(publishVersion.content, utmParams)
+    for (const part of publishVersion.threadParts) {
+      part.content = appendUtmParams(part.content, utmParams)
     }
 
     try {
