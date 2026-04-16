@@ -1,10 +1,25 @@
 import { and, eq } from 'drizzle-orm'
 import { db, schema } from '~/server/db'
-import { decrypt, encrypt } from '~/lib/encryption'
 import { requireWorkspaceAccess } from '~/server/session.server'
 import { logger } from '~/lib/logger'
 
 const PLC_DIRECTORY = 'https://plc.directory'
+
+type RepoRecord = {
+  uri: string
+  cid: string
+  value: {
+    text?: string
+    $type?: string
+    createdAt?: string
+    reply?: unknown
+  }
+}
+
+type ListRecordsResponse = {
+  records?: RepoRecord[]
+  cursor?: string
+}
 
 async function resolvePds(did: string): Promise<string> {
   const res = await fetch(`${PLC_DIRECTORY}/${encodeURIComponent(did)}`)
@@ -17,38 +32,12 @@ async function resolvePds(did: string): Promise<string> {
   return pds.serviceEndpoint.replace(/\/+$/, '')
 }
 
-async function refreshSession(
-  pdsUrl: string,
-  refreshJwt: string,
-): Promise<{ did: string; accessJwt: string; refreshJwt: string }> {
-  const res = await fetch(`${pdsUrl}/xrpc/com.atproto.server.refreshSession`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${refreshJwt}` },
-  })
-  if (!res.ok) throw new Error(`Bluesky session refresh failed (${res.status})`)
-  return (await res.json()) as { did: string; accessJwt: string; refreshJwt: string }
-}
-
-type FeedPost = {
-  post: {
-    uri: string
-    cid: string
-    author: { did: string; handle: string }
-    record: {
-      text?: string
-      createdAt?: string
-      $type?: string
-    }
-    likeCount?: number
-    repostCount?: number
-    replyCount?: number
-  }
-  reason?: unknown
-}
-
-type FeedResponse = {
-  feed?: FeedPost[]
-  cursor?: string
+async function resolveHandle(did: string): Promise<string> {
+  const res = await fetch(`${PLC_DIRECTORY}/${encodeURIComponent(did)}`)
+  if (!res.ok) return did
+  const doc = (await res.json()) as { alsoKnownAs?: string[] }
+  const atUri = doc.alsoKnownAs?.find((a) => a.startsWith('at://'))
+  return atUri ? atUri.replace('at://', '') : did
 }
 
 function postUrl(handle: string, uri: string): string {
@@ -75,38 +64,12 @@ export async function backfillBlueskyImpl(
   if (!account) throw new Error('Account not found')
   if (account.platform !== 'bluesky') throw new Error('Not a Bluesky account')
 
-  let accessToken = decrypt(account.accessToken)
-  const refreshToken = account.refreshToken ? decrypt(account.refreshToken) : null
   const did = (account.metadata as Record<string, unknown>)?.did as string
   if (!did) throw new Error('Bluesky account missing DID — reconnect it')
 
   const pdsUrl = await resolvePds(did)
-  logger.info({ socialAccountId, pdsUrl }, 'resolved bluesky PDS')
-
-  // Bluesky JWTs expire after ~2h. Proactively refresh before starting.
-  if (refreshToken) {
-    logger.info({ socialAccountId }, 'attempting bluesky session refresh')
-    try {
-      const fresh = await refreshSession(pdsUrl, refreshToken)
-      accessToken = fresh.accessJwt
-      await db
-        .update(schema.socialAccounts)
-        .set({
-          accessToken: encrypt(fresh.accessJwt),
-          refreshToken: encrypt(fresh.refreshJwt),
-          lastSyncedAt: new Date(),
-        })
-        .where(eq(schema.socialAccounts.id, socialAccountId))
-      logger.info({ socialAccountId }, 'bluesky session refreshed')
-    } catch (e) {
-      logger.warn(
-        { err: e instanceof Error ? e.message : String(e) },
-        'bluesky session refresh failed, trying with existing token',
-      )
-    }
-  } else {
-    logger.warn({ socialAccountId }, 'no refresh token available')
-  }
+  const handle = account.accountHandle || (await resolveHandle(did))
+  logger.info({ socialAccountId, pdsUrl, handle }, 'resolved bluesky PDS')
 
   let imported = 0
   let skipped = 0
@@ -114,34 +77,33 @@ export async function backfillBlueskyImpl(
   let cursor: string | undefined
 
   for (let page = 0; page < maxPages; page++) {
-    const url = new URL(`${pdsUrl}/xrpc/app.bsky.feed.getAuthorFeed`)
-    url.searchParams.set('actor', did)
-    url.searchParams.set('limit', '50')
-    url.searchParams.set('filter', 'posts_no_replies')
+    // Use com.atproto.repo.listRecords — a PDS-native endpoint that
+    // reads directly from the repo without proxying to the AppView.
+    const url = new URL(`${pdsUrl}/xrpc/com.atproto.repo.listRecords`)
+    url.searchParams.set('repo', did)
+    url.searchParams.set('collection', 'app.bsky.feed.post')
+    url.searchParams.set('limit', '100')
+    url.searchParams.set('reverse', 'true')
     if (cursor) url.searchParams.set('cursor', cursor)
 
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
+    const res = await fetch(url.toString())
     if (!res.ok) {
       const body = await res.text().catch(() => '')
-      logger.warn({ status: res.status, body: body.slice(0, 300) }, 'bluesky getAuthorFeed failed')
+      logger.warn({ status: res.status, body: body.slice(0, 300) }, 'bluesky listRecords failed')
       break
     }
-    const json = (await res.json()) as FeedResponse
-    const items = json.feed ?? []
-    if (items.length === 0) break
+    const json = (await res.json()) as ListRecordsResponse
+    const records = json.records ?? []
+    if (records.length === 0) break
 
-    for (const item of items) {
+    for (const rec of records) {
       total++
-      const p = item.post
-      // Skip reposts of other people's content.
-      if (item.reason || p.author.did !== did) {
+      if (rec.value.$type && rec.value.$type !== 'app.bsky.feed.post') {
         skipped++
         continue
       }
-      // Skip non-post record types (e.g. app.bsky.feed.repost).
-      if (p.record.$type && p.record.$type !== 'app.bsky.feed.post') {
+      // Skip replies — we only want top-level posts.
+      if (rec.value.reply) {
         skipped++
         continue
       }
@@ -150,7 +112,7 @@ export async function backfillBlueskyImpl(
       const existing = await db.query.postPlatforms.findFirst({
         where: and(
           eq(schema.postPlatforms.socialAccountId, socialAccountId),
-          eq(schema.postPlatforms.platformPostId, p.uri),
+          eq(schema.postPlatforms.platformPostId, rec.uri),
         ),
       })
       if (existing) {
@@ -158,8 +120,8 @@ export async function backfillBlueskyImpl(
         continue
       }
 
-      const publishedAt = p.record.createdAt ? new Date(p.record.createdAt) : new Date()
-      const content = p.record.text ?? ''
+      const publishedAt = rec.value.createdAt ? new Date(rec.value.createdAt) : new Date()
+      const content = rec.value.text ?? ''
 
       try {
         await db.transaction(async (tx) => {
@@ -189,8 +151,8 @@ export async function backfillBlueskyImpl(
           await tx.insert(schema.postPlatforms).values({
             postId: post.id,
             socialAccountId,
-            platformPostId: p.uri,
-            publishedUrl: postUrl(p.author.handle, p.uri),
+            platformPostId: rec.uri,
+            publishedUrl: postUrl(handle, rec.uri),
             status: 'published',
             publishedAt,
           })
@@ -198,7 +160,7 @@ export async function backfillBlueskyImpl(
         imported++
       } catch (e) {
         logger.warn(
-          { err: e instanceof Error ? e.message : String(e), uri: p.uri },
+          { err: e instanceof Error ? e.message : String(e), uri: rec.uri },
           'backfill post insert failed',
         )
         skipped++
