@@ -1,10 +1,21 @@
 import { and, eq } from 'drizzle-orm'
 import { db, schema } from '~/server/db'
-import { decrypt } from '~/lib/encryption'
+import { decrypt, encrypt } from '~/lib/encryption'
 import { requireWorkspaceAccess } from '~/server/session.server'
 import { logger } from '~/lib/logger'
 
 const SERVICE = 'https://bsky.social'
+
+async function refreshSession(
+  refreshJwt: string,
+): Promise<{ did: string; accessJwt: string; refreshJwt: string }> {
+  const res = await fetch(`${SERVICE}/xrpc/com.atproto.server.refreshSession`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${refreshJwt}` },
+  })
+  if (!res.ok) throw new Error(`Bluesky session refresh failed (${res.status})`)
+  return (await res.json()) as { did: string; accessJwt: string; refreshJwt: string }
+}
 
 type FeedPost = {
   post: {
@@ -52,9 +63,31 @@ export async function backfillBlueskyImpl(
   if (!account) throw new Error('Account not found')
   if (account.platform !== 'bluesky') throw new Error('Not a Bluesky account')
 
-  const accessToken = decrypt(account.accessToken)
+  let accessToken = decrypt(account.accessToken)
+  const refreshToken = account.refreshToken ? decrypt(account.refreshToken) : null
   const did = (account.metadata as Record<string, unknown>)?.did as string
   if (!did) throw new Error('Bluesky account missing DID — reconnect it')
+
+  // Bluesky JWTs expire after ~2h. Proactively refresh before starting.
+  if (refreshToken) {
+    try {
+      const fresh = await refreshSession(refreshToken)
+      accessToken = fresh.accessJwt
+      await db
+        .update(schema.socialAccounts)
+        .set({
+          accessToken: encrypt(fresh.accessJwt),
+          refreshToken: encrypt(fresh.refreshJwt),
+          lastSyncedAt: new Date(),
+        })
+        .where(eq(schema.socialAccounts.id, socialAccountId))
+    } catch (e) {
+      logger.warn(
+        { err: e instanceof Error ? e.message : String(e) },
+        'bluesky session refresh failed, trying with existing token',
+      )
+    }
+  }
 
   let imported = 0
   let skipped = 0
