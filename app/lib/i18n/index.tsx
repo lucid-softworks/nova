@@ -1,16 +1,18 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import { en } from './en'
 import { fr } from './fr'
+import { zh } from './zh'
 
-export type Locale = 'en' | 'fr'
+export type Locale = 'en' | 'fr' | 'zh'
 
 export type Translations = Record<string, string>
 
-const DICTIONARIES: Record<Locale, Translations> = { en, fr }
+const DICTIONARIES: Record<Locale, Translations> = { en, fr, zh }
 
 function detectLocale(): Locale {
   if (typeof navigator === 'undefined') return 'en'
   const lang = navigator.language ?? (navigator as { userLanguage?: string }).userLanguage ?? 'en'
+  if (lang.startsWith('zh')) return 'zh'
   if (lang.startsWith('fr')) return 'fr'
   return 'en'
 }
