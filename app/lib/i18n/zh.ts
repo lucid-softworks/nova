@@ -150,7 +150,7 @@ export const zh: Record<string, string> = {
   "media.all": "全部",
   "media.images": "图片",
   "media.videos": "视频",
-  "media.gifs": "GIF",
+  "media.gifs": "动图",
   "media.sizeSmall": "小",
   "media.sizeMedium": "中",
   "media.sizeLarge": "大",
