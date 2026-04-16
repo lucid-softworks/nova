@@ -9,12 +9,17 @@ export type Translations = Record<string, string>
 
 const DICTIONARIES: Record<Locale, Translations> = { en, fr, zh }
 
+const SUPPORTED: Record<string, Locale> = { en: 'en', fr: 'fr', zh: 'zh' }
+
 function detectLocale(): Locale {
+  if (typeof document !== 'undefined') {
+    // Pre-hydrate script already detected and wrote this before React boots.
+    const fromDom = document.documentElement.dataset.locale
+    if (fromDom && fromDom in SUPPORTED) return fromDom as Locale
+  }
   if (typeof navigator === 'undefined') return 'en'
-  const lang = navigator.language ?? (navigator as { userLanguage?: string }).userLanguage ?? 'en'
-  if (lang.startsWith('zh')) return 'zh'
-  if (lang.startsWith('fr')) return 'fr'
-  return 'en'
+  const lang = (navigator.language ?? 'en').slice(0, 2)
+  return SUPPORTED[lang] ?? 'en'
 }
 
 type I18nCtx = {
@@ -32,6 +37,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.lang = locale
+    // The pre-hydrate script hid the page to prevent the English flash.
+    // Now that React has rendered in the correct locale, show it.
+    document.documentElement.style.visibility = ''
   }, [locale])
 
   const t = useCallback(

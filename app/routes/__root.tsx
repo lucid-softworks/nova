@@ -30,15 +30,29 @@ function RootComponent() {
   )
 }
 
-// Applies dark mode from system preference before hydration.
-const THEME_INIT_SCRIPT = `
+// Runs before React hydrates. Detects locale from browser, persists
+// to a cookie so subsequent SSR renders in the right language, and
+// hides the body until React takes over (prevents English flash).
+const PRE_HYDRATE_SCRIPT = `
 try {
+  // Dark mode
   if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
     document.documentElement.classList.add('dark');
   }
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
     document.documentElement.classList.toggle('dark', e.matches);
   });
+  // Locale
+  var lang = (navigator.language || 'en').slice(0, 2);
+  var supported = { en: 1, fr: 1, zh: 1 };
+  var locale = supported[lang] ? lang : 'en';
+  document.documentElement.lang = locale;
+  document.documentElement.dataset.locale = locale;
+  if (!document.cookie.match('(^|;)\\\\s*locale=')) {
+    document.cookie = 'locale=' + locale + ';path=/;max-age=31536000;samesite=lax';
+  }
+  // Hide body until React hydrates to prevent locale flash
+  document.documentElement.style.visibility = 'hidden';
 } catch (e) {}
 `
 
@@ -57,7 +71,7 @@ function RootDocument({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: PRE_HYDRATE_SCRIPT }} />
       </head>
       <body>
         {children}
