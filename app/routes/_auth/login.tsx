@@ -36,9 +36,6 @@ function LoginPage() {
     navigate({ to: '/' })
   }
 
-  const oauth = (provider: 'google' | 'github') =>
-    authClient.signIn.social({ provider, callbackURL: '/' })
-
   return (
     <Card>
       <CardHeader>
@@ -96,12 +93,6 @@ function LoginPage() {
             }}
           >
             Sign in with a passkey
-          </Button>
-          <Button variant="outline" className="w-full" onClick={() => oauth('google')}>
-            Continue with Google
-          </Button>
-          <Button variant="outline" className="w-full" onClick={() => oauth('github')}>
-            Continue with GitHub
           </Button>
         </div>
         <div className="mt-6 flex justify-between text-sm">

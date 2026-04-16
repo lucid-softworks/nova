@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AnalyticsAccountCtx } from '../types'
 
+const PLC_RESPONSE = JSON.stringify({
+  service: [{ id: '#atproto_pds', type: 'AtprotoPersonalDataServer', serviceEndpoint: 'https://test.pds.example' }],
+})
+
 function ctx(overrides: Partial<AnalyticsAccountCtx> = {}): AnalyticsAccountCtx {
   return {
     id: 'acct-1',
@@ -10,7 +14,7 @@ function ctx(overrides: Partial<AnalyticsAccountCtx> = {}): AnalyticsAccountCtx 
     workspaceId: 'ws-1',
     accessToken: 'token',
     refreshToken: null,
-    metadata: {},
+    metadata: { did: 'did:plc:test123' },
     platformPostIds: [],
     ...overrides,
   }
@@ -35,6 +39,7 @@ afterEach(() => {
 describe('bluesky analytics adapter', () => {
   it('maps account profile into AccountSnapshot', async () => {
     mockFetch([
+      () => new Response(PLC_RESPONSE, { status: 200 }),
       () =>
         new Response(
           JSON.stringify({ followersCount: 42, followsCount: 7, postsCount: 123 }),
@@ -47,13 +52,17 @@ describe('bluesky analytics adapter', () => {
   })
 
   it('returns empty on non-200', async () => {
-    mockFetch([() => new Response('nope', { status: 500 })])
+    mockFetch([
+      () => new Response(PLC_RESPONSE, { status: 200 }),
+      () => new Response('nope', { status: 500 }),
+    ])
     const mod = await import('./bluesky')
     expect(await mod.syncAccount(ctx())).toEqual({})
   })
 
   it('maps post metrics and sums engagements', async () => {
     mockFetch([
+      () => new Response(PLC_RESPONSE, { status: 200 }),
       () =>
         new Response(
           JSON.stringify({

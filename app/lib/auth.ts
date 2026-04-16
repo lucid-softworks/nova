@@ -216,16 +216,6 @@ export const auth = betterAuth({
     sendOnSignUp: false,
     autoSignInAfterVerification: true,
   },
-  socialProviders: {
-    google: {
-      clientId: optionalEnv('GOOGLE_CLIENT_ID') ?? '',
-      clientSecret: optionalEnv('GOOGLE_CLIENT_SECRET') ?? '',
-    },
-    github: {
-      clientId: optionalEnv('GITHUB_CLIENT_ID') ?? '',
-      clientSecret: optionalEnv('GITHUB_CLIENT_SECRET') ?? '',
-    },
-  },
   plugins,
 })
 
