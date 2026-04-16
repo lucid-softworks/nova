@@ -12,11 +12,6 @@ const DICTIONARIES: Record<Locale, Translations> = { en, fr, zh }
 const SUPPORTED: Record<string, Locale> = { en: 'en', fr: 'fr', zh: 'zh' }
 
 function detectLocale(): Locale {
-  if (typeof document !== 'undefined') {
-    // Pre-hydrate script already detected and wrote this before React boots.
-    const fromDom = document.documentElement.dataset.locale
-    if (fromDom && fromDom in SUPPORTED) return fromDom as Locale
-  }
   if (typeof navigator === 'undefined') return 'en'
   const lang = (navigator.language ?? 'en').slice(0, 2)
   return SUPPORTED[lang] ?? 'en'
@@ -41,10 +36,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const detected = detectLocale()
-    setLocale(detected)
+    if (detected !== locale) setLocale(detected)
     document.documentElement.lang = detected
-    document.documentElement.style.visibility = ''
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const t = useCallback(
     (key: string, params?: Record<string, string | number>): string => {
