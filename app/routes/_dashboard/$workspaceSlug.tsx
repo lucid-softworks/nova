@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect, useLocation } from '@tanstack/react-
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { setActiveWorkspace } from '~/server/auth-context'
+import { useT } from '~/lib/i18n'
 import type { SessionContext } from '~/server/auth-context'
 import { Sidebar } from '~/components/layout/Sidebar'
 import { TopBar } from '~/components/layout/TopBar'
@@ -28,26 +29,30 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug')({
   component: WorkspaceLayout,
 })
 
-const TITLES: Record<string, string> = {
-  compose: 'Compose',
-  posts: 'Posts',
-  calendar: 'Calendar',
-  media: 'Media',
-  templates: 'Templates',
-  analytics: 'Analytics',
-  accounts: 'Accounts',
-  team: 'Team',
-  settings: 'Settings',
+const TITLE_KEYS: Record<string, string> = {
+  compose: 'nav.compose',
+  posts: 'nav.posts',
+  calendar: 'nav.calendar',
+  media: 'nav.media',
+  templates: 'nav.templates',
+  analytics: 'nav.analytics',
+  accounts: 'nav.accounts',
+  team: 'nav.team',
+  settings: 'nav.settings',
+  inbox: 'nav.inbox',
+  activity: 'nav.activity',
+  approvals: 'nav.approvals',
 }
 
 function WorkspaceLayout() {
+  const t = useT()
   const { workspace, session } = Route.useRouteContext()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const path = location.pathname
   const segment = path.split('/').filter(Boolean)[1] ?? 'compose'
-  const title = TITLES[segment] ?? 'Dashboard'
+  const title = t(TITLE_KEYS[segment] ?? 'nav.compose')
 
   if (!session.user) return null
 

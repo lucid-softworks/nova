@@ -27,7 +27,7 @@ import {
 import { PostStatusBadge } from '~/components/posts/badges'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { cn } from '~/lib/utils'
-import { useT } from '~/lib/i18n'
+import { useT, useLocale } from '~/lib/i18n'
 
 type View = 'month' | 'week'
 
@@ -51,8 +51,12 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/calendar')({
   component: CalendarPage,
 })
 
+const LOCALE_MAP = { en: 'en-US', fr: 'fr-FR', zh: 'zh-CN' } as const
+
 function CalendarPage() {
   const t = useT()
+  const { locale } = useLocale()
+  const dateLang = LOCALE_MAP[locale] ?? 'en-US'
   const { workspaceSlug } = Route.useParams()
   const navigate = useNavigate()
   const initial = Route.useLoaderData()
@@ -178,8 +182,8 @@ function CalendarPage() {
 
   const title =
     view === 'month'
-      ? anchor.toLocaleString(undefined, { month: 'long', year: 'numeric' })
-      : `${startOfWeek(anchor).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${endOfWeek(anchor).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+      ? anchor.toLocaleString(dateLang, { month: 'long', year: 'numeric' })
+      : `${startOfWeek(anchor).toLocaleDateString(dateLang, { month: 'short', day: 'numeric' })} – ${endOfWeek(anchor).toLocaleDateString(dateLang, { month: 'short', day: 'numeric' })}`
 
   const openComposerForDate = (d: Date) => {
     navigate({
@@ -235,6 +239,7 @@ function CalendarPage() {
             postsByDay={postsByDay}
             onClickEmpty={openComposerForDate}
             onClickPost={(p) => setPreview(p)}
+            dateLang={dateLang}
           />
         ) : (
           <WeekGrid
@@ -242,6 +247,7 @@ function CalendarPage() {
             postsByDay={postsByDay}
             onClickEmpty={openComposerForDate}
             onClickPost={(p) => setPreview(p)}
+            dateLang={dateLang}
           />
         )}
       </DndContext>
@@ -261,25 +267,35 @@ function CalendarPage() {
 
 // --------------------------------------------------------------------------
 
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+function localizedDayLabels(lang: string): string[] {
+  const base = new Date(2024, 0, 1) // Monday
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(base)
+    d.setDate(d.getDate() + i)
+    return d.toLocaleDateString(lang, { weekday: 'short' })
+  })
+}
 
 function MonthGrid({
   anchor,
   postsByDay,
   onClickEmpty,
   onClickPost,
+  dateLang,
 }: {
   anchor: Date
   postsByDay: Map<string, PostRow[]>
   onClickEmpty: (d: Date) => void
   onClickPost: (p: PostRow) => void
+  dateLang: string
 }) {
   const days = monthGrid(anchor)
   const month = anchor.getMonth()
+  const dayLabels = localizedDayLabels(dateLang)
   return (
     <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
       <div className="grid grid-cols-7 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-        {DAY_LABELS.map((l) => (
+        {dayLabels.map((l) => (
           <div key={l} className="px-2 py-1.5">
             {l}
           </div>
@@ -388,11 +404,13 @@ function WeekGrid({
   postsByDay,
   onClickEmpty,
   onClickPost,
+  dateLang,
 }: {
   anchor: Date
   postsByDay: Map<string, PostRow[]>
   onClickEmpty: (d: Date) => void
   onClickPost: (p: PostRow) => void
+  dateLang: string
 }) {
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(startOfWeek(anchor))
@@ -408,7 +426,7 @@ function WeekGrid({
         {days.map((d) => (
           <div key={d.toISOString()} className="border-l border-neutral-100 dark:border-neutral-800 px-2 py-1.5 text-xs font-semibold">
             <div className="text-neutral-500 dark:text-neutral-400">
-              {d.toLocaleDateString(undefined, { weekday: 'short' })}
+              {d.toLocaleDateString(dateLang, { weekday: 'short' })}
             </div>
             <div className="text-neutral-900 dark:text-neutral-100">{d.getDate()}</div>
           </div>
