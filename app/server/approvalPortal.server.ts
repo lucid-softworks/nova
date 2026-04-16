@@ -197,6 +197,7 @@ export async function approvePostViaTokenImpl(token: string, postId: string, rev
     where: and(eq(schema.posts.id, postId), eq(schema.posts.workspaceId, hit.workspaceId)),
   })
   if (!post) throw new Error('Post not found')
+  if (post.status !== 'pending_approval') throw new Error('Post is not pending approval')
 
   const when = new Date(Date.now() + 5_000)
   await db
@@ -236,6 +237,7 @@ export async function requestChangesViaTokenImpl(token: string, postId: string, 
     where: and(eq(schema.posts.id, postId), eq(schema.posts.workspaceId, hit.workspaceId)),
   })
   if (!post) throw new Error('Post not found')
+  if (post.status !== 'pending_approval') throw new Error('Post is not pending approval')
 
   await db
     .update(schema.posts)
