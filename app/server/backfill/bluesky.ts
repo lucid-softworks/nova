@@ -4,12 +4,24 @@ import { decrypt, encrypt } from '~/lib/encryption'
 import { requireWorkspaceAccess } from '~/server/session.server'
 import { logger } from '~/lib/logger'
 
-const SERVICE = 'https://bsky.social'
+const PLC_DIRECTORY = 'https://plc.directory'
+
+async function resolvePds(did: string): Promise<string> {
+  const res = await fetch(`${PLC_DIRECTORY}/${encodeURIComponent(did)}`)
+  if (!res.ok) throw new Error(`DID resolution failed (${res.status})`)
+  const doc = (await res.json()) as {
+    service?: Array<{ id: string; type: string; serviceEndpoint: string }>
+  }
+  const pds = doc.service?.find((s) => s.id === '#atproto_pds')
+  if (!pds) throw new Error('No #atproto_pds service in DID document')
+  return pds.serviceEndpoint.replace(/\/+$/, '')
+}
 
 async function refreshSession(
+  pdsUrl: string,
   refreshJwt: string,
 ): Promise<{ did: string; accessJwt: string; refreshJwt: string }> {
-  const res = await fetch(`${SERVICE}/xrpc/com.atproto.server.refreshSession`, {
+  const res = await fetch(`${pdsUrl}/xrpc/com.atproto.server.refreshSession`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${refreshJwt}` },
   })
@@ -68,10 +80,14 @@ export async function backfillBlueskyImpl(
   const did = (account.metadata as Record<string, unknown>)?.did as string
   if (!did) throw new Error('Bluesky account missing DID — reconnect it')
 
+  const pdsUrl = await resolvePds(did)
+  logger.info({ socialAccountId, pdsUrl }, 'resolved bluesky PDS')
+
   // Bluesky JWTs expire after ~2h. Proactively refresh before starting.
   if (refreshToken) {
+    logger.info({ socialAccountId }, 'attempting bluesky session refresh')
     try {
-      const fresh = await refreshSession(refreshToken)
+      const fresh = await refreshSession(pdsUrl, refreshToken)
       accessToken = fresh.accessJwt
       await db
         .update(schema.socialAccounts)
@@ -81,12 +97,15 @@ export async function backfillBlueskyImpl(
           lastSyncedAt: new Date(),
         })
         .where(eq(schema.socialAccounts.id, socialAccountId))
+      logger.info({ socialAccountId }, 'bluesky session refreshed')
     } catch (e) {
       logger.warn(
         { err: e instanceof Error ? e.message : String(e) },
         'bluesky session refresh failed, trying with existing token',
       )
     }
+  } else {
+    logger.warn({ socialAccountId }, 'no refresh token available')
   }
 
   let imported = 0
@@ -95,7 +114,7 @@ export async function backfillBlueskyImpl(
   let cursor: string | undefined
 
   for (let page = 0; page < maxPages; page++) {
-    const url = new URL(`${SERVICE}/xrpc/app.bsky.feed.getAuthorFeed`)
+    const url = new URL(`${pdsUrl}/xrpc/app.bsky.feed.getAuthorFeed`)
     url.searchParams.set('actor', did)
     url.searchParams.set('limit', '50')
     url.searchParams.set('filter', 'posts_no_replies')
@@ -105,7 +124,8 @@ export async function backfillBlueskyImpl(
       headers: { Authorization: `Bearer ${accessToken}` },
     })
     if (!res.ok) {
-      logger.warn({ status: res.status }, 'bluesky getAuthorFeed failed')
+      const body = await res.text().catch(() => '')
+      logger.warn({ status: res.status, body: body.slice(0, 300) }, 'bluesky getAuthorFeed failed')
       break
     }
     const json = (await res.json()) as FeedResponse
