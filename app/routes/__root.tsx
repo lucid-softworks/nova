@@ -66,7 +66,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 
 function RootDocument({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: PRE_HYDRATE_SCRIPT }} />
