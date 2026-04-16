@@ -219,13 +219,32 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false,
-    autoSignIn: true,
+    requireEmailVerification: true,
+    autoSignIn: false,
     minPasswordLength: 8,
   },
   emailVerification: {
-    sendOnSignUp: false,
+    sendOnSignUp: true,
     autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendEmail({
+        to: user.email,
+        subject: 'Verify your SocialHub email',
+        text: `Verify your email: ${url}`,
+        html: `
+          <div style="font-family:system-ui;max-width:480px;margin:24px auto;color:#111">
+            <h2 style="margin:0 0 12px">Verify your email</h2>
+            <p>Click the button below to verify your email address.</p>
+            <p style="margin:20px 0">
+              <a href="${escapeHtml(url)}" style="display:inline-block;background:#6366f1;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Verify email</a>
+            </p>
+            <p style="color:#666;font-size:12px">
+              Or paste this link: <br><code>${escapeHtml(url)}</code>
+            </p>
+          </div>
+        `,
+      })
+    },
   },
   plugins,
 })
