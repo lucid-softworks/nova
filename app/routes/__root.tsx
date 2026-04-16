@@ -1,9 +1,20 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
+import { createServerFn } from '@tanstack/react-start'
+import { getRequest } from '@tanstack/react-start/server'
 import globalsCss from '../styles/globals.css?url'
-import { I18nProvider } from '~/lib/i18n'
+import { I18nProvider, parseAcceptLanguage, type Locale } from '~/lib/i18n'
+
+const detectLocale = createServerFn({ method: 'GET' }).handler(async (): Promise<Locale> => {
+  const header = getRequest().headers.get('accept-language')
+  return parseAcceptLanguage(header)
+})
 
 export const Route = createRootRoute({
+  loader: async () => {
+    const locale = await detectLocale()
+    return { locale }
+  },
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
@@ -21,37 +32,27 @@ export const Route = createRootRoute({
 })
 
 function RootComponent() {
+  const { locale } = Route.useLoaderData()
   return (
-    <I18nProvider>
-      <RootDocument>
+    <I18nProvider locale={locale}>
+      <RootDocument locale={locale}>
         <Outlet />
       </RootDocument>
     </I18nProvider>
   )
 }
 
-// Runs before React hydrates. Detects locale from browser, persists
-// to a cookie so subsequent SSR renders in the right language, and
-// hides the body until React takes over (prevents English flash).
-const PRE_HYDRATE_SCRIPT = `
+const DARK_MODE_SCRIPT = `
 try {
-  // Dark mode
   if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
     document.documentElement.classList.add('dark');
   }
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
     document.documentElement.classList.toggle('dark', e.matches);
   });
-  // Locale — set lang attr so CSS :lang() selectors work pre-hydration.
-  var lang = (navigator.language || 'en').slice(0, 2);
-  var supported = { en: 1, fr: 1, zh: 1 };
-  var locale = supported[lang] ? lang : 'en';
-  document.documentElement.lang = locale;
 } catch (e) {}
 `
 
-// Registers the PWA service worker once the page has settled. No-op when
-// the feature isn't available (SSR, older browsers, http dev contexts).
 const SW_REGISTER_SCRIPT = `
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', function() {
@@ -60,12 +61,12 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 }
 `
 
-function RootDocument({ children }: { children: ReactNode }) {
+function RootDocument({ locale, children }: { locale: string; children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <HeadContent />
-        <script dangerouslySetInnerHTML={{ __html: PRE_HYDRATE_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: DARK_MODE_SCRIPT }} />
       </head>
       <body>
         {children}

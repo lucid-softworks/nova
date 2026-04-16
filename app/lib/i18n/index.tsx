@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useCallback, type ReactNode } from 'react'
 import { en } from './en'
 import { fr } from './fr'
 import { zh } from './zh'
@@ -9,12 +9,19 @@ export type Translations = Record<string, string>
 
 const DICTIONARIES: Record<Locale, Translations> = { en, fr, zh }
 
-const SUPPORTED: Record<string, Locale> = { en: 'en', fr: 'fr', zh: 'zh' }
+export const SUPPORTED_LOCALES: Record<string, Locale> = { en: 'en', fr: 'fr', zh: 'zh' }
 
-function detectLocale(): Locale {
-  if (typeof navigator === 'undefined') return 'en'
-  const lang = (navigator.language ?? 'en').slice(0, 2)
-  return SUPPORTED[lang] ?? 'en'
+/**
+ * Parse the Accept-Language header and return the best supported locale.
+ * Works server-side (in loaders) — no navigator needed.
+ */
+export function parseAcceptLanguage(header: string | null): Locale {
+  if (!header) return 'en'
+  for (const part of header.split(',')) {
+    const lang = part.trim().split(';')[0]?.trim().slice(0, 2).toLowerCase()
+    if (lang && lang in SUPPORTED_LOCALES) return SUPPORTED_LOCALES[lang]!
+  }
+  return 'en'
 }
 
 type I18nCtx = {
@@ -27,19 +34,13 @@ const I18nContext = createContext<I18nCtx>({
   t: (key) => key,
 })
 
-export function I18nProvider({ children }: { children: ReactNode }) {
-  // SSR always returns 'en' (no document/navigator). The client
-  // immediately corrects via the effect below. The pre-hydrate
-  // inline script hides the page until this effect fires so the
-  // user never sees the SSR English.
-  const [locale, setLocale] = useState<Locale>('en')
-
-  useEffect(() => {
-    const detected = detectLocale()
-    if (detected !== locale) setLocale(detected)
-    document.documentElement.lang = detected
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
+export function I18nProvider({
+  locale,
+  children,
+}: {
+  locale: Locale
+  children: ReactNode
+}) {
   const t = useCallback(
     (key: string, params?: Record<string, string | number>): string => {
       let str = DICTIONARIES[locale][key] ?? DICTIONARIES.en[key] ?? key
