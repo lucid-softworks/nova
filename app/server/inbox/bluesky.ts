@@ -77,24 +77,21 @@ async function refreshAndPersist(
 }
 
 export async function fetchInbox(ctx: InboxAccountCtx): Promise<InboxFetchItem[]> {
-  const did = (ctx.metadata.did as string) ?? ''
-  if (!did) return []
-  const pdsUrl = await resolvePds(did)
+  // Use bsky.social (the entryway) for AppView-proxied calls like
+  // listNotifications. The entryway forwards to the user's actual PDS
+  // and then to the AppView — calling the PDS directly 502s when the
+  // PDS can't reach the AppView on its own.
+  const entryway = 'https://bsky.social'
 
   let token = ctx.accessToken
   if (ctx.refreshToken) {
-    const fresh = await refreshAndPersist(pdsUrl, ctx.id, ctx.refreshToken)
+    const fresh = await refreshAndPersist(entryway, ctx.id, ctx.refreshToken)
     if (fresh) token = fresh
   }
 
   const res = await fetch(
-    `${pdsUrl}/xrpc/app.bsky.notification.listNotifications?limit=50`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'atproto-proxy': 'did:web:api.bsky.app#bsky_appview',
-      },
-    },
+    `${entryway}/xrpc/app.bsky.notification.listNotifications?limit=50`,
+    { headers: { Authorization: `Bearer ${token}` } },
   )
   if (!res.ok) {
     logger.warn(
