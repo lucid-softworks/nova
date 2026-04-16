@@ -5,6 +5,11 @@ import { db, schema } from './index'
 import { eq } from 'drizzle-orm'
 
 async function main() {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('Seed script must not run in production')
+    process.exit(1)
+  }
+
   const email = 'test@example.com'
   const password = 'password123'
   const name = 'Test User'
