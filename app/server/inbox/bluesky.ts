@@ -1,3 +1,7 @@
+import { eq } from 'drizzle-orm'
+import { db, schema } from '~/server/db'
+import { encrypt } from '~/lib/encryption'
+import { logger } from '~/lib/logger'
 import type { InboxAccountCtx, InboxFetchItem, InboxKind } from './types'
 
 const PLC_DIRECTORY = 'https://plc.directory'
@@ -50,15 +54,50 @@ async function resolvePds(did: string): Promise<string> {
   return pds?.serviceEndpoint?.replace(/\/+$/, '') ?? 'https://bsky.social'
 }
 
+async function refreshAndPersist(
+  pdsUrl: string,
+  accountId: string,
+  refreshJwt: string,
+): Promise<string | null> {
+  const res = await fetch(`${pdsUrl}/xrpc/com.atproto.server.refreshSession`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${refreshJwt}` },
+  })
+  if (!res.ok) return null
+  const json = (await res.json()) as { accessJwt: string; refreshJwt: string }
+  await db
+    .update(schema.socialAccounts)
+    .set({
+      accessToken: encrypt(json.accessJwt),
+      refreshToken: encrypt(json.refreshJwt),
+      lastSyncedAt: new Date(),
+    })
+    .where(eq(schema.socialAccounts.id, accountId))
+  return json.accessJwt
+}
+
 export async function fetchInbox(ctx: InboxAccountCtx): Promise<InboxFetchItem[]> {
   const did = (ctx.metadata.did as string) ?? ''
-  const pdsUrl = did ? await resolvePds(did) : 'https://bsky.social'
+  if (!did) return []
+  const pdsUrl = await resolvePds(did)
+
+  let token = ctx.accessToken
+  if (ctx.refreshToken) {
+    const fresh = await refreshAndPersist(pdsUrl, ctx.id, ctx.refreshToken)
+    if (fresh) token = fresh
+  }
 
   const res = await fetch(
     `${pdsUrl}/xrpc/app.bsky.notification.listNotifications?limit=50`,
-    { headers: { Authorization: `Bearer ${ctx.accessToken}` } },
+    { headers: { Authorization: `Bearer ${token}` } },
   )
-  if (!res.ok) return []
+  if (!res.ok) {
+    logger.warn(
+      { status: res.status, platform: 'bluesky', accountId: ctx.id },
+      'bluesky listNotifications failed',
+    )
+    return []
+  }
   const json = (await res.json()) as { notifications?: Notification[] }
   const items: InboxFetchItem[] = []
   for (const n of json.notifications ?? []) {
