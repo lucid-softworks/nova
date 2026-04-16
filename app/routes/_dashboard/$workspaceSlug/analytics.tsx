@@ -72,7 +72,7 @@ function SyncNowButton({ workspaceSlug }: { workspaceSlug: string }) {
       setDone(true)
       setTimeout(() => setDone(false), 3000)
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed to queue sync')
+      alert(e instanceof Error ? e.message : t('analytics.failedToSync'))
     } finally {
       setBusy(false)
     }
@@ -243,6 +243,13 @@ function AnalyticsPage() {
 
 // ---------------- subcomponents ---------------------------------------------
 
+const RANGE_LABELS = {
+  '7d': 'analytics.range7d',
+  '30d': 'analytics.range30d',
+  '90d': 'analytics.range90d',
+  'custom': 'analytics.rangeCustom',
+} as const
+
 function RangeToggle({
   value,
   onChange,
@@ -250,9 +257,10 @@ function RangeToggle({
   value: AnalyticsRange
   onChange: (r: AnalyticsRange) => void
 }) {
+  const t = useT()
   return (
     <div className="inline-flex rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0.5 text-xs">
-      {(['7d', '30d', '90d', 'custom'] as AnalyticsRange[]).map((r) => (
+      {(['7d', '30d', '90d', 'custom'] as const).map((r) => (
         <button
           key={r}
           type="button"
@@ -262,13 +270,7 @@ function RangeToggle({
             value === r ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300',
           )}
         >
-          {r === '7d'
-            ? '7 days'
-            : r === '30d'
-              ? '30 days'
-              : r === '90d'
-                ? '90 days'
-                : 'Custom'}
+          {t(RANGE_LABELS[r])}
         </button>
       ))}
     </div>
@@ -435,7 +437,7 @@ function EngagementPie({ summary }: { summary: AnalyticsSummary }) {
   const t = useT()
   if (summary.totalEngagements === 0) return <EmptyState label={t('analytics.noEngagementsYet')} />
   const data = [
-    { name: 'Engagements', value: summary.totalEngagements },
+    { name: t('analytics.engagements'), value: summary.totalEngagements },
   ]
   const COLORS = ['#6366f1', '#22c55e', '#ef4444', '#f59e0b']
   return (

@@ -82,7 +82,7 @@ function GeneralSettings() {
         })
       }
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Save failed')
+      setMessage(e instanceof Error ? e.message : t('settings.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -93,7 +93,7 @@ function GeneralSettings() {
       await deleteWorkspace({ data: { workspaceSlug, confirmName: deleteConfirm } })
       navigate({ to: '/onboarding' })
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed')
+      alert(e instanceof Error ? e.message : t('settings.deleteFailed'))
     }
   }
 

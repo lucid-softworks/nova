@@ -196,6 +196,11 @@ export const zh: Record<string, string> = {
   "analytics.view": "查看",
   "analytics.downloadReport": "下载报告",
   "analytics.generatingReport": "正在生成报告…",
+  "analytics.range7d": "7天",
+  "analytics.range30d": "30天",
+  "analytics.range90d": "90天",
+  "analytics.rangeCustom": "自定义",
+  "analytics.failedToSync": "同步排队失败",
 
   // ── Inbox ─────────────────────────────────────────────
   "inbox.title": "收件箱",
@@ -315,6 +320,8 @@ export const zh: Record<string, string> = {
   "settings.typeNameToConfirm": "请输入工作区名称以确认",
   "settings.deleteForever": "永久删除",
   "settings.cancel": "取消",
+  "settings.saveFailed": "保存失败",
+  "settings.deleteFailed": "失败",
 
   // ── Billing ───────────────────────────────────────────
   "billing.title": "账单",
@@ -349,6 +356,19 @@ export const zh: Record<string, string> = {
   "security.activeSessions": "活跃会话",
   "security.logOutEverywhere": "登出所有其他会话",
   "security.unknownDevice": "未知设备",
+  "security.couldNotEnable2FA": "无法启用双因素认证",
+  "security.invalidCode": "验证码无效",
+  "security.failed": "失败",
+  "security.twoFANowActive": "双因素认证已激活",
+  "security.disable2FAConfirm": "禁用双因素认证？",
+  "security.twoFADisabled": "双因素认证已禁用",
+  "security.couldNotAddPasskey": "无法添加通行密钥",
+  "security.passkeyRegistrationCancelled": "通行密钥注册已取消",
+  "security.deletePasskeyConfirm": "删除此通行密钥？",
+  "security.logOutEverywhereConfirm": "从所有设备登出（包括此设备）？",
+  "security.totpDescription": "添加来自身份验证器应用的基于时间的验证码作为第二因素。",
+  "security.justThisOne": "仅此会话。",
+  "security.addedDate": "添加于 {date}",
 
   // ── API ───────────────────────────────────────────────
   "api.title": "API 与 Webhooks",
@@ -387,6 +407,12 @@ export const zh: Record<string, string> = {
   "notifSettings.brrrSecret": "brrr 密钥",
   "notifSettings.testPush": "发送测试推送",
   "notifSettings.disconnect": "断开连接",
+  "notifSettings.savedPushEnabled": "已保存 — 推送已启用",
+  "notifSettings.disconnected": "已断开连接",
+  "notifSettings.testPushSent": "测试推送已发送 — 请检查您的设备。",
+  "notifSettings.pushFailed": "推送失败",
+  "notifSettings.failedToSave": "保存失败",
+  "notifSettings.connectBrrrToEnablePush": "连接 brrr.now 以启用推送",
 
   // ── Schedule settings ─────────────────────────────────
   "schedule.postingSchedule": "发布排期",
@@ -724,6 +750,13 @@ export const zh: Record<string, string> = {
   "common.search": "搜索",
   "common.noResults": "无结果",
   "common.or": "或",
+
+  // ── Logo uploader ────────────────────────────────────
+  "logo.replace": "替换",
+  "logo.upload": "上传",
+  "logo.remove": "移除",
+  "logo.pasteUrl": "…或粘贴 HTTPS 图片链接",
+  "logo.uploadFailed": "上传失败",
 
   // ── Media extras (i18n sweep) ─────────────────────────
   "media.allMedia": "全部媒体",

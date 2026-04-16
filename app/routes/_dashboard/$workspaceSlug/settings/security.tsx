@@ -49,9 +49,9 @@ function TwoFactorCard() {
       const res = await authClient.twoFactor.enable({ password })
       const d = res.data as { totpURI?: string; backupCodes?: string[] } | null
       if (d?.totpURI) setQr({ totpURI: d.totpURI, backupCodes: d.backupCodes ?? [] })
-      else setMessage(res.error?.message ?? 'Could not enable 2FA')
+      else setMessage(res.error?.message ?? t('security.couldNotEnable2FA'))
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Failed')
+      setMessage(e instanceof Error ? e.message : t('security.failed'))
     } finally {
       setBusy(false)
     }
@@ -62,9 +62,9 @@ function TwoFactorCard() {
     setMessage(null)
     try {
       const res = await authClient.twoFactor.verifyTotp({ code: totp })
-      if (res.error) setMessage(res.error.message ?? 'Invalid code')
+      if (res.error) setMessage(res.error.message ?? t('security.invalidCode'))
       else {
-        setMessage('2FA is now active')
+        setMessage(t('security.twoFANowActive'))
         setQr(null)
         setTotp('')
       }
@@ -74,11 +74,11 @@ function TwoFactorCard() {
   }
 
   const disable = async () => {
-    if (!confirm('Disable two-factor auth?')) return
+    if (!confirm(t('security.disable2FAConfirm'))) return
     setBusy(true)
     try {
       await authClient.twoFactor.disable({ password })
-      setMessage('2FA disabled')
+      setMessage(t('security.twoFADisabled'))
     } finally {
       setBusy(false)
     }
@@ -136,7 +136,7 @@ function TwoFactorCard() {
         ) : (
           <>
             <p className="text-sm text-neutral-600 dark:text-neutral-300">
-              Add a time-based code from your authenticator app as a second factor.
+              {t('security.totpDescription')}
             </p>
             <Field label={t('security.confirmPassword')} htmlFor="tfa-pw-enable">
               <Input
@@ -184,17 +184,17 @@ function PasskeyCard() {
     setMessage(null)
     try {
       const res = await authClient.passkey.addPasskey()
-      if (res?.error) setMessage(res.error.message ?? 'Could not add passkey')
+      if (res?.error) setMessage(res.error.message ?? t('security.couldNotAddPasskey'))
       await reload()
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Passkey registration cancelled')
+      setMessage(e instanceof Error ? e.message : t('security.passkeyRegistrationCancelled'))
     } finally {
       setBusy(false)
     }
   }
 
   const remove = async (id: string) => {
-    if (!confirm('Delete this passkey?')) return
+    if (!confirm(t('security.deletePasskeyConfirm'))) return
     await authClient.passkey.deletePasskey({ id })
     await reload()
   }
@@ -220,7 +220,7 @@ function PasskeyCard() {
                 <div>
                   <div className="font-medium text-neutral-900 dark:text-neutral-100">{k.name ?? t('security.unnamedPasskey')}</div>
                   <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                    Added {new Date(k.createdAt).toLocaleDateString()}
+                    {t('security.addedDate', { date: new Date(k.createdAt).toLocaleDateString() })}
                   </div>
                 </div>
                 <Button size="sm" variant="ghost" className="text-red-600" onClick={() => remove(k.id)}>
@@ -266,7 +266,7 @@ function SessionsCard() {
     await reload()
   }
   const revokeAll = async () => {
-    if (!confirm('Log out everywhere (including this device)?')) return
+    if (!confirm(t('security.logOutEverywhereConfirm'))) return
     await authClient.revokeSessions()
     window.location.href = '/login'
   }
@@ -286,7 +286,7 @@ function SessionsCard() {
         {loading ? (
           <Spinner />
         ) : sessions.length === 0 ? (
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Just this one.</p>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">{t('security.justThisOne')}</p>
         ) : (
           <div className="space-y-2">
             {sessions.map((s) => (

@@ -196,6 +196,11 @@ export const en = {
   "analytics.view": "View",
   "analytics.downloadReport": "Download report",
   "analytics.generatingReport": "Generating report…",
+  "analytics.range7d": "7 days",
+  "analytics.range30d": "30 days",
+  "analytics.range90d": "90 days",
+  "analytics.rangeCustom": "Custom",
+  "analytics.failedToSync": "Failed to queue sync",
 
   // ── Inbox ─────────────────────────────────────────────
   "inbox.title": "Inbox",
@@ -315,6 +320,8 @@ export const en = {
   "settings.typeNameToConfirm": "Type the workspace name to confirm",
   "settings.deleteForever": "Delete forever",
   "settings.cancel": "Cancel",
+  "settings.saveFailed": "Save failed",
+  "settings.deleteFailed": "Failed",
 
   // ── Billing ───────────────────────────────────────────
   "billing.title": "Billing",
@@ -349,6 +356,19 @@ export const en = {
   "security.activeSessions": "Active sessions",
   "security.logOutEverywhere": "Log out of all other sessions",
   "security.unknownDevice": "Unknown device",
+  "security.couldNotEnable2FA": "Could not enable 2FA",
+  "security.invalidCode": "Invalid code",
+  "security.failed": "Failed",
+  "security.twoFANowActive": "2FA is now active",
+  "security.disable2FAConfirm": "Disable two-factor auth?",
+  "security.twoFADisabled": "2FA disabled",
+  "security.couldNotAddPasskey": "Could not add passkey",
+  "security.passkeyRegistrationCancelled": "Passkey registration cancelled",
+  "security.deletePasskeyConfirm": "Delete this passkey?",
+  "security.logOutEverywhereConfirm": "Log out everywhere (including this device)?",
+  "security.totpDescription": "Add a time-based code from your authenticator app as a second factor.",
+  "security.justThisOne": "Just this one.",
+  "security.addedDate": "Added {date}",
 
   // ── API ───────────────────────────────────────────────
   "api.title": "API & Webhooks",
@@ -387,6 +407,12 @@ export const en = {
   "notifSettings.brrrSecret": "brrr secret",
   "notifSettings.testPush": "Send test push",
   "notifSettings.disconnect": "Disconnect",
+  "notifSettings.savedPushEnabled": "Saved — push now enabled",
+  "notifSettings.disconnected": "Disconnected",
+  "notifSettings.testPushSent": "Test push sent — check your device.",
+  "notifSettings.pushFailed": "Push failed",
+  "notifSettings.failedToSave": "Failed to save",
+  "notifSettings.connectBrrrToEnablePush": "Connect brrr.now to enable push",
 
   // ── Schedule settings ─────────────────────────────────
   "schedule.postingSchedule": "Posting schedule",
@@ -724,6 +750,13 @@ export const en = {
   "common.search": "Search",
   "common.noResults": "No results",
   "common.or": "or",
+
+  // ── Logo uploader ────────────────────────────────────
+  "logo.replace": "Replace",
+  "logo.upload": "Upload",
+  "logo.remove": "Remove",
+  "logo.pasteUrl": "…or paste an HTTPS image URL",
+  "logo.uploadFailed": "Upload failed",
 
   // ── Media extras (i18n sweep) ─────────────────────────
   "media.allMedia": "All Media",

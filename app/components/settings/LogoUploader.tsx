@@ -3,6 +3,7 @@ import { Upload, X } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
+import { useT } from '~/lib/i18n'
 
 export function LogoUploader({
   workspaceSlug,
@@ -15,6 +16,7 @@ export function LogoUploader({
   onChange: (url: string) => void
   disabled?: boolean
 }) {
+  const t = useT()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -36,7 +38,7 @@ export function LogoUploader({
       const asset = (await res.json()) as { url: string }
       onChange(asset.url)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Upload failed')
+      setError(e instanceof Error ? e.message : t('logo.uploadFailed'))
     } finally {
       setUploading(false)
     }
@@ -75,7 +77,7 @@ export function LogoUploader({
           disabled={disabled || uploading}
         >
           {uploading ? <Spinner /> : <Upload className="h-3 w-3" />}
-          {value ? 'Replace' : 'Upload'}
+          {value ? t('logo.replace') : t('logo.upload')}
         </Button>
         {value ? (
           <Button
@@ -85,14 +87,14 @@ export function LogoUploader({
             onClick={() => onChange('')}
             disabled={disabled || uploading}
           >
-            <X className="h-3 w-3" /> Remove
+            <X className="h-3 w-3" /> {t('logo.remove')}
           </Button>
         ) : null}
       </div>
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="…or paste an HTTPS image URL"
+        placeholder={t('logo.pasteUrl')}
         disabled={disabled}
       />
       {error ? <p className="text-xs text-red-600">{error}</p> : null}

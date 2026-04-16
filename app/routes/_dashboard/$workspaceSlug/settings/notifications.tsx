@@ -69,7 +69,7 @@ function NotificationsSettings() {
     try {
       await setPreference({ data: { type: key, prefs: next } })
     } catch (e) {
-      setToast(e instanceof Error ? e.message : 'Failed to save')
+      setToast(e instanceof Error ? e.message : t('notifSettings.failedToSave'))
     }
   }
 
@@ -80,7 +80,7 @@ function NotificationsSettings() {
       await saveBrrrSecret({ data: { secret: brrrSecret || null } })
       setSettings((s) => ({ ...s, brrrConnected: !!brrrSecret }))
       setBrrrSecret('')
-      setToast(brrrSecret ? 'Saved — push now enabled' : 'Disconnected')
+      setToast(brrrSecret ? t('notifSettings.savedPushEnabled') : t('notifSettings.disconnected'))
     } finally {
       setSavingBrrr(false)
     }
@@ -91,9 +91,9 @@ function NotificationsSettings() {
     setToast(null)
     try {
       await testBrrrPush()
-      setToast('Test push sent — check your device.')
+      setToast(t('notifSettings.testPushSent'))
     } catch (e) {
-      setToast(e instanceof Error ? e.message : 'Push failed')
+      setToast(e instanceof Error ? e.message : t('notifSettings.pushFailed'))
     } finally {
       setTesting(false)
     }
@@ -188,7 +188,7 @@ function NotificationsSettings() {
                           checked={p.push}
                           onChange={() => toggle(tp.key, 'push')}
                           disabled={!settings.brrrConnected}
-                          title={settings.brrrConnected ? '' : 'Connect brrr.now to enable push'}
+                          title={settings.brrrConnected ? '' : t('notifSettings.connectBrrrToEnablePush')}
                         />
                       </td>
                     </tr>

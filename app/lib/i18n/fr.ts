@@ -194,6 +194,11 @@ export const fr: Record<string, string> = {
   "analytics.noEngagementData": "Aucune donnée d'interaction",
   "analytics.downloadReport": "Télécharger le rapport",
   "analytics.generatingReport": "Génération du rapport…",
+  "analytics.range7d": "7 jours",
+  "analytics.range30d": "30 jours",
+  "analytics.range90d": "90 jours",
+  "analytics.rangeCustom": "Personnalisé",
+  "analytics.failedToSync": "Échec de la mise en file d'attente de la synchronisation",
 
   // ── Inbox ─────────────────────────────────────────────
   "inbox.title": "Boîte de réception",
@@ -313,6 +318,8 @@ export const fr: Record<string, string> = {
   "settings.typeNameToConfirm": "Saisissez le nom de l'espace de travail pour confirmer",
   "settings.deleteForever": "Supprimer définitivement",
   "settings.cancel": "Annuler",
+  "settings.saveFailed": "Échec de l'enregistrement",
+  "settings.deleteFailed": "Échec",
 
   // ── Billing ───────────────────────────────────────────
   "billing.title": "Facturation",
@@ -347,6 +354,19 @@ export const fr: Record<string, string> = {
   "security.activeSessions": "Sessions actives",
   "security.logOutEverywhere": "Se déconnecter de toutes les autres sessions",
   "security.unknownDevice": "Appareil inconnu",
+  "security.couldNotEnable2FA": "Impossible d'activer la 2FA",
+  "security.invalidCode": "Code invalide",
+  "security.failed": "Échec",
+  "security.twoFANowActive": "La 2FA est maintenant active",
+  "security.disable2FAConfirm": "Désactiver l'authentification à deux facteurs ?",
+  "security.twoFADisabled": "2FA désactivée",
+  "security.couldNotAddPasskey": "Impossible d'ajouter la clé d'accès",
+  "security.passkeyRegistrationCancelled": "Enregistrement de la clé d'accès annulé",
+  "security.deletePasskeyConfirm": "Supprimer cette clé d'accès ?",
+  "security.logOutEverywhereConfirm": "Se déconnecter partout (y compris cet appareil) ?",
+  "security.totpDescription": "Ajoutez un code temporel de votre application d'authentification comme second facteur.",
+  "security.justThisOne": "Seulement cette session.",
+  "security.addedDate": "Ajoutée le {date}",
 
   // ── API ───────────────────────────────────────────────
   "api.title": "API et Webhooks",
@@ -385,6 +405,12 @@ export const fr: Record<string, string> = {
   "notifSettings.brrrSecret": "Secret brrr",
   "notifSettings.testPush": "Envoyer une notification test",
   "notifSettings.disconnect": "Déconnecter",
+  "notifSettings.savedPushEnabled": "Enregistré — notifications push activées",
+  "notifSettings.disconnected": "Déconnecté",
+  "notifSettings.testPushSent": "Notification test envoyée — vérifiez votre appareil.",
+  "notifSettings.pushFailed": "Échec de la notification push",
+  "notifSettings.failedToSave": "Échec de l'enregistrement",
+  "notifSettings.connectBrrrToEnablePush": "Connectez brrr.now pour activer les notifications push",
 
   // ── Schedule settings ─────────────────────────────────
   "schedule.postingSchedule": "Calendrier de publication",
@@ -569,6 +595,13 @@ export const fr: Record<string, string> = {
   "common.search": "Rechercher",
   "common.noResults": "Aucun résultat",
   "common.or": "ou",
+
+  // ── Logo uploader ────────────────────────────────────
+  "logo.replace": "Remplacer",
+  "logo.upload": "Téléverser",
+  "logo.remove": "Supprimer",
+  "logo.pasteUrl": "…ou collez une URL d'image HTTPS",
+  "logo.uploadFailed": "Échec du téléversement",
 
   // ── Media extras (i18n sweep) ─────────────────────────
   "media.allMedia": "Tous les médias",
