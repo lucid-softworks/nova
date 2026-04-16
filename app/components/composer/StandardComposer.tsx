@@ -28,6 +28,7 @@ import { PostPreview } from './PostPreview'
 import { AIAssistPanel } from './AIAssistPanel'
 import { EmojiPicker } from './EmojiPicker'
 import { HashtagPickerButton } from './HashtagPickerButton'
+import { SavedReplyPicker } from './SavedReplyPicker'
 import { saveDraft } from '~/server/composer'
 import { addToQueue, publishNow, schedulePost, submitForApproval } from '~/server/scheduling'
 import type { WorkspaceRole } from '~/server/types'
@@ -290,6 +291,7 @@ export function StandardComposer({
               dispatch={dispatch}
               onOpenAI={() => setAiOpen(true)}
               workspaceSlug={workspaceSlug}
+              isReply={!!state.replyToPostId}
             />
             <MediaZone
               workspaceSlug={workspaceSlug}
@@ -712,6 +714,7 @@ function Editor({
   dispatch,
   onOpenAI,
   workspaceSlug,
+  isReply,
 }: {
   version: Version
   supportsFirstComment: boolean
@@ -719,6 +722,7 @@ function Editor({
   dispatch: React.Dispatch<import('./state').Action>
   onOpenAI: () => void
   workspaceSlug: string
+  isReply?: boolean
 }) {
   const minLimit = version.platforms.length
     ? Math.min(...version.platforms.map((p) => PLATFORMS[p].textLimit))
@@ -821,6 +825,12 @@ function Editor({
             workspaceSlug={workspaceSlug}
             onInsert={(text) => insertAtCursor(` ${text}`)}
           />
+          {isReply ? (
+            <SavedReplyPicker
+              workspaceSlug={workspaceSlug}
+              onPick={(text) => insertAtCursor(text)}
+            />
+          ) : null}
           <div className="relative">
             <ToolbarBtn title="Variables" onClick={() => setShowVariables((o) => !o)}>
               <Code className="h-4 w-4" />

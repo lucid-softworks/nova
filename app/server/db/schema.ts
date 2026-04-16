@@ -682,6 +682,18 @@ export const rssFeedItems = pgTable(
   }),
 )
 
+export const savedReplies = pgTable('saved_replies', {
+  id: id(),
+  workspaceId: uuid('workspace_id')
+    .notNull()
+    .references(() => workspaces.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  shortcut: text('shortcut'),
+  createdById: text('created_by_id').references(() => user.id, { onDelete: 'set null' }),
+  createdAt: now(),
+})
+
 export const shortLinks = pgTable(
   'short_links',
   {
