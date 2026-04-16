@@ -14,6 +14,33 @@ import handler from './dist/server/server.js'
 const port = process.env.PORT ? Number(process.env.PORT) : 3000
 const app = new Hono()
 
+// Security headers
+app.use('*', async (c, next) => {
+  await next()
+  c.res.headers.set('X-Content-Type-Options', 'nosniff')
+  c.res.headers.set('X-Frame-Options', 'DENY')
+  c.res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  c.res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  c.res.headers.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self'",
+      "connect-src 'self' https:",
+      "frame-src https://challenges.cloudflare.com",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; '),
+  )
+  if (process.env.NODE_ENV === 'production') {
+    c.res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  }
+})
+
 // Serve the Vite client bundle first (static assets like /assets/*.js + css).
 app.use('/assets/*', serveStatic({ root: './dist/client' }))
 app.use('/favicon.ico', serveStatic({ path: './dist/client/favicon.ico' }))
