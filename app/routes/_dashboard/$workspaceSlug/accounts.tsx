@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
-import { ChevronDown, Plug, RotateCw } from 'lucide-react'
+import { ChevronDown, Download, Plug, RotateCw } from 'lucide-react'
 import { listAccounts, disconnectAccount, type AccountSummary } from '~/server/accounts'
+import { backfillBluesky, type BackfillResult } from '~/server/backfill'
 import { PLATFORM_KEYS, PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { Card, CardContent } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
@@ -186,6 +187,9 @@ function AccountRow({
         </span>
       ) : null}
       <StatusBadge status={account.status} />
+      {account.platform === 'bluesky' && account.status === 'connected' ? (
+        <BackfillButton workspaceSlug={workspaceSlug} accountId={account.id} />
+      ) : null}
       {account.status === 'connected' ? (
         <Button variant="outline" size="sm" onClick={handleDisconnect} disabled={busy}>
           {busy ? <Spinner /> : null}
@@ -197,6 +201,46 @@ function AccountRow({
         </Button>
       )}
     </div>
+  )
+}
+
+function BackfillButton({
+  workspaceSlug,
+  accountId,
+}: {
+  workspaceSlug: string
+  accountId: string
+}) {
+  const [busy, setBusy] = useState(false)
+  const [result, setResult] = useState<BackfillResult | null>(null)
+
+  const run = async () => {
+    if (!confirm('Import up to 250 recent posts from this Bluesky account?')) return
+    setBusy(true)
+    try {
+      const res = await backfillBluesky({
+        data: { workspaceSlug, socialAccountId: accountId },
+      })
+      setResult(res)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Backfill failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <>
+      <Button variant="outline" size="sm" onClick={run} disabled={busy}>
+        {busy ? <Spinner /> : <Download className="h-3 w-3" />}
+        Backfill
+      </Button>
+      {result ? (
+        <span className="text-xs text-neutral-500 dark:text-neutral-400">
+          {result.imported} imported · {result.skipped} skipped
+        </span>
+      ) : null}
+    </>
   )
 }
 
