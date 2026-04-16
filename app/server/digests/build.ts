@@ -4,7 +4,8 @@ import { db, schema } from '~/server/db'
 
 export function unsubscribeUrl(userId: string): string {
   const base = process.env.APP_URL ?? 'http://localhost:3000'
-  const secret = process.env.BETTER_AUTH_SECRET ?? ''
+  const secret = process.env.BETTER_AUTH_SECRET
+  if (!secret) throw new Error('BETTER_AUTH_SECRET is required')
   const token = createHmac('sha256', secret).update(`digest:${userId}`).digest('hex').slice(0, 24)
   return `${base.replace(/\/+$/, '')}/digest/unsubscribe?uid=${encodeURIComponent(userId)}&token=${token}`
 }
