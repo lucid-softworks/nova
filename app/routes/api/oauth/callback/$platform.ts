@@ -9,6 +9,7 @@ import {
   getProvider,
   saveSocialAccount,
 } from '~/server/oauth/flow.server'
+import { requireWorkspaceAccess } from '~/server/session.server'
 import { OAUTH_COOKIE } from '~/server/accounts.server'
 
 type PendingStateGeneric = {
@@ -51,6 +52,12 @@ export const Route = createFileRoute('/api/oauth/callback/$platform')({
         if (pending.state !== state) return Response.json({ error: 'State mismatch' }, { status: 400 })
         if (pending.platform !== params.platform) {
           return Response.json({ error: 'Platform mismatch' }, { status: 400 })
+        }
+
+        // Re-verify the user still has an active session and workspace access
+        const access = await requireWorkspaceAccess(pending.workspaceSlug)
+        if (!access.ok) {
+          return Response.json({ error: 'Session expired or workspace access revoked' }, { status: 403 })
         }
 
         const baseUrl = process.env.APP_URL ?? 'http://localhost:3000'
