@@ -12,8 +12,24 @@ async function ensureWs(slug: string) {
   return r
 }
 
+const MAX_UPLOAD_SIZE = 50 * 1024 * 1024 // 50 MB
+const ALLOWED_MIME_PREFIXES = ['image/', 'video/', 'audio/']
+const ALLOWED_MIME_EXACT = ['application/pdf']
+
+function isAllowedMime(mime: string): boolean {
+  return ALLOWED_MIME_PREFIXES.some((p) => mime.startsWith(p)) || ALLOWED_MIME_EXACT.includes(mime)
+}
+
 export async function uploadMediaImpl(slug: string, file: File, folderId: string | null = null) {
   const { workspace, user } = await ensureWs(slug)
+
+  if (file.size > MAX_UPLOAD_SIZE) {
+    throw new Error(`File too large (${Math.round(file.size / 1024 / 1024)} MB). Maximum is 50 MB.`)
+  }
+  const mime = file.type || 'application/octet-stream'
+  if (!isAllowedMime(mime)) {
+    throw new Error(`File type "${mime}" is not allowed. Upload images, videos, audio, or PDFs.`)
+  }
 
   if (folderId) {
     const parent = await db.query.mediaFolders.findFirst({
@@ -51,7 +67,6 @@ export async function uploadMediaImpl(slug: string, file: File, folderId: string
 
   const ext = path.extname(file.name) || ''
   const filename = `${randomUUID()}${ext}`
-  const mime = file.type || 'application/octet-stream'
   const storage = getStorage()
   await storage.put(filename, buf, { contentType: mime, cacheControl: 'public, max-age=31536000, immutable' })
 
