@@ -4,12 +4,27 @@ import { encrypt } from '~/lib/encryption'
 import { PublishError } from '../errors'
 import type { PublishResult, ReshareContext } from '../index'
 
-const SERVICE = 'https://bsky.social'
+const ENTRYWAY = 'https://bsky.social'
+const PLC_DIRECTORY = 'https://plc.directory'
 
-type Session = { did: string; accessJwt: string; refreshJwt: string }
+type Session = { did: string; accessJwt: string; refreshJwt: string; pdsUrl: string }
 
-async function refreshSession(refreshJwt: string): Promise<Session> {
-  const res = await fetch(`${SERVICE}/xrpc/com.atproto.server.refreshSession`, {
+async function resolvePds(did: string): Promise<string> {
+  try {
+    const res = await fetch(`${PLC_DIRECTORY}/${encodeURIComponent(did)}`)
+    if (!res.ok) return ENTRYWAY
+    const doc = (await res.json()) as {
+      service?: Array<{ id: string; serviceEndpoint: string }>
+    }
+    const pds = doc.service?.find((s) => s.id === '#atproto_pds')
+    return pds?.serviceEndpoint?.replace(/\/+$/, '') ?? ENTRYWAY
+  } catch {
+    return ENTRYWAY
+  }
+}
+
+async function refreshSession(pdsUrl: string, refreshJwt: string): Promise<Session> {
+  const res = await fetch(`${pdsUrl}/xrpc/com.atproto.server.refreshSession`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${refreshJwt}` },
   })
@@ -21,7 +36,8 @@ async function refreshSession(refreshJwt: string): Promise<Session> {
       retryable: false,
     })
   }
-  return (await res.json()) as Session
+  const json = (await res.json()) as { did: string; accessJwt: string; refreshJwt: string }
+  return { ...json, pdsUrl }
 }
 
 async function createRecord(
@@ -29,7 +45,7 @@ async function createRecord(
   record: Record<string, unknown>,
   collection: string,
 ): Promise<{ uri: string; cid: string }> {
-  const res = await fetch(`${SERVICE}/xrpc/com.atproto.repo.createRecord`, {
+  const res = await fetch(`${session.pdsUrl}/xrpc/com.atproto.repo.createRecord`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${session.accessJwt}`,
@@ -69,8 +85,8 @@ async function persistRefreshed(accountId: string, s: Session) {
 }
 
 async function getPostCid(session: Session, uri: string): Promise<string | null> {
-  // getPosts accepts up to 25 URIs; we just need this one.
-  const url = `${SERVICE}/xrpc/app.bsky.feed.getPosts?uris=${encodeURIComponent(uri)}`
+  // Use entryway for AppView-proxied calls (getPosts is AppView).
+  const url = `${ENTRYWAY}/xrpc/app.bsky.feed.getPosts?uris=${encodeURIComponent(uri)}`
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${session.accessJwt}`, Accept: 'application/json' },
   })
@@ -89,13 +105,14 @@ export async function resharePost(ctx: ReshareContext): Promise<PublishResult> {
       retryable: false,
     })
   }
+  const pdsUrl = await resolvePds(did)
   let session: Session = {
     did,
     accessJwt: ctx.account.accessToken,
     refreshJwt: ctx.account.refreshToken ?? '',
+    pdsUrl,
   }
 
-  // Pull the cached cid written at queue time.
   let cid = await loadStoredCidForSource(ctx.reshare.sourcePostId)
   if (!cid) cid = await getPostCid(session, ctx.reshare.sourcePostId)
   if (!cid) {
@@ -140,7 +157,7 @@ export async function resharePost(ctx: ReshareContext): Promise<PublishResult> {
     res = await run()
   } catch (e) {
     if (e instanceof PublishError && e.code === 'AUTH_EXPIRED' && session.refreshJwt) {
-      session = await refreshSession(session.refreshJwt)
+      session = await refreshSession(pdsUrl, session.refreshJwt)
       await persistRefreshed(ctx.account.id, session)
       res = await run()
     } else {
@@ -157,8 +174,6 @@ export async function resharePost(ctx: ReshareContext): Promise<PublishResult> {
 }
 
 async function loadStoredCidForSource(sourceUri: string): Promise<string | null> {
-  // Join post_reshare_details -> post_versions to retrieve the cid stored at
-  // queue time in platformVariables.
   const rows = await db
     .select({ vars: schema.postVersions.platformVariables })
     .from(schema.postReshareDetails)

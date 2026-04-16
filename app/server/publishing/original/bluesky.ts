@@ -5,13 +5,28 @@ import { PublishError } from '../errors'
 import { loadMediaBuffer } from '../helpers'
 import type { PublishContext, PublishMedia, PublishResult } from '../index'
 
-const SERVICE = 'https://bsky.social'
+const ENTRYWAY = 'https://bsky.social'
+const PLC_DIRECTORY = 'https://plc.directory'
 const MAX_GRAPHEMES = 300
 
-type Session = { did: string; accessJwt: string; refreshJwt: string }
+async function resolvePds(did: string): Promise<string> {
+  try {
+    const res = await fetch(`${PLC_DIRECTORY}/${encodeURIComponent(did)}`)
+    if (!res.ok) return ENTRYWAY
+    const doc = (await res.json()) as {
+      service?: Array<{ id: string; serviceEndpoint: string }>
+    }
+    const pds = doc.service?.find((s) => s.id === '#atproto_pds')
+    return pds?.serviceEndpoint?.replace(/\/+$/, '') ?? ENTRYWAY
+  } catch {
+    return ENTRYWAY
+  }
+}
 
-async function refreshSession(refreshJwt: string): Promise<Session> {
-  const res = await fetch(`${SERVICE}/xrpc/com.atproto.server.refreshSession`, {
+type Session = { did: string; accessJwt: string; refreshJwt: string; pdsUrl: string }
+
+async function refreshSession(pdsUrl: string, refreshJwt: string): Promise<Session> {
+  const res = await fetch(`${pdsUrl}/xrpc/com.atproto.server.refreshSession`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${refreshJwt}` },
   })
@@ -24,7 +39,7 @@ async function refreshSession(refreshJwt: string): Promise<Session> {
     })
   }
   const json = (await res.json()) as { did: string; accessJwt: string; refreshJwt: string }
-  return { did: json.did, accessJwt: json.accessJwt, refreshJwt: json.refreshJwt }
+  return { did: json.did, accessJwt: json.accessJwt, refreshJwt: json.refreshJwt, pdsUrl }
 }
 
 async function xrpc<T>(
@@ -33,7 +48,7 @@ async function xrpc<T>(
   session: Session,
   body?: unknown,
 ): Promise<T> {
-  const url = `${SERVICE}/xrpc/${nsid}`
+  const url = `${session.pdsUrl}/xrpc/${nsid}`
   const headers: Record<string, string> = {
     Authorization: `Bearer ${session.accessJwt}`,
     Accept: 'application/json',
@@ -80,7 +95,7 @@ async function uploadImages(
   for (const m of media.slice(0, 4)) {
     if (!m.mimeType.startsWith('image/')) continue
     const { buf, mime } = await loadMediaBuffer(m)
-    const res = await fetch(`${SERVICE}/xrpc/com.atproto.repo.uploadBlob`, {
+    const res = await fetch(`${session.pdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${session.accessJwt}`,
@@ -165,7 +180,7 @@ async function resolveAtUriToRef(
   const m = /^at:\/\/([^/]+)\/([^/]+)\/([^/]+)$/.exec(atUri)
   if (!m) return null
   const [, repo, collection, rkey] = m
-  const url = new URL(`${SERVICE}/xrpc/com.atproto.repo.getRecord`)
+  const url = new URL(`${session.pdsUrl}/xrpc/com.atproto.repo.getRecord`)
   url.searchParams.set('repo', repo!)
   url.searchParams.set('collection', collection!)
   url.searchParams.set('rkey', rkey!)
@@ -204,10 +219,12 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
       retryable: false,
     })
   }
+  const pdsUrl = await resolvePds(did)
   let session: Session = {
     did,
     accessJwt: ctx.account.accessToken,
     refreshJwt: ctx.account.refreshToken ?? '',
+    pdsUrl,
   }
 
   const withRefresh = async <T>(fn: () => Promise<T>): Promise<T> => {
@@ -215,7 +232,7 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
       return await fn()
     } catch (err) {
       if (err instanceof PublishError && err.code === 'AUTH_EXPIRED' && session.refreshJwt) {
-        session = await refreshSession(session.refreshJwt)
+        session = await refreshSession(pdsUrl, session.refreshJwt)
         await persistRefreshed(ctx.account.id, session)
         return await fn()
       }
