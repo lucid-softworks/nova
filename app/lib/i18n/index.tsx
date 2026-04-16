@@ -28,13 +28,11 @@ const I18nContext = createContext<I18nCtx>({
 })
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocale] = useState<Locale>('en')
+  const [locale] = useState<Locale>(() => detectLocale())
 
   useEffect(() => {
-    const detected = detectLocale()
-    setLocale(detected)
-    document.documentElement.lang = detected
-  }, [])
+    document.documentElement.lang = locale
+  }, [locale])
 
   const t = useCallback(
     (key: string, params?: Record<string, string | number>): string => {
