@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from '~/components/ui/dialog'
 import { Button } from '~/components/ui/button'
+import { useT } from '~/lib/i18n'
 import type { AssetSummary } from '~/server/media'
 
 export function MediaPreviewModal({
@@ -21,6 +22,7 @@ export function MediaPreviewModal({
   onDelete: (id: string) => Promise<void>
   onInsert?: (id: string) => void
 }) {
+  const t = useT()
   return (
     <Dialog open={asset !== null} onOpenChange={(o) => { if (!o) onClose() }}>
       <DialogContent className="max-w-4xl">
@@ -40,12 +42,12 @@ export function MediaPreviewModal({
               </DialogHeader>
               <dl className="space-y-1.5 text-sm text-neutral-600 dark:text-neutral-300">
                 {asset.width && asset.height ? (
-                  <Row label="Dimensions">{asset.width} × {asset.height}</Row>
+                  <Row label={t('media.dimensions')}>{asset.width} × {asset.height}</Row>
                 ) : null}
-                {asset.duration ? <Row label="Duration">{asset.duration}s</Row> : null}
-                <Row label="Size">{formatBytes(asset.size)}</Row>
-                <Row label="Uploaded">{new Date(asset.createdAt).toLocaleString()}</Row>
-                {asset.uploaderName ? <Row label="By">{asset.uploaderName}</Row> : null}
+                {asset.duration ? <Row label={t('media.duration')}>{asset.duration}s</Row> : null}
+                <Row label={t('media.size')}>{formatBytes(asset.size)}</Row>
+                <Row label={t('media.uploaded')}>{new Date(asset.createdAt).toLocaleString()}</Row>
+                {asset.uploaderName ? <Row label={t('media.by')}>{asset.uploaderName}</Row> : null}
               </dl>
               <div className="flex flex-col gap-2 pt-2">
                 {onInsert ? (
@@ -56,12 +58,12 @@ export function MediaPreviewModal({
                       onClose()
                     }}
                   >
-                    <Plus className="h-4 w-4" /> Insert into Post
+                    <Plus className="h-4 w-4" /> {t('media.insertIntoPost')}
                   </Button>
                 ) : null}
                 <Button variant="outline" asChild>
                   <a href={asset.url} download={asset.originalName}>
-                    <Download className="h-4 w-4" /> Download
+                    <Download className="h-4 w-4" /> {t('media.download')}
                   </a>
                 </Button>
                 <DialogClose asChild>
@@ -69,12 +71,12 @@ export function MediaPreviewModal({
                     variant="outline"
                     className="text-red-600"
                     onClick={async () => {
-                      if (confirm(`Delete ${asset.originalName}?`)) {
+                      if (confirm(t('media.deleteConfirm', { name: asset.originalName }))) {
                         await onDelete(asset.id)
                       }
                     }}
                   >
-                    <Trash2 className="h-4 w-4" /> Delete
+                    <Trash2 className="h-4 w-4" /> {t('common.delete')}
                   </Button>
                 </DialogClose>
               </div>

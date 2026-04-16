@@ -3,6 +3,7 @@ import { X, Search } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
+import { useT } from '~/lib/i18n'
 import { MediaAssetCard } from './MediaAssetCard'
 import { listAssets, type AssetSummary } from '~/server/media'
 import { cn } from '~/lib/utils'
@@ -50,6 +51,7 @@ export function MediaLibraryPicker({
     }
   }, [open, search, workspaceSlug, excludeIds])
 
+  const t = useT()
   if (!open) return null
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -67,7 +69,7 @@ export function MediaLibraryPicker({
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className={cn('absolute inset-y-0 right-0 flex w-[min(720px,100%)] flex-col bg-white dark:bg-neutral-900 shadow-xl')}>
         <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 p-4">
-          <div className="text-lg font-semibold">Media Library</div>
+          <div className="text-lg font-semibold">{t('media.mediaLibrary')}</div>
           <button type="button" onClick={onClose} className="rounded p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Close">
             <X className="h-4 w-4" />
           </button>
@@ -78,7 +80,7 @@ export function MediaLibraryPicker({
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search"
+              placeholder={t('common.search')}
               className="pl-8"
             />
           </div>
@@ -87,7 +89,7 @@ export function MediaLibraryPicker({
         <div className="flex-1 overflow-auto p-4">
           {assets.length === 0 ? (
             <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
-              No assets yet. Upload via the Media page or the drop zone above.
+              {t('media.noAssetsYet')}
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-3">
@@ -106,7 +108,7 @@ export function MediaLibraryPicker({
         </div>
         <div className="flex items-center justify-between border-t border-neutral-200 dark:border-neutral-800 p-3">
           <Button type="button" variant="ghost" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             type="button"
@@ -117,7 +119,7 @@ export function MediaLibraryPicker({
             }}
             disabled={chosen.length === 0}
           >
-            Insert Selected ({chosen.length})
+            {t('media.insertSelected', { count: chosen.length })}
           </Button>
         </div>
       </div>

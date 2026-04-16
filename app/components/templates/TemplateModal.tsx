@@ -13,6 +13,7 @@ import { Spinner } from '~/components/ui/spinner'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { PLATFORM_KEYS, PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 import type { TemplateRow } from '~/server/templates'
 
 export function TemplateModal({
@@ -26,6 +27,7 @@ export function TemplateModal({
   initial: TemplateRow | null
   onSubmit: (input: { name: string; content: string; platforms: PlatformKey[] }) => Promise<void>
 }) {
+  const t = useT()
   const [name, setName] = useState('')
   const [content, setContent] = useState('')
   const [platforms, setPlatforms] = useState<PlatformKey[]>([])
@@ -46,7 +48,7 @@ export function TemplateModal({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) {
-      setError('Name is required')
+      setError(t('templates.nameRequired'))
       return
     }
     setSubmitting(true)
@@ -54,7 +56,7 @@ export function TemplateModal({
       await onSubmit({ name, content, platforms })
       onOpenChange(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save')
+      setError(err instanceof Error ? err.message : t('templates.failedToSave'))
     } finally {
       setSubmitting(false)
     }
@@ -64,16 +66,16 @@ export function TemplateModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{initial ? 'Edit template' : 'Create template'}</DialogTitle>
+          <DialogTitle>{initial ? t('templates.editTemplate') : t('templates.createTemplateTitle')}</DialogTitle>
           <DialogDescription>
-            Reusable post content for the platforms you pick.
+            {t('templates.reusableDescription')}
           </DialogDescription>
         </DialogHeader>
         <form className="space-y-3" onSubmit={submit}>
-          <Field label="Template name" htmlFor="tpl-name">
+          <Field label={t('templates.templateName')} htmlFor="tpl-name">
             <Input id="tpl-name" value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
-          <Field label="Content" htmlFor="tpl-content">
+          <Field label={t('templates.content')} htmlFor="tpl-content">
             <textarea
               id="tpl-content"
               value={content}
@@ -82,7 +84,7 @@ export function TemplateModal({
             />
           </Field>
           <div>
-            <div className="mb-1 text-sm font-medium text-neutral-700 dark:text-neutral-200">Platforms</div>
+            <div className="mb-1 text-sm font-medium text-neutral-700 dark:text-neutral-200">{t('templates.platforms')}</div>
             <div className="flex flex-wrap gap-1">
               {PLATFORM_KEYS.map((p) => (
                 <button
@@ -107,11 +109,11 @@ export function TemplateModal({
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={submitting}>
               {submitting ? <Spinner /> : null}
-              {initial ? 'Save' : 'Create'}
+              {initial ? t('common.save') : t('templates.create')}
             </Button>
           </div>
         </form>

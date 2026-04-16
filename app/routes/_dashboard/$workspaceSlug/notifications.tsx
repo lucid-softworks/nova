@@ -10,6 +10,7 @@ import {
 import { deriveNotificationLink } from '~/components/layout/NotificationBell'
 import { Button } from '~/components/ui/button'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/notifications')({
   loader: async () => {
@@ -20,6 +21,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/notifications')
 })
 
 function NotificationsPage() {
+  const t = useT()
   const initial = Route.useLoaderData()
   const [rows, setRows] = useState<NotificationRow[]>(initial.rows)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
@@ -49,9 +51,9 @@ function NotificationsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">Notifications</h2>
+          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{t('notifications.title')}</h2>
           <div className="text-sm text-neutral-500 dark:text-neutral-400">
-            {unreadCount} unread · {rows.length} total
+            {t('notifications.unreadTotal', { unread: String(unreadCount), total: String(rows.length) })}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -62,16 +64,16 @@ function NotificationsPage() {
                 type="button"
                 onClick={() => setFilter(k)}
                 className={cn(
-                  'rounded px-2 py-1 capitalize',
+                  'rounded px-2 py-1',
                   filter === k ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300',
                 )}
               >
-                {k}
+                {k === 'all' ? t('notifications.all') : t('notifications.unread')}
               </button>
             ))}
           </div>
           <Button size="sm" variant="outline" onClick={onMarkAll} disabled={unreadCount === 0}>
-            <CheckCheck className="h-3 w-3" /> Mark all read
+            <CheckCheck className="h-3 w-3" /> {t('notifications.markAllRead')}
           </Button>
         </div>
       </div>
@@ -79,7 +81,7 @@ function NotificationsPage() {
       <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
         {visible.length === 0 ? (
           <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
-            {filter === 'unread' ? "You're all caught up." : 'No notifications yet.'}
+            {filter === 'unread' ? t('notifications.allCaughtUp') : t('notifications.noNotificationsYet')}
           </div>
         ) : (
           visible.map((n) => (

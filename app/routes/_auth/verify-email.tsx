@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { authClient } from '~/lib/auth-client'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/_auth/verify-email')({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -12,6 +13,7 @@ export const Route = createFileRoute('/_auth/verify-email')({
 })
 
 function VerifyEmailPage() {
+  const t = useT()
   const { email } = Route.useSearch()
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -21,7 +23,7 @@ function VerifyEmailPage() {
     setError(null)
     const { error: e } = await authClient.sendVerificationEmail({ email, callbackURL: '/' })
     if (e) {
-      setError(e.message ?? 'Could not resend email')
+      setError(e.message ?? t('auth.couldNotResendEmail'))
       return
     }
     setSent(true)
@@ -30,20 +32,20 @@ function VerifyEmailPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Check your inbox</CardTitle>
+        <CardTitle>{t('auth.verifyEmail')}</CardTitle>
         <CardDescription>
-          {email ? <>We sent a verification link to <strong>{email}</strong>.</> : 'We sent you a verification link.'}
+          {email ? <>{t('auth.verificationLinkSent', { email })}</> : t('auth.weSentVerification')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Button variant="outline" className="w-full" onClick={resend} disabled={!email}>
-          {sent ? 'Sent — check your inbox again' : 'Resend email'}
+          {sent ? t('auth.sentCheckInboxAgain') : t('auth.resendEmail')}
         </Button>
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          Wrong address?{' '}
+          {t('auth.wrongAddress')}{' '}
           <Link to="/login" className="text-indigo-600 hover:underline">
-            Back to sign in
+            {t('auth.backToSignIn')}
           </Link>
         </p>
       </CardContent>

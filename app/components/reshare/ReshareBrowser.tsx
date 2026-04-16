@@ -7,6 +7,7 @@ import { PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { AIAssistPanel } from '~/components/composer/AIAssistPanel'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 import {
   RESHARE_PLATFORMS,
   browseAccount,
@@ -55,6 +56,7 @@ export function ReshareBrowser({
   workspaceSlug: string
   accounts: ReshareAccount[]
 }) {
+  const t = useT()
   const [platform, setPlatform] = useState<ResharePlatform>('bluesky')
   const [mode, setMode] = useState<Mode>('browse')
   const [handle, setHandle] = useState('')
@@ -156,7 +158,7 @@ export function ReshareBrowser({
     const items = Object.values(selectedBySource)
     if (items.length === 0) return
     if (!targetAccountId) {
-      setToast('Pick a target account to reshare from.')
+      setToast(t('reshare.pickTargetAccount'))
       return
     }
     setSubmitting(true)
@@ -183,7 +185,7 @@ export function ReshareBrowser({
         },
       })
       if (r.kind === 'no_schedule') {
-        setToast('No posting schedule — add one in Settings → Posting Schedule, then try again.')
+        setToast(t('reshare.noSchedule'))
         return
       }
       setToast(`${r.count} reshare${r.count === 1 ? '' : 's'} added to queue.`)
@@ -202,7 +204,7 @@ export function ReshareBrowser({
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="absolute inset-y-0 right-0 flex w-[min(880px,100%)] flex-col bg-white dark:bg-neutral-900 shadow-xl">
         <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 p-4">
-          <div className="text-lg font-semibold">Queue Reshares</div>
+          <div className="text-lg font-semibold">{t('reshare.queueReshares')}</div>
           <button type="button" onClick={onClose} className="rounded p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Close">
             <X className="h-4 w-4" />
           </button>
@@ -227,14 +229,14 @@ export function ReshareBrowser({
                 onClick={() => setMode('browse')}
                 className={cn('rounded px-2 py-1', mode === 'browse' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
               >
-                Browse Account
+                {t('reshare.browseAccount')}
               </button>
               <button
                 type="button"
                 onClick={() => setMode('search')}
                 className={cn('rounded px-2 py-1', mode === 'search' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
               >
-                Search
+                {t('common.search')}
               </button>
             </div>
           </div>
@@ -254,7 +256,7 @@ export function ReshareBrowser({
                 className="max-w-sm"
               />
               <Button type="submit" disabled={loading}>
-                {loading ? <Spinner /> : null} Load
+                {loading ? <Spinner /> : null} {t('reshare.load')}
               </Button>
             </form>
           ) : (
@@ -283,7 +285,7 @@ export function ReshareBrowser({
                 />
               ) : null}
               <Button type="submit" disabled={loading}>
-                {loading ? <Spinner /> : null} Search
+                {loading ? <Spinner /> : null} {t('common.search')}
               </Button>
             </form>
           )}
@@ -292,19 +294,19 @@ export function ReshareBrowser({
         <div className="flex-1 overflow-auto p-4">
           {result === null ? (
             <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
-              Choose a platform and load results.
+              {t('reshare.chooseAndLoad')}
             </div>
           ) : result.kind === 'unsupported' ? (
             <div className="flex items-start gap-3 rounded-md border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/40 p-4 text-sm text-yellow-800">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
-                <div className="font-semibold">Limited API access</div>
+                <div className="font-semibold">{t('reshare.limitedApiAccess')}</div>
                 <div>{result.message}</div>
               </div>
             </div>
           ) : result.items.length === 0 ? (
             <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
-              No results for this query.
+              {t('reshare.noResults')}
             </div>
           ) : (
             <div className="space-y-3">
@@ -326,13 +328,13 @@ export function ReshareBrowser({
         {selectedCount > 0 ? (
           <div className="space-y-2 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3 text-sm">
             <div className="flex flex-wrap items-center gap-2">
-              <div>Reshare from:</div>
+              <div>{t('reshare.reshareFrom')}</div>
               <select
                 value={targetAccountId}
                 onChange={(e) => setTargetAccountId(e.target.value)}
                 className="h-8 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2"
               >
-                <option value="">Select account…</option>
+                <option value="">{t('reshare.selectAccount')}</option>
                 {accountsForPlatform.map((a) => (
                   <option key={a.id} value={a.id}>
                     @{a.accountHandle}
@@ -345,14 +347,14 @@ export function ReshareBrowser({
                   onClick={() => setScheduleMode('queue')}
                   className={cn('rounded px-2 py-1', scheduleMode === 'queue' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
                 >
-                  Add to Queue
+                  {t('reshare.addToQueue')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setScheduleMode('schedule')}
                   className={cn('rounded px-2 py-1', scheduleMode === 'schedule' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
                 >
-                  Schedule
+                  {t('compose.schedule')}
                 </button>
               </div>
               {scheduleMode === 'schedule' ? (
@@ -365,13 +367,13 @@ export function ReshareBrowser({
               ) : null}
             </div>
             <div className="flex items-center justify-between">
-              <div className="text-neutral-600 dark:text-neutral-300">{selectedCount} selected</div>
+              <div className="text-neutral-600 dark:text-neutral-300">{t('reshare.selected', { count: String(selectedCount) })}</div>
               <Button
                 type="button"
                 onClick={submit}
                 disabled={submitting || !targetAccountId || (scheduleMode === 'schedule' && !scheduledAt)}
               >
-                {submitting ? <Spinner /> : null} Queue {selectedCount} post{selectedCount === 1 ? '' : 's'}
+                {submitting ? <Spinner /> : null} {t('reshare.queuePosts', { count: String(selectedCount) })}
               </Button>
             </div>
             {toast ? <div className="text-xs text-neutral-700 dark:text-neutral-200">{toast}</div> : null}
@@ -399,6 +401,7 @@ function ResultCard({
   onToggle: () => void
   onUpdate: (patch: Partial<SelectedItem>) => void
 }) {
+  const t = useT()
   const [expanded, setExpanded] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
   const longText = src.sourceContent.length > 280
@@ -452,7 +455,7 @@ function ResultCard({
               onClick={() => setExpanded((e) => !e)}
               className="mt-0.5 text-xs text-indigo-600 hover:underline"
             >
-              {expanded ? 'Show less' : 'Show more'}
+              {expanded ? t('reshare.showLess') : t('reshare.showMore')}
             </button>
           ) : null}
           {src.sourceMediaUrls[0] ? (
@@ -473,7 +476,7 @@ function ResultCard({
               rel="noreferrer"
               className="text-indigo-600 hover:underline"
             >
-              Open →
+              {t('reshare.open')} →
             </a>
           </div>
         </div>
@@ -498,7 +501,7 @@ function ResultCard({
               <textarea
                 value={selected.quoteComment}
                 onChange={(e) => onUpdate({ quoteComment: e.target.value })}
-                placeholder="Add your commentary"
+                placeholder={t('reshare.addCommentary')}
                 className="min-h-[60px] w-full resize-y rounded border border-neutral-200 dark:border-neutral-800 p-2 text-sm"
               />
               <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400">
@@ -510,7 +513,7 @@ function ResultCard({
                   onClick={() => setAiOpen(true)}
                   className="inline-flex items-center gap-1 text-indigo-600 hover:underline"
                 >
-                  <Sparkles className="h-3 w-3" /> AI Assist
+                  <Sparkles className="h-3 w-3" /> {t('reshare.aiAssist')}
                 </button>
               </div>
               <AIAssistPanel
@@ -527,7 +530,7 @@ function ResultCard({
             <Input
               value={selected.targetSubreddit}
               onChange={(e) => onUpdate({ targetSubreddit: e.target.value })}
-              placeholder="target subreddit (required)"
+              placeholder={t('reshare.targetSubreddit')}
             />
           ) : null}
         </div>

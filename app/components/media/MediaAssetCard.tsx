@@ -1,5 +1,6 @@
 import { Check, Play } from 'lucide-react'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 import type { AssetSummary } from '~/server/media'
 
 export function MediaAssetCard({
@@ -15,6 +16,7 @@ export function MediaAssetCard({
   onSelect: (id: string, additive: boolean) => void
   onOpen: (asset: AssetSummary) => void
 }) {
+  const t = useT()
   const h = size === 'sm' ? 120 : size === 'md' ? 160 : 220
   return (
     <button
@@ -51,7 +53,7 @@ export function MediaAssetCard({
           />
         )}
         <span className="absolute left-1.5 top-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-white">
-          {asset.kind === 'other' ? 'File' : asset.kind}
+          {asset.kind === 'other' ? t('media.file') : asset.kind}
         </span>
         <span
           role="checkbox"

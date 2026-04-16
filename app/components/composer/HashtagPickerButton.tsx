@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Hash } from 'lucide-react'
+import { useT } from '~/lib/i18n'
 import { listHashtagGroups, type HashtagGroupRow } from '~/server/templates'
 
 export function HashtagPickerButton({
@@ -9,6 +10,7 @@ export function HashtagPickerButton({
   workspaceSlug: string
   onInsert: (text: string) => void
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [groups, setGroups] = useState<HashtagGroupRow[] | null>(null)
   const [loading, setLoading] = useState(false)
@@ -34,7 +36,7 @@ export function HashtagPickerButton({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        title="Hashtag groups"
+        title={t('compose.hashtagGroups')}
         className="rounded p-1.5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
       >
         <Hash className="h-4 w-4" />
@@ -42,10 +44,10 @@ export function HashtagPickerButton({
       {open ? (
         <div className="absolute left-0 top-full z-10 mt-1 w-72 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg">
           {loading ? (
-            <div className="px-2 py-3 text-xs text-neutral-500 dark:text-neutral-400">Loading…</div>
+            <div className="px-2 py-3 text-xs text-neutral-500 dark:text-neutral-400">{t('common.loading')}</div>
           ) : !groups || groups.length === 0 ? (
             <div className="px-2 py-3 text-xs text-neutral-500 dark:text-neutral-400">
-              No hashtag groups yet. Create some in Templates.
+              {t('compose.noHashtagGroupsYet')}
             </div>
           ) : (
             groups.map((g) => (

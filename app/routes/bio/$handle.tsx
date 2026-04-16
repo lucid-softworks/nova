@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { ExternalLink } from 'lucide-react'
 import { getPublicBioPage, type PublicBioPage } from '~/server/bioPage'
+import { useT } from '~/lib/i18n'
 import { cn } from '~/lib/utils'
 
 export const Route = createFileRoute('/bio/$handle')({
@@ -38,12 +39,13 @@ const PLATFORM_LABELS: Record<string, string> = {
 }
 
 function BioPageRoute() {
+  const t = useT()
   const page = Route.useLoaderData() as PublicBioPage | null
 
   if (!page) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-50 dark:bg-[#0b0d12]">
-        <p className="text-neutral-500 dark:text-neutral-400">Page not found</p>
+        <p className="text-neutral-500 dark:text-neutral-400">{t('bio.pageNotFound')}</p>
       </div>
     )
   }
@@ -127,7 +129,7 @@ function BioPageRoute() {
                 !isDark && !isMinimal && 'text-indigo-500 dark:text-indigo-400',
               )}
             >
-              Recent Posts
+              {t('bio.recentPosts')}
             </h2>
             <div className="space-y-3">
               {page.recentPosts.map((post) => (

@@ -9,6 +9,7 @@ import { Input } from '~/components/ui/input'
 import { Field } from '~/components/ui/field'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Spinner } from '~/components/ui/spinner'
+import { useT } from '~/lib/i18n'
 
 const schema = z
   .object({
@@ -26,6 +27,7 @@ export const Route = createFileRoute('/_auth/reset-password')({
 })
 
 function ResetPasswordPage() {
+  const t = useT()
   const { token } = Route.useSearch()
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
@@ -38,12 +40,12 @@ function ResetPasswordPage() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Invalid link</CardTitle>
-          <CardDescription>This reset link is missing a token.</CardDescription>
+          <CardTitle>{t('auth.invalidLink')}</CardTitle>
+          <CardDescription>{t('auth.resetLinkMissingToken')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Link to="/forgot-password" className="text-sm text-indigo-600 hover:underline">
-            Request a new one
+            {t('auth.requestNewOne')}
           </Link>
         </CardContent>
       </Card>
@@ -54,7 +56,7 @@ function ResetPasswordPage() {
     setError(null)
     const { error: e } = await authClient.resetPassword({ newPassword: values.password, token })
     if (e) {
-      setError(e.message ?? 'Could not reset password')
+      setError(e.message ?? t('auth.couldNotResetPassword'))
       return
     }
     navigate({ to: '/login' })
@@ -63,21 +65,21 @@ function ResetPasswordPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Set a new password</CardTitle>
-        <CardDescription>Choose something you&apos;ll remember.</CardDescription>
+        <CardTitle>{t('auth.setNewPassword')}</CardTitle>
+        <CardDescription>{t('auth.chooseRememberable')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-          <Field label="New password" htmlFor="password" error={form.formState.errors.password?.message}>
+          <Field label={t('auth.newPassword')} htmlFor="password" error={form.formState.errors.password?.message}>
             <Input id="password" type="password" autoComplete="new-password" {...form.register('password')} />
           </Field>
-          <Field label="Confirm password" htmlFor="confirm" error={form.formState.errors.confirm?.message}>
+          <Field label={t('auth.confirmPassword')} htmlFor="confirm" error={form.formState.errors.confirm?.message}>
             <Input id="confirm" type="password" autoComplete="new-password" {...form.register('confirm')} />
           </Field>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? <Spinner /> : null}
-            Reset password
+            {t('auth.resetPassword')}
           </Button>
         </form>
       </CardContent>

@@ -3,6 +3,7 @@ import { ChevronRight, ChevronDown, Folder, FolderPlus, Pencil, Trash2, MoreHori
 import { cn } from '~/lib/utils'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
+import { useT } from '~/lib/i18n'
 import type { FolderNode } from '~/server/media'
 
 export type SelectedFolder = 'all' | 'uncategorized' | string
@@ -38,6 +39,7 @@ export function FolderTree({
   onRename: (id: string, name: string) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }) {
+  const t = useT()
   const tree = useMemo(() => buildTree(folders), [folders])
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
@@ -52,7 +54,7 @@ export function FolderTree({
           selected === 'all' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300' : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800',
         )}
       >
-        <Folder className="h-4 w-4" /> All Media
+        <Folder className="h-4 w-4" /> {t('media.allMedia')}
       </button>
       <button
         type="button"
@@ -64,10 +66,10 @@ export function FolderTree({
             : 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800',
         )}
       >
-        <Inbox className="h-4 w-4" /> Uncategorized
+        <Inbox className="h-4 w-4" /> {t('media.uncategorized')}
       </button>
       <div className="pt-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-        Folders
+        {t('media.folders')}
       </div>
       {tree.map((node) => (
         <TreeRow
@@ -97,16 +99,16 @@ export function FolderTree({
             autoFocus
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="Folder name"
+            placeholder={t('media.folderName')}
             className="h-8"
           />
           <Button type="submit" size="sm">
-            Add
+            {t('media.add')}
           </Button>
         </form>
       ) : (
         <Button type="button" variant="ghost" size="sm" onClick={() => setCreating(true)} className="mt-1">
-          <FolderPlus className="h-4 w-4" /> New Folder
+          <FolderPlus className="h-4 w-4" /> {t('media.newFolder')}
         </Button>
       )}
     </div>
@@ -130,6 +132,7 @@ function TreeRow({
   onDelete: (id: string) => Promise<void>
   onCreate: (name: string, parentId: string | null) => Promise<void>
 }) {
+  const t = useT()
   const [open, setOpen] = useState(true)
   const [menu, setMenu] = useState(false)
   const [renaming, setRenaming] = useState(false)
@@ -165,7 +168,7 @@ function TreeRow({
               className="h-7"
             />
             <Button type="submit" size="sm">
-              Save
+              {t('common.save')}
             </Button>
           </form>
         ) : (
@@ -202,7 +205,7 @@ function TreeRow({
                     setCreatingChild(true)
                   }}
                 >
-                  <FolderPlus className="h-3 w-3" /> New subfolder
+                  <FolderPlus className="h-3 w-3" /> {t('media.newSubfolder')}
                 </button>
                 <button
                   type="button"
@@ -212,19 +215,19 @@ function TreeRow({
                     setRenaming(true)
                   }}
                 >
-                  <Pencil className="h-3 w-3" /> Rename
+                  <Pencil className="h-3 w-3" /> {t('media.rename')}
                 </button>
                 <button
                   type="button"
                   className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-red-600 hover:bg-red-50"
                   onClick={async () => {
                     setMenu(false)
-                    if (confirm(`Delete folder "${node.name}"? Assets will be unfiled.`)) {
+                    if (confirm(t('media.deleteFolderConfirm', { name: node.name }))) {
                       await onDelete(node.id)
                     }
                   }}
                 >
-                  <Trash2 className="h-3 w-3" /> Delete
+                  <Trash2 className="h-3 w-3" /> {t('common.delete')}
                 </button>
               </div>
             ) : null}
@@ -249,10 +252,10 @@ function TreeRow({
             value={childName}
             onChange={(e) => setChildName(e.target.value)}
             className="h-7"
-            placeholder="Subfolder name"
+            placeholder={t('media.subfolderName')}
           />
           <Button type="submit" size="sm">
-            Add
+            {t('media.add')}
           </Button>
         </form>
       ) : null}

@@ -16,6 +16,7 @@ import { Card } from '~/components/ui/card'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { CampaignStatusBadge, PostStatusBadge } from '~/components/posts/badges'
 import { cn } from '~/lib/utils'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/posts/campaigns/$campaignId')({
   loader: async ({ params }) => {
@@ -35,6 +36,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/posts/campaigns
 
 function CampaignDetailPage() {
   const { workspaceSlug } = Route.useParams()
+  const t = useT()
   const initial = Route.useLoaderData()
   const [detail, setDetail] = useState<CampaignDetail>(initial.detail)
   const [analytics, setAnalytics] = useState<CampaignAnalytics | null>(initial.analytics)
@@ -66,7 +68,7 @@ function CampaignDetailPage() {
               <CampaignStatusBadge status={detail.status} />
             </div>
             <div className="text-sm text-neutral-500 dark:text-neutral-400">
-              {publishedSteps} of {detail.steps.length} steps published
+              {t('campaign.stepsPublished', { published: String(publishedSteps), total: String(detail.steps.length) })}
             </div>
           </div>
         </div>
@@ -86,13 +88,13 @@ function CampaignDetailPage() {
             type="button"
             onClick={() => setTab(k)}
             className={cn(
-              'px-3 py-2 text-sm font-medium capitalize',
+              'px-3 py-2 text-sm font-medium',
               tab === k
                 ? 'border-b-2 border-indigo-500 text-indigo-600'
                 : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900',
             )}
           >
-            {k}
+            {k === 'steps' ? t('campaign.stepsTab') : t('campaign.analyticsTab')}
           </button>
         ))}
       </div>
@@ -130,29 +132,30 @@ function CampaignDetailPage() {
 }
 
 function CampaignAnalyticsPanel({ analytics }: { analytics: CampaignAnalytics | null }) {
+  const t = useT()
   if (!analytics) {
-    return <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">Analytics unavailable.</div>
+    return <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">{t('campaign.analyticsUnavailable')}</div>
   }
   const { totals, byPlatform } = analytics
   const fmt = (n: number) => n.toLocaleString()
   const hasData = totals.reach + totals.impressions + totals.engagements > 0
 
   const kpis = [
-    { label: 'Reach', value: fmt(totals.reach) },
-    { label: 'Impressions', value: fmt(totals.impressions) },
-    { label: 'Engagements', value: fmt(totals.engagements) },
-    { label: 'Likes', value: fmt(totals.likes) },
-    { label: 'Comments', value: fmt(totals.comments) },
-    { label: 'Shares', value: fmt(totals.shares) },
-    { label: 'Clicks', value: fmt(totals.clicks) },
-    { label: 'Steps Published', value: `${totals.publishedSteps}/${totals.totalSteps}` },
+    { label: t('analytics.reach'), value: fmt(totals.reach) },
+    { label: t('analytics.impressions'), value: fmt(totals.impressions) },
+    { label: t('analytics.engagements'), value: fmt(totals.engagements) },
+    { label: t('analytics.likes'), value: fmt(totals.likes) },
+    { label: t('analytics.comments'), value: fmt(totals.comments) },
+    { label: t('analytics.shares'), value: fmt(totals.shares) },
+    { label: t('analytics.clicks'), value: fmt(totals.clicks) },
+    { label: t('campaign.stepsPublishedKpi'), value: `${totals.publishedSteps}/${totals.totalSteps}` },
   ]
 
   return (
     <div className="space-y-4">
       {!hasData ? (
         <div className="rounded border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3 text-xs text-neutral-500 dark:text-neutral-400">
-          No analytics snapshots have arrived for this campaign yet. Numbers will populate once the analytics sync runs.
+          {t('campaign.noAnalyticsYet')}
         </div>
       ) : null}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -168,16 +171,16 @@ function CampaignAnalyticsPanel({ analytics }: { analytics: CampaignAnalytics | 
       {byPlatform.length > 0 ? (
         <Card>
           <div className="p-4">
-            <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">By platform</h3>
+            <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('campaign.byPlatform')}</h3>
             <table className="w-full text-sm">
               <thead className="text-left text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 <tr>
-                  <th className="py-1">Platform</th>
-                  <th className="py-1 text-right">Posts</th>
-                  <th className="py-1 text-right">Reach</th>
-                  <th className="py-1 text-right">Impressions</th>
-                  <th className="py-1 text-right">Engagements</th>
-                  <th className="py-1 text-right">Eng. Rate</th>
+                  <th className="py-1">{t('campaign.platform')}</th>
+                  <th className="py-1 text-right">{t('analytics.posts')}</th>
+                  <th className="py-1 text-right">{t('analytics.reach')}</th>
+                  <th className="py-1 text-right">{t('analytics.impressions')}</th>
+                  <th className="py-1 text-right">{t('analytics.engagements')}</th>
+                  <th className="py-1 text-right">{t('campaign.engRate')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -220,6 +223,7 @@ function StepCard({
   onSkip: () => Promise<void>
   onTriggerNow: () => Promise<void>
 }) {
+  const t = useT()
   const [busy, setBusy] = useState(false)
   const canTrigger =
     step.status === 'waiting' || step.status === 'ready' || step.status === 'on_hold'
@@ -239,13 +243,13 @@ function StepCard({
   const triggerDesc =
     depIndex < 0
       ? step.triggerScheduledAt
-        ? `Scheduled for ${new Date(step.triggerScheduledAt).toLocaleString()}`
-        : 'Root step'
+        ? t('campaign.scheduledFor', { date: new Date(step.triggerScheduledAt).toLocaleString() })
+        : t('campaign.rootStep')
       : step.triggerType === 'immediate'
-        ? `Fires immediately after Step ${depIndex + 1} succeeds`
+        ? t('campaign.firesImmediately', { n: String(depIndex + 1) })
         : step.triggerType === 'delay'
-          ? `Fires ${step.triggerDelayMinutes} minutes after Step ${depIndex + 1} succeeds`
-          : `Fires at ${step.triggerScheduledAt ? new Date(step.triggerScheduledAt).toLocaleString() : 'scheduled time'}`
+          ? t('campaign.firesAfterDelay', { minutes: String(step.triggerDelayMinutes), n: String(depIndex + 1) })
+          : t('campaign.firesAtScheduled', { date: step.triggerScheduledAt ? new Date(step.triggerScheduledAt).toLocaleString() : '' })
 
   const platformIcons = new Set<string>()
   for (const p of step.post?.platforms ?? []) platformIcons.add(p.platform)
@@ -256,7 +260,7 @@ function StepCard({
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Step {step.stepOrder + 1}</div>
+              <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('campaign.step', { n: String(step.stepOrder + 1) })}</div>
               <div className="flex gap-0.5">
                 {[...platformIcons].map((p) => (
                   <PlatformIcon key={p} platform={p as keyof typeof PLATFORMS} size={16} />
@@ -274,7 +278,7 @@ function StepCard({
                 onClick={() => void guarded(onTriggerNow)}
                 disabled={busy}
               >
-                <Zap className="h-3 w-3" /> Trigger now
+                <Zap className="h-3 w-3" /> {t('campaign.triggerNow')}
               </Button>
             ) : null}
             {canSkip ? (
@@ -282,17 +286,17 @@ function StepCard({
                 size="sm"
                 variant="ghost"
                 onClick={() => {
-                  if (!confirm('Skip this step? Dependents will fire as if it succeeded.')) return
+                  if (!confirm(t('campaign.skipConfirm'))) return
                   void guarded(onSkip)
                 }}
                 disabled={busy}
               >
-                <SkipForward className="h-3 w-3" /> Skip
+                <SkipForward className="h-3 w-3" /> {t('campaign.skip')}
               </Button>
             ) : null}
             {step.post?.status === 'failed' ? (
               <Button size="sm" variant="outline" onClick={() => void guarded(onRetry)} disabled={busy}>
-                <RotateCw className="h-3 w-3" /> Retry
+                <RotateCw className="h-3 w-3" /> {t('campaign.retry')}
               </Button>
             ) : null}
           </div>
@@ -300,7 +304,7 @@ function StepCard({
 
         {step.post ? (
           <div className="rounded-md bg-neutral-50 dark:bg-neutral-900 p-3 text-sm text-neutral-700 dark:text-neutral-200">
-            {step.post.defaultContent || <span className="italic text-neutral-400 dark:text-neutral-500">No content</span>}
+            {step.post.defaultContent || <span className="italic text-neutral-400 dark:text-neutral-500">{t('campaign.noContent')}</span>}
           </div>
         ) : null}
 
@@ -320,7 +324,7 @@ function StepCard({
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 rounded-full border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 py-0.5 text-xs text-indigo-600 hover:bg-indigo-50"
               >
-                <ExternalLink className="h-3 w-3" /> View
+                <ExternalLink className="h-3 w-3" /> {t('campaign.view')}
               </a>
             ))}
           </div>
@@ -328,11 +332,11 @@ function StepCard({
 
         {step.status === 'waiting' ? (
           <div className="text-xs text-neutral-500 dark:text-neutral-400">
-            Waiting for Step {depIndex + 1} to succeed
+            {t('campaign.waitingForStep', { n: String(depIndex + 1) })}
           </div>
         ) : null}
         {step.status === 'on_hold' ? (
-          <div className="text-xs text-yellow-700">On hold — dependency failed or missed its window</div>
+          <div className="text-xs text-yellow-700">{t('campaign.onHold')}</div>
         ) : null}
       </div>
     </Card>
