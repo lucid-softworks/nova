@@ -61,6 +61,7 @@ export const Route = createFileRoute('/api/v1/posts/$id')({
       PATCH: async ({ request, params }) => {
         const auth = await authenticateApiRequest(request)
         if (!auth.ok) return authFailureToResponse(auth.err)
+        if (auth.ctx.role === 'viewer') return apiError('FORBIDDEN', 'Viewers cannot update posts', 403)
         const rl = await rateLimit(`ws:${auth.ctx.workspaceId}`)
         if (!rl.ok) return apiError('RATE_LIMITED', 'Too many requests', 429)
 
@@ -99,6 +100,7 @@ export const Route = createFileRoute('/api/v1/posts/$id')({
       DELETE: async ({ request, params }) => {
         const auth = await authenticateApiRequest(request)
         if (!auth.ok) return authFailureToResponse(auth.err)
+        if (auth.ctx.role === 'viewer') return apiError('FORBIDDEN', 'Viewers cannot delete posts', 403)
         const rl = await rateLimit(`ws:${auth.ctx.workspaceId}`)
         if (!rl.ok) return apiError('RATE_LIMITED', 'Too many requests', 429)
 

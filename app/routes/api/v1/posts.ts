@@ -90,6 +90,7 @@ export const Route = createFileRoute('/api/v1/posts')({
       POST: async ({ request }) => {
         const auth = await authenticateApiRequest(request)
         if (!auth.ok) return authFailureToResponse(auth.err)
+        if (auth.ctx.role === 'viewer') return apiError('FORBIDDEN', 'Viewers cannot create posts', 403)
         const rl = await rateLimit(`ws:${auth.ctx.workspaceId}`)
         if (!rl.ok) return apiError('RATE_LIMITED', 'Too many requests', 429)
 
