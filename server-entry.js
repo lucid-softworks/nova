@@ -6,6 +6,19 @@
 // a process bootstrapper.
 
 import 'dotenv/config'
+
+// Fail fast if critical secrets are missing or malformed
+for (const key of ['BETTER_AUTH_SECRET', 'ENCRYPTION_KEY', 'DATABASE_URL']) {
+  if (!process.env[key]) {
+    console.error(`[FATAL] Required env var ${key} is not set`)
+    process.exit(1)
+  }
+}
+if (Buffer.from(process.env.ENCRYPTION_KEY, 'hex').length !== 32) {
+  console.error('[FATAL] ENCRYPTION_KEY must be a 64-char hex string (32 bytes)')
+  process.exit(1)
+}
+
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
