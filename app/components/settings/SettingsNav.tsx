@@ -10,6 +10,7 @@ const TABS = [
   { key: 'white-label', label: 'White Label', to: '/$workspaceSlug/settings/white-label' as const },
   { key: 'rss', label: 'RSS Feeds', to: '/$workspaceSlug/settings/rss' as const },
   { key: 'replies', label: 'Saved Replies', to: '/$workspaceSlug/settings/replies' as const },
+  { key: 'bio', label: 'Bio Page', to: '/$workspaceSlug/settings/bio' as const },
   { key: 'billing', label: 'Billing', to: '/$workspaceSlug/settings/billing' as const },
 ] as const
 

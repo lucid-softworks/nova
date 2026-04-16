@@ -129,6 +129,10 @@ export const en: Record<string, string> = {
   "compose.aiAssist": "AI assist",
   "compose.suggestHashtags": "Suggest hashtags with AI",
   "compose.insertAll": "Insert all",
+  "compose.bestTime": "Best time",
+  "compose.topSlots": "Top slots (last 90 days)",
+  "compose.story": "Story",
+  "compose.storyRequiresMedia": "Stories require an image or video",
 
   // ── Calendar ──────────────────────────────────────────
   "calendar.title": "Calendar",
@@ -187,6 +191,8 @@ export const en: Record<string, string> = {
   "analytics.noPostsInWindow": "No posts in the window",
   "analytics.noEngagementsYet": "No engagements yet",
   "analytics.view": "View",
+  "analytics.downloadReport": "Download report",
+  "analytics.generatingReport": "Generating report…",
 
   // ── Inbox ─────────────────────────────────────────────
   "inbox.title": "Inbox",
@@ -658,6 +664,51 @@ export const en: Record<string, string> = {
   "series.weeklyMix": "Weekly Content Mix",
   "series.dailyTips": "Daily Tips",
   "series.noSeries": "No content series yet",
+
+  // ── Bio Page ──────────────────────────────────────────
+  "bio.title": "Bio Page",
+  "bio.handle": "Handle",
+  "bio.displayName": "Display name",
+  "bio.avatarUrl": "Avatar URL",
+  "bio.bioText": "Bio",
+  "bio.theme": "Theme",
+  "bio.themeDefault": "Default",
+  "bio.themeDark": "Dark",
+  "bio.themeMinimal": "Minimal",
+  "bio.links": "Links",
+  "bio.addLink": "Add link",
+  "bio.linkTitle": "Title",
+  "bio.linkUrl": "URL",
+  "bio.showRecentPosts": "Show recent posts",
+  "bio.recentPostCount": "Number of posts",
+  "bio.save": "Save",
+  "bio.preview": "Preview bio page",
+  "bio.noPage": "No bio page configured yet",
+
+  // ── Review Portal (public) ────────────────────────────
+  "review.title": "Review posts",
+  "review.description": "Review and approve or request changes on the posts below.",
+  "review.approve": "Approve",
+  "review.requestChanges": "Request Changes",
+  "review.whatNeedsToChange": "What needs to change?",
+  "review.approved": "Approved",
+  "review.changesRequested": "Changes requested",
+  "review.invalidToken": "Invalid review link",
+  "review.expiredToken": "Expired review link",
+  "review.noPendingPosts": "No posts pending approval right now.",
+
+  // ── Approval Portal (dashboard) ─────────────────────
+  "approvals.inviteReviewer": "Invite external reviewer",
+  "approvals.reviewerEmail": "Reviewer email",
+  "approvals.reviewerName": "Reviewer name",
+  "approvals.expiresIn": "Expires in",
+  "approvals.days": "days",
+  "approvals.createLink": "Create review link",
+  "approvals.copyLink": "Review link",
+  "approvals.activeLinks": "Review links",
+  "approvals.revoke": "Revoke",
+  "approvals.revokeConfirm": "Revoke this review link? The reviewer will lose access.",
+  "approvals.noLinks": "No active review links.",
 
   // ── Common ────────────────────────────────────────────
   "common.loading": "Loading…",

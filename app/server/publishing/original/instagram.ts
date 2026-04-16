@@ -86,6 +86,18 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
   }
   const videos = ctx.media.filter((m) => m.mimeType.startsWith('video/'))
   const images = ctx.media.filter((m) => m.mimeType.startsWith('image/'))
+  const isStory = ctx.version.platformVariables.ig_media_type === 'STORIES'
+  if (isStory) {
+    if (ctx.media.length === 0) {
+      throw new PublishError({
+        code: 'INVALID_FORMAT',
+        message: 'Instagram Stories require media',
+        userMessage: 'Instagram Stories require an image or video.',
+        retryable: false,
+      })
+    }
+    return await publishStory({ igUserId, accessToken, media: ctx.media[0]! })
+  }
   if (videos.length > 0 && images.length === 0) {
     return await publishReel({ ctx, igUserId, accessToken, caption, videoUrl: videos[0]!.url })
   }
@@ -227,4 +239,54 @@ async function publishReel(args: {
   const postId = published.id
   const url = await fetchPermalink(postId, accessToken)
   return { platformPostId: postId, url, publishedAt: new Date() }
+}
+
+async function publishStory(args: {
+  igUserId: string
+  accessToken: string
+  media: import('../index').PublishMedia
+}): Promise<import('../index').PublishResult> {
+  const { igUserId, accessToken, media } = args
+  const isVideo = media.mimeType.startsWith('video/')
+  const create = new URLSearchParams()
+  create.set('media_type', 'STORIES')
+  if (isVideo) {
+    create.set('video_url', media.url)
+  } else {
+    create.set('image_url', media.url)
+  }
+  create.set('access_token', accessToken)
+  const created = await graphRequest<{ id: string }>(`/${igUserId}/media`, create)
+  const containerId = created.id
+
+  // Poll status for video stories (images are instant).
+  if (isVideo) {
+    const deadline = Date.now() + 120_000
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 2_000))
+      const q = new URLSearchParams()
+      q.set('fields', 'status_code')
+      q.set('access_token', accessToken)
+      const s = await graphRequest<{ status_code?: string }>(`/${containerId}`, q, 'GET')
+      if (s.status_code === 'FINISHED') break
+      if (s.status_code === 'ERROR' || s.status_code === 'EXPIRED') {
+        throw new PublishError({
+          code: 'INVALID_FORMAT',
+          message: `Instagram story container ${s.status_code}`,
+          userMessage: 'Instagram rejected the story media.',
+          retryable: false,
+        })
+      }
+    }
+  }
+
+  const pub = new URLSearchParams()
+  pub.set('creation_id', containerId)
+  pub.set('access_token', accessToken)
+  const published = await graphRequest<{ id: string }>(`/${igUserId}/media_publish`, pub)
+  return {
+    platformPostId: published.id,
+    url: `https://www.instagram.com/stories/${igUserId}/${published.id}/`,
+    publishedAt: new Date(),
+  }
 }

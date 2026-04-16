@@ -15,7 +15,7 @@ import {
   Pie,
   Cell,
 } from 'recharts'
-import { ArrowDown, ArrowUp, ExternalLink, RefreshCw } from 'lucide-react'
+import { ArrowDown, ArrowUp, Download, ExternalLink, RefreshCw } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
 import { Spinner } from '~/components/ui/spinner'
@@ -81,6 +81,37 @@ function SyncNowButton({ workspaceSlug }: { workspaceSlug: string }) {
     <Button size="sm" variant="ghost" onClick={trigger} disabled={busy} title="Run analytics sync now">
       <RefreshCw className={cn('h-4 w-4', busy ? 'animate-spin' : '')} />
       {done ? t('analytics.queued') : t('analytics.sync')}
+    </Button>
+  )
+}
+
+function DownloadReportButton({
+  workspaceSlug,
+  range,
+  accountId,
+  customFrom,
+  customTo,
+}: {
+  workspaceSlug: string
+  range: AnalyticsRange
+  accountId: string | null
+  customFrom: string
+  customTo: string
+}) {
+  const t = useT()
+  const download = () => {
+    const params = new URLSearchParams({ workspaceSlug, range })
+    if (accountId) params.set('accountId', accountId)
+    if (range === 'custom') {
+      params.set('fromIso', new Date(`${customFrom}T00:00:00`).toISOString())
+      params.set('toIso', new Date(`${customTo}T23:59:59`).toISOString())
+    }
+    window.location.href = `/api/reports/analytics?${params.toString()}`
+  }
+  return (
+    <Button size="sm" variant="outline" onClick={download}>
+      <Download className="h-4 w-4" />
+      {t('analytics.downloadReport')}
     </Button>
   )
 }
@@ -170,6 +201,7 @@ function AnalyticsPage() {
             value={accountId}
             onChange={setAccountId}
           />
+          <DownloadReportButton workspaceSlug={workspaceSlug} range={range} accountId={accountId} customFrom={customFrom} customTo={customTo} />
           <SyncNowButton workspaceSlug={Route.useParams().workspaceSlug} />
           {loading ? <Spinner /> : null}
         </div>

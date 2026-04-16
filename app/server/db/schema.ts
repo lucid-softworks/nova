@@ -788,6 +788,31 @@ export const contentSeries = pgTable('content_series', {
   createdAt: now(),
 })
 
+export const bioPages = pgTable('bio_pages', {
+  id: id(),
+  workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }).unique(),
+  handle: text('handle').notNull().unique(),
+  displayName: text('display_name'),
+  avatarUrl: text('avatar_url'),
+  bio: text('bio'),
+  theme: text('theme').default('default').notNull(),
+  links: jsonb('links').$type<Array<{ title: string; url: string }>>().default([]).notNull(),
+  showRecentPosts: boolean('show_recent_posts').default(true).notNull(),
+  recentPostCount: integer('recent_post_count').default(6).notNull(),
+  createdAt: now(),
+})
+
+export const approvalTokens = pgTable('approval_tokens', {
+  id: id(),
+  workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
+  name: text('name'),
+  token: text('token').notNull().unique(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdById: text('created_by_id').references(() => user.id, { onDelete: 'set null' }),
+  createdAt: now(),
+})
+
 // The legacy per-workspace api_keys table has been replaced by Better Auth's
 // apikey table (defined above). Keys are issued to users; the API Key plugin
 // also resolves a session from the bearer header on inbound requests.
