@@ -5,6 +5,7 @@ import { PublishError } from '../errors'
 import { loadMediaBuffer } from '../helpers'
 import type { PublishContext, PublishMedia, PublishResult } from '../index'
 import { buildFacets, detectRawFacets, type Facet } from './bluesky-facets'
+import { fetchLinkPreview } from './bluesky-linkcard'
 
 const ENTRYWAY = 'https://bsky.social'
 const PLC_DIRECTORY = 'https://plc.directory'
@@ -142,6 +143,59 @@ async function uploadVideo(session: Session, media: PublishMedia[]): Promise<Vid
   return embed
 }
 
+type ExternalEmbed = {
+  $type: 'app.bsky.embed.external'
+  external: { uri: string; title: string; description: string; thumb?: BlobRef }
+}
+
+async function uploadBytes(
+  session: Session,
+  bytes: Uint8Array,
+  mime: string,
+): Promise<BlobRef | null> {
+  try {
+    const body = new Blob([bytes as BlobPart], { type: mime })
+    const res = await fetch(`${session.pdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.accessJwt}`,
+        'Content-Type': mime,
+      },
+      body,
+    })
+    if (!res.ok) return null
+    const json = (await res.json()) as { blob: BlobRef }
+    return json.blob
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Build an app.bsky.embed.external from the first URL present in the post
+ * text. Returns null on any failure so the publisher can fall back to a
+ * facet-only link without blowing up the whole post.
+ */
+async function buildLinkCard(session: Session, text: string): Promise<ExternalEmbed | null> {
+  const match = /https?:\/\/[^\s)]+/i.exec(text)
+  if (!match) return null
+  const preview = await fetchLinkPreview(match[0].replace(/[.,!?;:)]+$/, ''))
+  if (!preview) return null
+  const embed: ExternalEmbed = {
+    $type: 'app.bsky.embed.external',
+    external: {
+      uri: preview.uri,
+      title: preview.title,
+      description: preview.description,
+    },
+  }
+  if (preview.imageBytes && preview.imageMime) {
+    const blob = await uploadBytes(session, preview.imageBytes, preview.imageMime)
+    if (blob) embed.external.thumb = blob
+  }
+  return embed
+}
+
 type CreateRecordResponse = { uri: string; cid: string }
 
 const VALID_LABELS = new Set(['suggestive', 'nudity', 'porn', 'graphic-media'])
@@ -164,6 +218,7 @@ async function createPost(
   text: string,
   images: Array<{ alt: string; image: BlobRef }>,
   video: VideoEmbed | null,
+  external: ExternalEmbed | null,
   labels: string[],
   facets: Facet[],
   reply?: { root: { uri: string; cid: string }; parent: { uri: string; cid: string } },
@@ -183,12 +238,16 @@ async function createPost(
     langs: ['en'],
   }
   if (facets.length > 0) record.facets = facets
-  // Bluesky embeds are mutually exclusive: video takes precedence when
-  // both video and images are present on the same post.
+  // Bluesky embeds are mutually exclusive. Precedence: video > images >
+  // external link card. That mirrors what a media-rich post expects and
+  // lets the publisher always attempt a link card without clobbering
+  // media.
   if (video) {
     record.embed = video
   } else if (images.length > 0) {
     record.embed = { $type: 'app.bsky.embed.images', images }
+  } else if (external) {
+    record.embed = external
   }
   const cleanLabels = labels.filter((l) => VALID_LABELS.has(l))
   if (cleanLabels.length > 0) {
@@ -312,8 +371,23 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
   const firstFacets = await buildFacets(detectRawFacets(ctx.version.content), (h) =>
     resolveHandleToDid(session, h),
   )
+  // Only try to fetch a link card when no media is attached (otherwise
+  // the media embed wins anyway — skip the network round-trip).
+  const firstExternal =
+    !video && images.length === 0
+      ? await withRefresh(() => buildLinkCard(session, ctx.version.content))
+      : null
   const first = await withRefresh(() =>
-    createPost(session, ctx.version.content, images, video, labels, firstFacets, replyRef),
+    createPost(
+      session,
+      ctx.version.content,
+      images,
+      video,
+      firstExternal,
+      labels,
+      firstFacets,
+      replyRef,
+    ),
   )
 
   if (ctx.version.isThread && ctx.version.threadParts.length > 1) {
@@ -324,8 +398,12 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
       const partFacets = await buildFacets(detectRawFacets(part.content), (h) =>
         resolveHandleToDid(session, h),
       )
+      const partExternal = await withRefresh(() => buildLinkCard(session, part.content))
       const next = await withRefresh(() =>
-        createPost(session, part.content, [], null, labels, partFacets, { root, parent }),
+        createPost(session, part.content, [], null, partExternal, labels, partFacets, {
+          root,
+          parent,
+        }),
       )
       parent = { uri: next.uri, cid: next.cid }
     }
