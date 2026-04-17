@@ -1,4 +1,7 @@
+import { randomBytes } from 'node:crypto'
 import { desc, eq } from 'drizzle-orm'
+import { getRequest } from '@tanstack/react-start/server'
+import { auth } from '~/lib/auth'
 import { db, schema } from './db'
 import { loadSessionContext } from './session.server'
 import { getPostQueue } from './queues/postQueue'
@@ -278,4 +281,49 @@ export async function updatePlatformSettingsImpl(input: PlatformSettings): Promi
       set: { ...input, updatedAt: new Date() },
     })
   return input
+}
+
+export type InviteUserResult = { ok: true; userId: string } | { ok: false; error: string }
+
+/**
+ * Create a new user as admin and email them a magic-link so they can sign
+ * in. The user is created with a random password they never learn — they
+ * either keep signing in via magic-link or set a password in security
+ * settings later. Bypasses the signup-disabled toggle because admin is
+ * vouching for this account.
+ */
+export async function inviteUserImpl(email: string, name: string): Promise<InviteUserResult> {
+  await requireAdmin()
+  const headers = getRequest().headers
+
+  const existing = await db.query.user.findFirst({ where: eq(schema.user.email, email) })
+  if (existing) {
+    return { ok: false, error: 'A user with that email already exists.' }
+  }
+
+  try {
+    const created = await auth.api.createUser({
+      headers,
+      body: {
+        email,
+        name,
+        password: randomBytes(24).toString('hex'),
+        role: 'user',
+      },
+    })
+    const userId = created.user.id
+    // Admin vouches; skip email-verification gate.
+    await db
+      .update(schema.user)
+      .set({ emailVerified: true })
+      .where(eq(schema.user.id, userId))
+
+    await auth.api.signInMagicLink({
+      headers,
+      body: { email, callbackURL: '/' },
+    })
+    return { ok: true, userId }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Invite failed' }
+  }
 }

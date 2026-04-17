@@ -9,14 +9,16 @@ import {
   listWebhookDeliveriesImpl,
   getPlatformSettingsAdminImpl,
   updatePlatformSettingsImpl,
+  inviteUserImpl,
   type AdminUserRow,
   type AdminWorkspaceRow,
   type AdminWebhookDelivery,
   type AdminJobStats,
   type PlatformSettings,
+  type InviteUserResult,
 } from './admin.server'
 
-export type { AdminUserRow, AdminWorkspaceRow, AdminWebhookDelivery, AdminJobStats, PlatformSettings }
+export type { AdminUserRow, AdminWorkspaceRow, AdminWebhookDelivery, AdminJobStats, PlatformSettings, InviteUserResult }
 
 export const listAdminUsers = createServerFn({ method: 'GET' }).handler(async () =>
   listUsersImpl(),
@@ -62,3 +64,12 @@ const platformSettingsSchema = z.object({
 export const updateAdminPlatformSettings = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => platformSettingsSchema.parse(d))
   .handler(async ({ data }) => updatePlatformSettingsImpl(data))
+
+const inviteUserSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1).max(200),
+})
+
+export const inviteAdminUser = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => inviteUserSchema.parse(d))
+  .handler(async ({ data }) => inviteUserImpl(data.email, data.name))

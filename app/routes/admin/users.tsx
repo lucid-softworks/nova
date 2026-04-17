@@ -1,10 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
+import { UserPlus } from 'lucide-react'
 import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
+import { Field } from '~/components/ui/field'
 import { Spinner } from '~/components/ui/spinner'
-import { listAdminUsers, type AdminUserRow } from '~/server/admin'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '~/components/ui/dialog'
+import { listAdminUsers, inviteAdminUser, type AdminUserRow } from '~/server/admin'
 import { authClient } from '~/lib/auth-client'
 import { cn } from '~/lib/utils'
 import { useT } from '~/lib/i18n'
@@ -60,12 +70,16 @@ function UsersPage() {
 
   return (
     <div className="space-y-3">
-      <Input
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-        placeholder={t('admin.filterPlaceholder')}
-        className="max-w-sm"
-      />
+      <div className="flex items-start gap-2">
+        <Input
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder={t('admin.filterPlaceholder')}
+          className="max-w-sm"
+        />
+        <div className="flex-1" />
+        <InviteUserButton onInvited={reload} />
+      </div>
       <Card>
         <div className="overflow-hidden rounded-md">
           <table className="w-full text-sm">
@@ -143,5 +157,113 @@ function UsersPage() {
         </div>
       </Card>
     </div>
+  )
+}
+
+function InviteUserButton({ onInvited }: { onInvited: () => Promise<void> }) {
+  const [open, setOpen] = useState(false)
+  const [email, setEmail] = useState('')
+  const [name, setName] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [sentTo, setSentTo] = useState<string | null>(null)
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setBusy(true)
+    try {
+      const res = await inviteAdminUser({ data: { email, name } })
+      if (res.ok) {
+        setSentTo(email)
+        setEmail('')
+        setName('')
+        await onInvited()
+      } else {
+        setError(res.error)
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const reset = () => {
+    setEmail('')
+    setName('')
+    setError(null)
+    setSentTo(null)
+    setBusy(false)
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v)
+        if (!v) reset()
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button>
+          <UserPlus className="h-4 w-4" /> Invite user
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        {sentTo ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Invitation sent</DialogTitle>
+              <DialogDescription>
+                A magic-link has been emailed to <strong>{sentTo}</strong>. They can click it to
+                sign in. Bypasses the sign-ups toggle.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Done
+              </Button>
+            </div>
+          </>
+        ) : (
+          <form onSubmit={submit} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>Invite user</DialogTitle>
+              <DialogDescription>
+                Creates an account and emails a one-click sign-in link. The user is marked
+                verified automatically since you're vouching for them.
+              </DialogDescription>
+            </DialogHeader>
+            <Field label="Name" htmlFor="invite-name">
+              <Input
+                id="invite-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                autoComplete="off"
+              />
+            </Field>
+            <Field label="Email" htmlFor="invite-email">
+              <Input
+                id="invite-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="off"
+              />
+            </Field>
+            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={busy || !email.trim() || !name.trim()}>
+                {busy ? <Spinner /> : null} Send invite
+              </Button>
+            </div>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
   )
 }
