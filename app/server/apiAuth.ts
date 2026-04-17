@@ -136,6 +136,7 @@ export async function withApiAuth<T>(ctx: ApiAuthContext, fn: () => Promise<T>):
       email: '',
       name: ctx.viaApiKey ? 'API key' : 'session',
       image: null,
+      role: null,
     },
     workspaces: [
       {

@@ -12,6 +12,7 @@ import {
   Link as LinkIcon,
   Users,
   Settings,
+  Shield,
   LogOut,
 } from 'lucide-react'
 import type { ComponentType, SVGProps } from 'react'
@@ -116,6 +117,18 @@ export function Sidebar({
           </div>
         ))}
       </nav>
+
+      {user.role === 'admin' ? (
+        <div className="border-t border-white/5 px-3 py-2">
+          <Link
+            to="/admin"
+            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-amber-300/90 hover:bg-white/5 hover:text-amber-200"
+          >
+            <Shield className="h-4 w-4" />
+            {t('nav.adminConsole')}
+          </Link>
+        </div>
+      ) : null}
 
       <div className="border-t border-white/5 p-3">
         <div className="flex items-center gap-2">

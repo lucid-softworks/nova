@@ -42,12 +42,15 @@ export async function loadSessionContext(): Promise<SessionContext> {
     )
     .where(eq(schema.member.userId, session.user.id))
 
+  const role = (session.user as { role?: string | null }).role ?? null
+
   return {
     user: {
       id: session.user.id,
       email: session.user.email,
       name: session.user.name,
       image: session.user.image ?? null,
+      role,
     },
     workspaces: rows.map((r) => ({ ...r, role: r.role as WorkspaceRole })),
     activeOrganizationId:

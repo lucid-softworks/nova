@@ -74,6 +74,7 @@ export const en = {
   "nav.settings": "Settings",
   "nav.review": "Review",
   "nav.approvals": "Approvals",
+  "nav.adminConsole": "Admin console",
   "nav.signOut": "Sign out",
   "nav.createNewWorkspace": "Create new workspace",
   "nav.newPost": "New post",
