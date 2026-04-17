@@ -135,6 +135,7 @@ export type DraftVersionInput = {
   threadParts: { content: string; mediaIds: string[] }[]
   mediaIds: string[]
   altTextByMediaId?: Record<string, string>
+  blueskyLabels?: string[]
   isDefault: boolean
 }
 
@@ -219,6 +220,9 @@ export async function saveDraftImpl(input: SaveDraftInput) {
         Object.assign(extras, redditVars)
         if (input.replyToPostId) extras.replyToPostId = input.replyToPostId
       }
+      if (version.blueskyLabels && version.blueskyLabels.length > 0) {
+        extras.bluesky_labels = version.blueskyLabels.join(',')
+      }
       const platformVariables = Object.keys(extras).length > 0 ? extras : {}
       const [v] = await tx
         .insert(schema.postVersions)
@@ -289,6 +293,7 @@ export type LoadedPostVersion = {
   threadParts: { content: string; mediaIds: string[] }[]
   mediaIds: string[]
   altTextByMediaId: Record<string, string>
+  blueskyLabels: string[]
   isDefault: boolean
 }
 
@@ -396,6 +401,11 @@ export async function loadPostForComposerImpl(
     })),
     mediaIds: mediaByVersion.get(v.id) ?? [],
     altTextByMediaId: altByVersion.get(v.id) ?? {},
+    blueskyLabels: (() => {
+      const vars = (v.platformVariables as Record<string, string> | null) ?? {}
+      const raw = vars.bluesky_labels ?? ''
+      return raw ? raw.split(',').filter(Boolean) : []
+    })(),
     isDefault: v.isDefault,
   }))
 

@@ -170,6 +170,7 @@ export function StandardComposer({
           threadParts: v.threadParts.map((p) => ({ content: p.content, mediaIds: p.mediaIds })),
           mediaIds: v.mediaIds,
           altTextByMediaId: v.altTextByMediaId,
+          blueskyLabels: v.blueskyLabels as ('suggestive' | 'nudity' | 'porn' | 'graphic-media')[],
           isDefault: v.isDefault,
         })),
         reddit: redditSelected ? state.reddit : null,
@@ -319,6 +320,14 @@ export function StandardComposer({
               <RedditFields
                 value={state.reddit}
                 onChange={(patch) => dispatch({ type: 'UPDATE_REDDIT', patch })}
+              />
+            ) : null}
+            {activeVersion.platforms.includes('bluesky') ? (
+              <BlueskyLabels
+                values={activeVersion.blueskyLabels}
+                onToggle={(label) =>
+                  dispatch({ type: 'TOGGLE_BLUESKY_LABEL', versionId: activeVersion.id, label })
+                }
               />
             ) : null}
           </>
@@ -1153,6 +1162,60 @@ function PreviewTabs({
         redditTitle={reddit.title}
         subreddit={reddit.subreddit}
       />
+    </div>
+  )
+}
+
+const BLUESKY_LABEL_CHOICES: { value: string; label: string; description: string }[] = [
+  { value: 'suggestive', label: 'Suggestive', description: 'Mildly suggestive content.' },
+  { value: 'nudity', label: 'Nudity', description: 'Non-sexual nudity (art, medical, etc).' },
+  { value: 'porn', label: 'Adult', description: 'Explicit sexual content.' },
+  { value: 'graphic-media', label: 'Graphic media', description: 'Violence, gore, or other disturbing imagery.' },
+]
+
+function BlueskyLabels({
+  values,
+  onToggle,
+}: {
+  values: string[]
+  onToggle: (label: string) => void
+}) {
+  return (
+    <div className="rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3">
+      <div className="mb-2">
+        <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+          Bluesky content warnings
+        </div>
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          Self-labels attached to the post so viewers can filter or hide it.
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {BLUESKY_LABEL_CHOICES.map((choice) => {
+          const checked = values.includes(choice.value)
+          return (
+            <label
+              key={choice.value}
+              className="flex cursor-pointer items-start gap-2 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-2 hover:border-indigo-300 dark:hover:border-indigo-700"
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => onToggle(choice.value)}
+                className="mt-0.5 h-4 w-4"
+              />
+              <div className="flex-1">
+                <div className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
+                  {choice.label}
+                </div>
+                <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                  {choice.description}
+                </div>
+              </div>
+            </label>
+          )
+        })}
+      </div>
     </div>
   )
 }

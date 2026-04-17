@@ -17,6 +17,9 @@ const versionSchema = z.object({
     .default([]),
   mediaIds: z.array(z.string().uuid()).default([]),
   altTextByMediaId: z.record(z.string().uuid(), z.string().max(2000)).default({}),
+  blueskyLabels: z
+    .array(z.enum(['suggestive', 'nudity', 'porn', 'graphic-media']))
+    .default([]),
   isDefault: z.boolean(),
 })
 

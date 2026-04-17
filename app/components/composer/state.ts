@@ -26,6 +26,7 @@ export type Action =
   | { type: 'ADD_MEDIA'; versionId: string; assets: MediaAsset[] }
   | { type: 'REMOVE_MEDIA'; versionId: string; mediaId: string }
   | { type: 'SET_ALT_TEXT'; versionId: string; mediaId: string; value: string }
+  | { type: 'TOGGLE_BLUESKY_LABEL'; versionId: string; label: string }
   | { type: 'UPDATE_REDDIT'; patch: Partial<ComposerState['reddit']> }
   | { type: 'RESET'; state: ComposerState }
 
@@ -89,7 +90,7 @@ function syncIndependentVersions(
         firstComment: '',
         isThread: false,
         threadParts: [{ id: makeId(), content: '', mediaIds: [] }],
-        mediaIds: [], altTextByMediaId: {},
+        mediaIds: [], altTextByMediaId: {}, blueskyLabels: [],
         isDefault: false,
       })
     }
@@ -106,7 +107,7 @@ function syncIndependentVersions(
       firstComment: '',
       isThread: false,
       threadParts: [{ id: makeId(), content: '', mediaIds: [] }],
-      mediaIds: [], altTextByMediaId: {},
+      mediaIds: [], altTextByMediaId: {}, blueskyLabels: [],
       isDefault: true,
     })
   }
@@ -148,7 +149,7 @@ export function composerReducer(state: ComposerState, action: Action): ComposerS
             firstComment: '',
             isThread: false,
             threadParts: [{ id: makeId(), content: '', mediaIds: [] }],
-            mediaIds: [], altTextByMediaId: {},
+            mediaIds: [], altTextByMediaId: {}, blueskyLabels: [],
             isDefault: true,
           })
         }
@@ -184,7 +185,7 @@ export function composerReducer(state: ComposerState, action: Action): ComposerS
           firstComment: '',
           isThread: false,
           threadParts: [{ id: makeId(), content: '', mediaIds: [] }],
-          mediaIds: [], altTextByMediaId: {},
+          mediaIds: [], altTextByMediaId: {}, blueskyLabels: [],
           isDefault: false,
         } satisfies Version,
       ].filter((v) => v.isDefault || v.platforms.length > 0)
@@ -275,6 +276,14 @@ export function composerReducer(state: ComposerState, action: Action): ComposerS
       return updateVersion(state, action.versionId, {
         altTextByMediaId: { ...version.altTextByMediaId, [action.mediaId]: action.value },
       })
+    }
+    case 'TOGGLE_BLUESKY_LABEL': {
+      const version = state.versions.find((v) => v.id === action.versionId)
+      if (!version) return state
+      const set = new Set(version.blueskyLabels)
+      if (set.has(action.label)) set.delete(action.label)
+      else set.add(action.label)
+      return updateVersion(state, action.versionId, { blueskyLabels: [...set] })
     }
     case 'UPDATE_REDDIT':
       return { ...state, reddit: { ...state.reddit, ...action.patch } }

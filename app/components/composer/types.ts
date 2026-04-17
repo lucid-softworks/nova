@@ -28,6 +28,8 @@ export type Version = {
   threadParts: ThreadPart[]
   mediaIds: string[]
   altTextByMediaId: Record<string, string>
+  /** Bluesky self-label values (subset of suggestive / nudity / porn / graphic-media). */
+  blueskyLabels: string[]
   isDefault: boolean
 }
 
@@ -84,6 +86,7 @@ export function hydrateStateFromPost(post: LoadedPost): ComposerState {
         : [{ id: makeId(), content: '', mediaIds: [] }],
     mediaIds: v.mediaIds,
     altTextByMediaId: v.altTextByMediaId ?? {},
+    blueskyLabels: v.blueskyLabels ?? [],
     isDefault: v.isDefault,
   }))
   if (versions.length === 0) return initialState()
@@ -135,7 +138,7 @@ export function initialState(): ComposerState {
         isThread: false,
         threadParts: [{ id: makeId(), content: '', mediaIds: [] }],
         mediaIds: [],
-        altTextByMediaId: {},
+        altTextByMediaId: {}, blueskyLabels: [],
         isDefault: true,
       },
     ],

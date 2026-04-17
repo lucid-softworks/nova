@@ -143,11 +143,14 @@ async function uploadVideo(session: Session, media: PublishMedia[]): Promise<Vid
 
 type CreateRecordResponse = { uri: string; cid: string }
 
+const VALID_LABELS = new Set(['suggestive', 'nudity', 'porn', 'graphic-media'])
+
 async function createPost(
   session: Session,
   text: string,
   images: Array<{ alt: string; image: BlobRef }>,
   video: VideoEmbed | null,
+  labels: string[],
   reply?: { root: { uri: string; cid: string }; parent: { uri: string; cid: string } },
 ): Promise<CreateRecordResponse> {
   if (graphemeCount(text) > MAX_GRAPHEMES) {
@@ -170,6 +173,13 @@ async function createPost(
     record.embed = video
   } else if (images.length > 0) {
     record.embed = { $type: 'app.bsky.embed.images', images }
+  }
+  const cleanLabels = labels.filter((l) => VALID_LABELS.has(l))
+  if (cleanLabels.length > 0) {
+    record.labels = {
+      $type: 'com.atproto.label.defs#selfLabels',
+      values: cleanLabels.map((val) => ({ val })),
+    }
   }
   if (reply) record.reply = reply
   return xrpc<CreateRecordResponse>('POST', 'com.atproto.repo.createRecord', session, {
@@ -281,8 +291,10 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
       // Non-fatal: publish as a regular post if the parent lookup fails.
     }
   }
+  const labelsRaw = (ctx.version.platformVariables.bluesky_labels ?? '') as string
+  const labels = labelsRaw ? labelsRaw.split(',').filter(Boolean) : []
   const first = await withRefresh(() =>
-    createPost(session, ctx.version.content, images, video, replyRef),
+    createPost(session, ctx.version.content, images, video, labels, replyRef),
   )
 
   if (ctx.version.isThread && ctx.version.threadParts.length > 1) {
@@ -291,7 +303,7 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
     for (let i = 1; i < ctx.version.threadParts.length; i++) {
       const part = ctx.version.threadParts[i]!
       const next = await withRefresh(() =>
-        createPost(session, part.content, [], null, { root, parent }),
+        createPost(session, part.content, [], null, labels, { root, parent }),
       )
       parent = { uri: next.uri, cid: next.cid }
     }
