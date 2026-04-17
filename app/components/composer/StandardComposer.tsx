@@ -760,6 +760,20 @@ function Editor({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [showVariables, setShowVariables] = useState(false)
 
+  const numberThread = (v: Version) => {
+    const total = v.threadParts.length
+    v.threadParts.forEach((p, i) => {
+      const stripped = p.content.replace(/\s*\(\s*\d+\s*\/\s*\d+\s*\)\s*$/, '').trimEnd()
+      const numbered = `${stripped} (${i + 1}/${total})`
+      dispatch({
+        type: 'THREAD_UPDATE',
+        versionId: v.id,
+        partId: p.id,
+        value: numbered,
+      })
+    })
+  }
+
   const insertAtCursor = (text: string) => {
     const el = textareaRef.current
     if (!el) return
@@ -838,14 +852,27 @@ function Editor({
                 />
               </div>
             ))}
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => dispatch({ type: 'THREAD_ADD', versionId: version.id })}
-            >
-              <Plus className="h-3 w-3" /> {t('compose.addPart')}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => dispatch({ type: 'THREAD_ADD', versionId: version.id })}
+              >
+                <Plus className="h-3 w-3" /> {t('compose.addPart')}
+              </Button>
+              {version.threadParts.length > 1 ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => numberThread(version)}
+                  title="Append (n/total) to each part"
+                >
+                  Number parts
+                </Button>
+              ) : null}
+            </div>
           </div>
         )}
 
