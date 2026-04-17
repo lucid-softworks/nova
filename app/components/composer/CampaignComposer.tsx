@@ -414,8 +414,10 @@ function StepCard({
             workspaceSlug={workspaceSlug}
             mediaIds={step.mediaIds}
             mediaById={mediaById}
+            altTextByMediaId={{}}
             onUploaded={onMediaUploaded}
             onRemove={onMediaRemove}
+            onAltTextChange={() => {}}
           />
           <MediaMismatchBanner items={mismatches} />
           {platforms.length > 0 ? (

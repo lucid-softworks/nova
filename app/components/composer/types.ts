@@ -27,6 +27,7 @@ export type Version = {
   isThread: boolean
   threadParts: ThreadPart[]
   mediaIds: string[]
+  altTextByMediaId: Record<string, string>
   isDefault: boolean
 }
 
@@ -82,6 +83,7 @@ export function hydrateStateFromPost(post: LoadedPost): ComposerState {
         ? v.threadParts.map((p) => ({ id: makeId(), content: p.content, mediaIds: p.mediaIds }))
         : [{ id: makeId(), content: '', mediaIds: [] }],
     mediaIds: v.mediaIds,
+    altTextByMediaId: v.altTextByMediaId ?? {},
     isDefault: v.isDefault,
   }))
   if (versions.length === 0) return initialState()
@@ -133,6 +135,7 @@ export function initialState(): ComposerState {
         isThread: false,
         threadParts: [{ id: makeId(), content: '', mediaIds: [] }],
         mediaIds: [],
+        altTextByMediaId: {},
         isDefault: true,
       },
     ],

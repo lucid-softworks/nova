@@ -10,14 +10,18 @@ export function MediaZone({
   workspaceSlug,
   mediaIds,
   mediaById,
+  altTextByMediaId,
   onUploaded,
   onRemove,
+  onAltTextChange,
 }: {
   workspaceSlug: string
   mediaIds: string[]
   mediaById: Record<string, MediaAsset>
+  altTextByMediaId: Record<string, string>
   onUploaded: (assets: MediaAsset[]) => void
   onRemove: (mediaId: string) => void
+  onAltTextChange: (mediaId: string, value: string) => void
 }) {
   const t = useT()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -106,40 +110,69 @@ export function MediaZone({
       </div>
       {error ? <p className="text-xs text-red-600">{error}</p> : null}
       {(mediaIds.length > 0 || uploading.length > 0) ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="space-y-2">
           {mediaIds.map((id) => {
             const m = mediaById[id]
             if (!m) return null
+            const alt = altTextByMediaId[id] ?? ''
             return (
               <div
                 key={id}
-                className="group relative h-20 w-20 overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-800"
-                title={m.originalName}
+                className="flex items-start gap-3 rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-2"
               >
-                {m.mimeType.startsWith('video/') ? (
-                  <video src={m.url} className="h-full w-full object-cover" />
-                ) : (
-                  <img src={m.url} alt={m.originalName} className="h-full w-full object-cover" />
-                )}
-                <button
-                  type="button"
-                  onClick={() => onRemove(id)}
-                  className="absolute right-1 top-1 rounded bg-black/60 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                  aria-label="Remove"
-                >
-                  <X className="h-3 w-3" />
-                </button>
+                <div className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-neutral-100 dark:bg-neutral-800" title={m.originalName}>
+                  {m.mimeType.startsWith('video/') ? (
+                    <video src={m.url} className="h-full w-full object-cover" />
+                  ) : (
+                    <img src={m.url} alt={alt || m.originalName} className="h-full w-full object-cover" />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onRemove(id)}
+                    className="absolute right-1 top-1 rounded bg-black/60 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    aria-label="Remove"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+                <div className="flex-1 space-y-1">
+                  <label
+                    htmlFor={`alt-${id}`}
+                    className="text-xs font-medium text-neutral-600 dark:text-neutral-400"
+                  >
+                    Alt text
+                    <span className="ml-1 text-neutral-400">
+                      {alt.length}/2000
+                    </span>
+                  </label>
+                  <textarea
+                    id={`alt-${id}`}
+                    value={alt}
+                    onChange={(e) => onAltTextChange(id, e.target.value.slice(0, 2000))}
+                    placeholder={
+                      m.mimeType.startsWith('video/')
+                        ? 'Describe the video for screen readers and search…'
+                        : 'Describe the image for screen readers…'
+                    }
+                    rows={2}
+                    className="w-full resize-none rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
               </div>
             )
           })}
-          {uploading.map((name) => (
-            <div
-              key={name}
-              className="flex h-20 w-20 items-center justify-center rounded-md border border-dashed border-neutral-300 bg-neutral-50 dark:bg-neutral-900"
-            >
-              <Spinner />
+          {uploading.length > 0 ? (
+            <div className="flex gap-2">
+              {uploading.map((name) => (
+                <div
+                  key={name}
+                  className="flex h-20 w-20 items-center justify-center rounded-md border border-dashed border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900"
+                >
+                  <Spinner />
+                </div>
+              ))}
             </div>
-          ))}
+          ) : null}
         </div>
       ) : null}
       <MediaLibraryPicker

@@ -169,6 +169,7 @@ export function StandardComposer({
           isThread: v.isThread,
           threadParts: v.threadParts.map((p) => ({ content: p.content, mediaIds: p.mediaIds })),
           mediaIds: v.mediaIds,
+          altTextByMediaId: v.altTextByMediaId,
           isDefault: v.isDefault,
         })),
         reddit: redditSelected ? state.reddit : null,
@@ -302,11 +303,15 @@ export function StandardComposer({
               workspaceSlug={workspaceSlug}
               mediaIds={activeVersion.mediaIds}
               mediaById={state.mediaById}
+              altTextByMediaId={activeVersion.altTextByMediaId}
               onUploaded={(assets) =>
                 dispatch({ type: 'ADD_MEDIA', versionId: activeVersion.id, assets })
               }
               onRemove={(mediaId) =>
                 dispatch({ type: 'REMOVE_MEDIA', versionId: activeVersion.id, mediaId })
+              }
+              onAltTextChange={(mediaId, value) =>
+                dispatch({ type: 'SET_ALT_TEXT', versionId: activeVersion.id, mediaId, value })
               }
             />
             <MediaMismatchBanner items={mismatchesByVersion[activeVersion.id] ?? []} />

@@ -512,6 +512,10 @@ export const postMedia = pgTable('post_media', {
     .notNull()
     .references(() => mediaAssets.id, { onDelete: 'cascade' }),
   sortOrder: integer('sort_order').default(0).notNull(),
+  // Per-usage alt text. Different posts can give the same media asset
+  // different alt text; when null, the publisher falls back to the
+  // asset's originalName.
+  altText: text('alt_text'),
 })
 
 export const postPlatforms = pgTable('post_platforms', {

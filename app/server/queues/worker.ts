@@ -100,6 +100,7 @@ async function processJob(job: { data: PostJobData }) {
         originalName: schema.mediaAssets.originalName,
         size: schema.mediaAssets.size,
         sortOrder: schema.postMedia.sortOrder,
+        altText: schema.postMedia.altText,
       })
       .from(schema.postMedia)
       .innerJoin(schema.mediaAssets, eq(schema.mediaAssets.id, schema.postMedia.mediaId))
@@ -114,6 +115,7 @@ async function processJob(job: { data: PostJobData }) {
           mimeType: r.mimeType,
           originalName: r.originalName,
           size: r.size,
+          altText: r.altText,
         })),
     )
   }

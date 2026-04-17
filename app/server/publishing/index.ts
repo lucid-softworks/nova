@@ -27,6 +27,7 @@ export type PublishMedia = {
   mimeType: string
   originalName: string
   size: number
+  altText: string | null
 }
 
 export type PublishRedditFields = {

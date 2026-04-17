@@ -134,6 +134,7 @@ export type DraftVersionInput = {
   isThread: boolean
   threadParts: { content: string; mediaIds: string[] }[]
   mediaIds: string[]
+  altTextByMediaId?: Record<string, string>
   isDefault: boolean
 }
 
@@ -236,10 +237,12 @@ export async function saveDraftImpl(input: SaveDraftInput) {
       for (let i = 0; i < version.mediaIds.length; i++) {
         const mid = version.mediaIds[i]
         if (!mid) continue
+        const alt = version.altTextByMediaId?.[mid]?.trim() || null
         await tx.insert(schema.postMedia).values({
           postVersionId: v.id,
           mediaId: mid,
           sortOrder: i,
+          altText: alt,
         })
       }
     }
@@ -285,6 +288,7 @@ export type LoadedPostVersion = {
   isThread: boolean
   threadParts: { content: string; mediaIds: string[] }[]
   mediaIds: string[]
+  altTextByMediaId: Record<string, string>
   isDefault: boolean
 }
 
@@ -332,6 +336,7 @@ export async function loadPostForComposerImpl(
     .select({
       versionId: schema.postMedia.postVersionId,
       sortOrder: schema.postMedia.sortOrder,
+      altText: schema.postMedia.altText,
       id: schema.mediaAssets.id,
       url: schema.mediaAssets.url,
       originalName: schema.mediaAssets.originalName,
@@ -348,6 +353,7 @@ export async function loadPostForComposerImpl(
 
   const mediaById: Record<string, LoadedPostMedia> = {}
   const mediaByVersion = new Map<string, string[]>()
+  const altByVersion = new Map<string, Record<string, string>>()
   for (const m of mediaRows) {
     mediaById[m.id] = {
       id: m.id,
@@ -361,6 +367,11 @@ export async function loadPostForComposerImpl(
     const arr = mediaByVersion.get(m.versionId) ?? []
     arr.push(m.id)
     mediaByVersion.set(m.versionId, arr)
+    if (m.altText) {
+      const alts = altByVersion.get(m.versionId) ?? {}
+      alts[m.id] = m.altText
+      altByVersion.set(m.versionId, alts)
+    }
   }
 
   // Decide mode: if any non-default version exists and covers a single
@@ -384,6 +395,7 @@ export async function loadPostForComposerImpl(
       mediaIds: p.mediaIds ?? [],
     })),
     mediaIds: mediaByVersion.get(v.id) ?? [],
+    altTextByMediaId: altByVersion.get(v.id) ?? {},
     isDefault: v.isDefault,
   }))
 

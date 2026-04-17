@@ -87,6 +87,36 @@ async function xrpc<T>(
 
 type BlobRef = { $type: 'blob'; ref: { $link: string }; mimeType: string; size: number }
 
+async function uploadBlob(session: Session, media: PublishMedia): Promise<BlobRef> {
+  const { buf, mime } = await loadMediaBuffer(media)
+  const res = await fetch(`${session.pdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session.accessJwt}`,
+      'Content-Type': mime,
+    },
+    body: new Uint8Array(buf),
+  })
+  if (!res.ok) {
+    const txt = await res.text()
+    if (res.status === 401) {
+      throw new PublishError({
+        code: 'AUTH_EXPIRED',
+        message: `uploadBlob 401`,
+        userMessage: 'Bluesky session expired — reconnect.',
+        retryable: false,
+      })
+    }
+    throw new PublishError({
+      code: res.status === 413 ? 'MEDIA_TOO_LARGE' : 'UNKNOWN',
+      message: `uploadBlob ${res.status}: ${txt.slice(0, 300)}`,
+      userMessage: 'Bluesky rejected one of the uploads.',
+    })
+  }
+  const json = (await res.json()) as { blob: BlobRef }
+  return json.blob
+}
+
 async function uploadImages(
   session: Session,
   media: PublishMedia[],
@@ -94,35 +124,21 @@ async function uploadImages(
   const images: Array<{ alt: string; image: BlobRef }> = []
   for (const m of media.slice(0, 4)) {
     if (!m.mimeType.startsWith('image/')) continue
-    const { buf, mime } = await loadMediaBuffer(m)
-    const res = await fetch(`${session.pdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${session.accessJwt}`,
-        'Content-Type': mime,
-      },
-      body: new Uint8Array(buf),
-    })
-    if (!res.ok) {
-      const txt = await res.text()
-      if (res.status === 401) {
-        throw new PublishError({
-          code: 'AUTH_EXPIRED',
-          message: `uploadBlob 401`,
-          userMessage: 'Bluesky session expired — reconnect.',
-          retryable: false,
-        })
-      }
-      throw new PublishError({
-        code: res.status === 413 ? 'MEDIA_TOO_LARGE' : 'UNKNOWN',
-        message: `uploadBlob ${res.status}: ${txt.slice(0, 300)}`,
-        userMessage: 'Bluesky rejected one of the images.',
-      })
-    }
-    const json = (await res.json()) as { blob: BlobRef }
-    images.push({ alt: m.originalName, image: json.blob })
+    const blob = await uploadBlob(session, m)
+    images.push({ alt: m.altText ?? m.originalName, image: blob })
   }
   return images
+}
+
+type VideoEmbed = { $type: 'app.bsky.embed.video'; video: BlobRef; alt?: string }
+
+async function uploadVideo(session: Session, media: PublishMedia[]): Promise<VideoEmbed | null> {
+  const video = media.find((m) => m.mimeType.startsWith('video/'))
+  if (!video) return null
+  const blob = await uploadBlob(session, video)
+  const embed: VideoEmbed = { $type: 'app.bsky.embed.video', video: blob }
+  if (video.altText) embed.alt = video.altText
+  return embed
 }
 
 type CreateRecordResponse = { uri: string; cid: string }
@@ -131,6 +147,7 @@ async function createPost(
   session: Session,
   text: string,
   images: Array<{ alt: string; image: BlobRef }>,
+  video: VideoEmbed | null,
   reply?: { root: { uri: string; cid: string }; parent: { uri: string; cid: string } },
 ): Promise<CreateRecordResponse> {
   if (graphemeCount(text) > MAX_GRAPHEMES) {
@@ -147,7 +164,11 @@ async function createPost(
     createdAt: new Date().toISOString(),
     langs: ['en'],
   }
-  if (images.length > 0) {
+  // Bluesky embeds are mutually exclusive: video takes precedence when
+  // both video and images are present on the same post.
+  if (video) {
+    record.embed = video
+  } else if (images.length > 0) {
     record.embed = { $type: 'app.bsky.embed.images', images }
   }
   if (reply) record.reply = reply
@@ -240,7 +261,8 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
     }
   }
 
-  const images = await withRefresh(() => uploadImages(session, ctx.media))
+  const video = await withRefresh(() => uploadVideo(session, ctx.media))
+  const images = video ? [] : await withRefresh(() => uploadImages(session, ctx.media))
 
   // Reply threading: if the user started this post from an inbox item,
   // fetch the parent record so we can emit a properly-rooted reply.
@@ -260,7 +282,7 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
     }
   }
   const first = await withRefresh(() =>
-    createPost(session, ctx.version.content, images, replyRef),
+    createPost(session, ctx.version.content, images, video, replyRef),
   )
 
   if (ctx.version.isThread && ctx.version.threadParts.length > 1) {
@@ -268,7 +290,9 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
     const root = { uri: first.uri, cid: first.cid }
     for (let i = 1; i < ctx.version.threadParts.length; i++) {
       const part = ctx.version.threadParts[i]!
-      const next = await withRefresh(() => createPost(session, part.content, [], { root, parent }))
+      const next = await withRefresh(() =>
+        createPost(session, part.content, [], null, { root, parent }),
+      )
       parent = { uri: next.uri, cid: next.cid }
     }
   }

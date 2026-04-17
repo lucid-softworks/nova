@@ -16,6 +16,7 @@ const versionSchema = z.object({
     .array(z.object({ content: z.string(), mediaIds: z.array(z.string().uuid()) }))
     .default([]),
   mediaIds: z.array(z.string().uuid()).default([]),
+  altTextByMediaId: z.record(z.string().uuid(), z.string().max(2000)).default({}),
   isDefault: z.boolean(),
 })
 

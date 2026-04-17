@@ -25,6 +25,7 @@ export type Action =
   | { type: 'THREAD_MOVE'; versionId: string; partId: string; direction: 'up' | 'down' }
   | { type: 'ADD_MEDIA'; versionId: string; assets: MediaAsset[] }
   | { type: 'REMOVE_MEDIA'; versionId: string; mediaId: string }
+  | { type: 'SET_ALT_TEXT'; versionId: string; mediaId: string; value: string }
   | { type: 'UPDATE_REDDIT'; patch: Partial<ComposerState['reddit']> }
   | { type: 'RESET'; state: ComposerState }
 
@@ -88,7 +89,7 @@ function syncIndependentVersions(
         firstComment: '',
         isThread: false,
         threadParts: [{ id: makeId(), content: '', mediaIds: [] }],
-        mediaIds: [],
+        mediaIds: [], altTextByMediaId: {},
         isDefault: false,
       })
     }
@@ -105,7 +106,7 @@ function syncIndependentVersions(
       firstComment: '',
       isThread: false,
       threadParts: [{ id: makeId(), content: '', mediaIds: [] }],
-      mediaIds: [],
+      mediaIds: [], altTextByMediaId: {},
       isDefault: true,
     })
   }
@@ -147,7 +148,7 @@ export function composerReducer(state: ComposerState, action: Action): ComposerS
             firstComment: '',
             isThread: false,
             threadParts: [{ id: makeId(), content: '', mediaIds: [] }],
-            mediaIds: [],
+            mediaIds: [], altTextByMediaId: {},
             isDefault: true,
           })
         }
@@ -183,7 +184,7 @@ export function composerReducer(state: ComposerState, action: Action): ComposerS
           firstComment: '',
           isThread: false,
           threadParts: [{ id: makeId(), content: '', mediaIds: [] }],
-          mediaIds: [],
+          mediaIds: [], altTextByMediaId: {},
           isDefault: false,
         } satisfies Version,
       ].filter((v) => v.isDefault || v.platforms.length > 0)
@@ -262,8 +263,17 @@ export function composerReducer(state: ComposerState, action: Action): ComposerS
     case 'REMOVE_MEDIA': {
       const version = state.versions.find((v) => v.id === action.versionId)
       if (!version) return state
+      const { [action.mediaId]: _removed, ...restAlt } = version.altTextByMediaId
       return updateVersion(state, action.versionId, {
         mediaIds: version.mediaIds.filter((id) => id !== action.mediaId),
+        altTextByMediaId: restAlt,
+      })
+    }
+    case 'SET_ALT_TEXT': {
+      const version = state.versions.find((v) => v.id === action.versionId)
+      if (!version) return state
+      return updateVersion(state, action.versionId, {
+        altTextByMediaId: { ...version.altTextByMediaId, [action.mediaId]: action.value },
       })
     }
     case 'UPDATE_REDDIT':
