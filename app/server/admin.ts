@@ -11,6 +11,8 @@ import {
   updatePlatformSettingsImpl,
   inviteUserImpl,
   listAuditLogImpl,
+  revokeUserSessionsImpl,
+  resetUserTwoFactorImpl,
   type AdminUserRow,
   type AdminWorkspaceRow,
   type AdminWebhookDelivery,
@@ -79,3 +81,13 @@ export const inviteAdminUser = createServerFn({ method: 'POST' })
 export const listAdminAuditLog = createServerFn({ method: 'GET' }).handler(async () =>
   listAuditLogImpl(),
 )
+
+const userIdSchema = z.object({ userId: z.string().min(1) })
+
+export const revokeAdminUserSessions = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => userIdSchema.parse(d))
+  .handler(async ({ data }) => revokeUserSessionsImpl(data.userId))
+
+export const resetAdminUserTwoFactor = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => userIdSchema.parse(d))
+  .handler(async ({ data }) => resetUserTwoFactorImpl(data.userId))

@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
-import { UserPlus } from 'lucide-react'
+import { MoreHorizontal, UserPlus } from 'lucide-react'
 import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -14,7 +14,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '~/components/ui/dialog'
-import { listAdminUsers, inviteAdminUser, type AdminUserRow } from '~/server/admin'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '~/components/ui/dropdown'
+import {
+  listAdminUsers,
+  inviteAdminUser,
+  revokeAdminUserSessions,
+  resetAdminUserTwoFactor,
+  type AdminUserRow,
+} from '~/server/admin'
 import { authClient } from '~/lib/auth-client'
 import { cn } from '~/lib/utils'
 import { useT } from '~/lib/i18n'
@@ -58,6 +70,26 @@ function UsersPage() {
     try {
       await authClient.admin.impersonateUser({ userId: u.id })
       window.location.href = '/'
+    } finally {
+      setBusy(null)
+    }
+  }
+  const onRevokeSessions = async (u: AdminUserRow) => {
+    if (!confirm(`Revoke all sessions for ${u.email}? They'll be signed out everywhere.`)) return
+    setBusy(u.id)
+    try {
+      const res = await revokeAdminUserSessions({ data: { userId: u.id } })
+      alert(`Revoked ${res.revoked} session${res.revoked === 1 ? '' : 's'}.`)
+    } finally {
+      setBusy(null)
+    }
+  }
+  const onResetTwoFactor = async (u: AdminUserRow) => {
+    if (!confirm(`Reset 2FA for ${u.email}? They'll be able to sign in with just their password.`)) return
+    setBusy(u.id)
+    try {
+      await resetAdminUserTwoFactor({ data: { userId: u.id } })
+      alert('2FA reset. User can enroll again in security settings.')
     } finally {
       setBusy(null)
     }
@@ -148,6 +180,21 @@ function UsersPage() {
                           Ban
                         </Button>
                       )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="outline" aria-label="More actions" disabled={busy === u.id}>
+                            <MoreHorizontal className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuItem onSelect={() => onRevokeSessions(u)}>
+                            Revoke all sessions
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => onResetTwoFactor(u)}>
+                            Reset 2FA
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </td>
                 </tr>

@@ -410,3 +410,34 @@ export async function inviteUserImpl(email: string, name: string): Promise<Invit
     return { ok: false, error: err instanceof Error ? err.message : 'Invite failed' }
   }
 }
+
+/**
+ * Delete every session row for a user. Any tab/device the user is signed
+ * in on becomes unauthenticated on its next request. The user row itself
+ * is untouched.
+ */
+export async function revokeUserSessionsImpl(userId: string): Promise<{ revoked: number }> {
+  await requireAdmin()
+  const deleted = await db
+    .delete(schema.session)
+    .where(eq(schema.session.userId, userId))
+    .returning({ id: schema.session.id })
+  await writeAudit('user.revokeSessions', 'user', userId, { count: deleted.length })
+  return { revoked: deleted.length }
+}
+
+/**
+ * Remove the user's 2FA enrollment. After this they can sign in with just
+ * their password (and must re-enroll). For recovery when the authenticator
+ * is lost.
+ */
+export async function resetUserTwoFactorImpl(userId: string): Promise<{ ok: true }> {
+  await requireAdmin()
+  await db.delete(schema.twoFactor).where(eq(schema.twoFactor.userId, userId))
+  await db
+    .update(schema.user)
+    .set({ twoFactorEnabled: false })
+    .where(eq(schema.user.id, userId))
+  await writeAudit('user.resetTwoFactor', 'user', userId)
+  return { ok: true }
+}
