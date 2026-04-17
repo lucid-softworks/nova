@@ -15,6 +15,7 @@ import {
   resetUserTwoFactorImpl,
   markUserVerifiedImpl,
   resendVerificationImpl,
+  getWorkspaceDetailImpl,
   type AdminUserRow,
   type AdminWorkspaceRow,
   type AdminWebhookDelivery,
@@ -22,9 +23,10 @@ import {
   type PlatformSettings,
   type InviteUserResult,
   type AdminAuditRow,
+  type AdminWorkspaceDetail,
 } from './admin.server'
 
-export type { AdminUserRow, AdminWorkspaceRow, AdminWebhookDelivery, AdminJobStats, PlatformSettings, InviteUserResult, AdminAuditRow }
+export type { AdminUserRow, AdminWorkspaceRow, AdminWebhookDelivery, AdminJobStats, PlatformSettings, InviteUserResult, AdminAuditRow, AdminWorkspaceDetail }
 
 export const listAdminUsers = createServerFn({ method: 'GET' }).handler(async () =>
   listUsersImpl(),
@@ -101,3 +103,9 @@ export const markAdminUserVerified = createServerFn({ method: 'POST' })
 export const resendAdminVerification = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => userIdSchema.parse(d))
   .handler(async ({ data }) => resendVerificationImpl(data.userId))
+
+const workspaceIdSchema = z.object({ workspaceId: z.string().uuid() })
+
+export const getAdminWorkspaceDetail = createServerFn({ method: 'GET' })
+  .inputValidator((d: unknown) => workspaceIdSchema.parse(d))
+  .handler(async ({ data }) => getWorkspaceDetailImpl(data.workspaceId))

@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { desc, eq } from 'drizzle-orm'
+import { count, desc, eq } from 'drizzle-orm'
 import { getRequest } from '@tanstack/react-start/server'
 import { auth } from '~/lib/auth'
 import { db, schema } from './db'
@@ -465,4 +465,87 @@ export async function resendVerificationImpl(userId: string): Promise<{ ok: true
   })
   await writeAudit('user.resendVerification', 'user', userId)
   return { ok: true }
+}
+
+export type AdminWorkspaceDetail = {
+  id: string
+  name: string
+  slug: string
+  organizationId: string
+  appName: string | null
+  logoUrl: string | null
+  createdAt: string
+  counts: {
+    posts: number
+    media: number
+    socialAccounts: number
+    campaigns: number
+  }
+  members: Array<{
+    userId: string
+    name: string
+    email: string
+    role: string
+    joinedAt: string
+  }>
+}
+
+export async function getWorkspaceDetailImpl(workspaceId: string): Promise<AdminWorkspaceDetail> {
+  await requireAdmin()
+  const ws = await db.query.workspaces.findFirst({
+    where: eq(schema.workspaces.id, workspaceId),
+  })
+  if (!ws) throw new Error('Workspace not found')
+  const org = await db.query.organization.findFirst({
+    where: eq(schema.organization.id, ws.organizationId),
+  })
+  if (!org) throw new Error('Organization not found for workspace')
+
+  const [posts, media, socialAccounts, campaigns, members] = await Promise.all([
+    db.select({ n: count() }).from(schema.posts).where(eq(schema.posts.workspaceId, ws.id)),
+    db.select({ n: count() }).from(schema.mediaAssets).where(eq(schema.mediaAssets.workspaceId, ws.id)),
+    db
+      .select({ n: count() })
+      .from(schema.socialAccounts)
+      .where(eq(schema.socialAccounts.workspaceId, ws.id)),
+    db
+      .select({ n: count() })
+      .from(schema.campaigns)
+      .where(eq(schema.campaigns.workspaceId, ws.id)),
+    db
+      .select({
+        userId: schema.member.userId,
+        role: schema.member.role,
+        joinedAt: schema.member.createdAt,
+        name: schema.user.name,
+        email: schema.user.email,
+      })
+      .from(schema.member)
+      .innerJoin(schema.user, eq(schema.user.id, schema.member.userId))
+      .where(eq(schema.member.organizationId, ws.organizationId))
+      .orderBy(schema.member.createdAt),
+  ])
+
+  return {
+    id: ws.id,
+    name: org.name,
+    slug: org.slug,
+    organizationId: org.id,
+    appName: ws.appName,
+    logoUrl: org.logo,
+    createdAt: org.createdAt.toISOString(),
+    counts: {
+      posts: posts[0]?.n ?? 0,
+      media: media[0]?.n ?? 0,
+      socialAccounts: socialAccounts[0]?.n ?? 0,
+      campaigns: campaigns[0]?.n ?? 0,
+    },
+    members: members.map((m) => ({
+      userId: m.userId,
+      name: m.name,
+      email: m.email,
+      role: m.role,
+      joinedAt: m.joinedAt.toISOString(),
+    })),
+  }
 }
