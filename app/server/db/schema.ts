@@ -913,6 +913,52 @@ export const adminAuditLog = pgTable(
   (t) => [index('admin_audit_log_created_idx').on(t.createdAt)],
 )
 
+// Keyword mention monitoring. Each row is a query the workspace is
+// watching on a given platform; the worker polls and stores matches
+// in keyword_matches.
+export const keywordWatches = pgTable(
+  'keyword_watches',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    term: text('term').notNull(),
+    platform: text('platform').default('bluesky').notNull(),
+    enabled: boolean('enabled').default(true).notNull(),
+    createdById: text('created_by_id').references(() => user.id, { onDelete: 'set null' }),
+    lastCheckedAt: timestamp('last_checked_at', { withTimezone: true }),
+    createdAt: now(),
+  },
+  (t) => [index('keyword_watches_workspace_idx').on(t.workspaceId)],
+)
+
+export const keywordMatches = pgTable(
+  'keyword_matches',
+  {
+    id: id(),
+    watchId: uuid('watch_id')
+      .notNull()
+      .references(() => keywordWatches.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    externalPostId: text('external_post_id').notNull(),
+    authorHandle: text('author_handle'),
+    authorName: text('author_name'),
+    authorAvatar: text('author_avatar'),
+    content: text('content').notNull(),
+    postUrl: text('post_url'),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    seenAt: now(),
+    readAt: timestamp('read_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('keyword_matches_watch_post_idx').on(t.watchId, t.externalPostId),
+    index('keyword_matches_workspace_seen_idx').on(t.workspaceId, t.seenAt),
+  ],
+)
+
 // Sign-in attempt log for security visibility. Captures both success
 // and failure.
 export const authLoginAttempts = pgTable(

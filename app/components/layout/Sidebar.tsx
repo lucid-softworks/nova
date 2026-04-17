@@ -10,6 +10,7 @@ import {
   History,
   Inbox,
   Link as LinkIcon,
+  Radar,
   Users,
   Settings,
   Shield,
@@ -46,6 +47,7 @@ const sections = [
     label: 'nav.insights',
     items: [
       { label: 'nav.inbox', to: '/$workspaceSlug/inbox', icon: Inbox },
+      { label: 'nav.monitors', to: '/$workspaceSlug/monitors', icon: Radar },
       { label: 'nav.analytics', to: '/$workspaceSlug/analytics', icon: BarChart2 },
       { label: 'nav.activity', to: '/$workspaceSlug/activity', icon: History },
     ],

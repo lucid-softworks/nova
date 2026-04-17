@@ -28,6 +28,12 @@ import {
   resetRecurring,
   startRecurringPolling,
 } from '~/server/recurring/schedule'
+import {
+  getMonitorQueue,
+  getMonitorWorker,
+  resetMonitors,
+  startMonitorPolling,
+} from '~/server/monitors/schedule'
 import { logger } from '~/lib/logger'
 import { initSentry } from '~/lib/sentry'
 
@@ -61,6 +67,8 @@ export function bootQueues() {
   const digestWorker = getDigestWorker()
   const recurringQueue = getRecurringQueue()
   const recurringWorker = getRecurringWorker()
+  const monitorQueue = getMonitorQueue()
+  const monitorWorker = getMonitorWorker()
   startScheduler()
   startAnalyticsSync().catch((e) =>
     logger.error({ err: e instanceof Error ? e.message : String(e) }, 'analytics schedule failed'),
@@ -77,7 +85,12 @@ export function bootQueues() {
   startRecurringPolling().catch((e) =>
     logger.error({ err: e instanceof Error ? e.message : String(e) }, 'recurring schedule failed'),
   )
-  logger.info('queues online: posts + analytics + rss + inbox + digest + recurring + scheduler')
+  startMonitorPolling().catch((e) =>
+    logger.error({ err: e instanceof Error ? e.message : String(e) }, 'monitor schedule failed'),
+  )
+  logger.info(
+    'queues online: posts + analytics + rss + inbox + digest + recurring + monitors + scheduler',
+  )
   void rssQueue
   void rssWorker
   void inboxQueue
@@ -86,6 +99,8 @@ export function bootQueues() {
   void digestWorker
   void recurringQueue
   void recurringWorker
+  void monitorQueue
+  void monitorWorker
 
   globalThis.__novaQueueCleanup = async () => {
     stopScheduler()
@@ -96,6 +111,7 @@ export function bootQueues() {
       inboxWorker.close(),
       digestWorker.close(),
       recurringWorker.close(),
+      monitorWorker.close(),
     ])
     await Promise.all([
       queue.close(),
@@ -104,6 +120,7 @@ export function bootQueues() {
       inboxQueue.close(),
       digestQueue.close(),
       recurringQueue.close(),
+      monitorQueue.close(),
     ])
     resetPostWorker()
     resetPostQueue()
@@ -113,6 +130,7 @@ export function bootQueues() {
     resetInbox()
     resetDigest()
     resetRecurring()
+    resetMonitors()
     globalThis.__novaQueuesBooted = false
   }
 }

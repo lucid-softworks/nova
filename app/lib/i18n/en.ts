@@ -66,6 +66,7 @@ export const en = {
   "nav.templates": "Templates",
   "nav.insights": "Insights",
   "nav.inbox": "Inbox",
+  "nav.monitors": "Monitors",
   "nav.analytics": "Analytics",
   "nav.activity": "Activity",
   "nav.management": "Management",
