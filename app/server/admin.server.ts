@@ -585,6 +585,49 @@ export async function revokeApiKeyImpl(keyId: string): Promise<{ ok: true }> {
   return { ok: true }
 }
 
+function escapeCsvCell(value: string): string {
+  if (/["\n,]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`
+  }
+  return value
+}
+
+export async function exportUsersCsvImpl(): Promise<string> {
+  await requireAdmin()
+  const rows = await db
+    .select({
+      id: schema.user.id,
+      email: schema.user.email,
+      name: schema.user.name,
+      role: schema.user.role,
+      banned: schema.user.banned,
+      emailVerified: schema.user.emailVerified,
+      createdAt: schema.user.createdAt,
+    })
+    .from(schema.user)
+    .orderBy(desc(schema.user.createdAt))
+
+  const header = ['id', 'email', 'name', 'role', 'banned', 'emailVerified', 'createdAt']
+  const lines = [header.join(',')]
+  for (const r of rows) {
+    lines.push(
+      [
+        r.id,
+        r.email,
+        r.name,
+        r.role ?? '',
+        r.banned ? 'true' : 'false',
+        r.emailVerified ? 'true' : 'false',
+        r.createdAt.toISOString(),
+      ]
+        .map(escapeCsvCell)
+        .join(','),
+    )
+  }
+  await writeAudit('user.export', null, null, { count: rows.length })
+  return lines.join('\n') + '\n'
+}
+
 export type AdminWorkspaceDetail = {
   id: string
   name: string

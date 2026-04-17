@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
-import { MoreHorizontal, UserPlus } from 'lucide-react'
+import { Download, MoreHorizontal, UserPlus } from 'lucide-react'
 import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -120,6 +120,15 @@ function UsersPage() {
     return !q || r.email.toLowerCase().includes(q) || r.name.toLowerCase().includes(q)
   })
 
+  const exportUsersCsv = () => {
+    const form = document.createElement('form')
+    form.method = 'POST'
+    form.action = '/api/admin/users/export'
+    document.body.appendChild(form)
+    form.submit()
+    form.remove()
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex items-start gap-2">
@@ -130,6 +139,9 @@ function UsersPage() {
           className="max-w-sm"
         />
         <div className="flex-1" />
+        <Button variant="outline" onClick={exportUsersCsv}>
+          <Download className="h-4 w-4" /> Export CSV
+        </Button>
         <InviteUserButton onInvited={reload} />
       </div>
       <Card>
