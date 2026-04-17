@@ -17,6 +17,7 @@ import { Input } from '~/components/ui/input'
 import { Field } from '~/components/ui/field'
 import { Card } from '~/components/ui/card'
 import { Spinner } from '~/components/ui/spinner'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/components/ui/dropdown'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { cn } from '~/lib/utils'
 import { composerReducer } from './state'
@@ -645,19 +646,6 @@ function VersionTabs({
   mismatchesByVersion: Record<string, { platform: PlatformKey; message: string }[]>
 }) {
   const t = useT()
-  const [addOpen, setAddOpen] = useState(false)
-  const addMenuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!addOpen) return
-    const onDown = (e: MouseEvent) => {
-      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
-        setAddOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
-  }, [addOpen])
 
   return (
     <div className="flex flex-wrap items-center gap-1 border-b border-neutral-200 dark:border-neutral-800">
@@ -701,34 +689,25 @@ function VersionTabs({
         )
       })}
       {mode === 'shared' && unassignedPlatforms.length > 0 ? (
-        <div ref={addMenuRef} className="relative">
-          <button
-            type="button"
-            onClick={() => setAddOpen((o) => !o)}
-            className="flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 hover:bg-indigo-50"
-          >
-            <Plus className="h-3 w-3" /> {t('compose.addVersion')}
-            <ChevronDown className="h-3 w-3" />
-          </button>
-          {addOpen ? (
-            <div className="absolute left-0 top-full z-10 mt-1 w-56 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg">
-              {unassignedPlatforms.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => {
-                    onAdd([p])
-                    setAddOpen(false)
-                  }}
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                >
-                  <PlatformIcon platform={p} size={16} />
-                  {PLATFORMS[p].label}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+            >
+              <Plus className="h-3 w-3" /> {t('compose.addVersion')}
+              <ChevronDown className="h-3 w-3" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            {unassignedPlatforms.map((p) => (
+              <DropdownMenuItem key={p} onSelect={() => onAdd([p])}>
+                <PlatformIcon platform={p} size={16} />
+                {PLATFORMS[p].label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       ) : null}
     </div>
   )

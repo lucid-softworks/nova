@@ -5,6 +5,7 @@ import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/components/ui/dropdown'
 import { PostStatusBadge, PostTypeBadge } from './badges'
 import { RecurringDialog } from './RecurringDialog'
 import { cn } from '~/lib/utils'
@@ -43,7 +44,6 @@ export function PostRow({
   hasRecurringRule?: boolean
 }) {
   const t = useT()
-  const [menuOpen, setMenuOpen] = useState(false)
   const [rescheduling, setRescheduling] = useState(false)
   const [recurringOpen, setRecurringOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -83,7 +83,6 @@ export function PostRow({
       await onChanged()
     } finally {
       setBusy(false)
-      setMenuOpen(false)
     }
   }
   const onRetry = async () => {
@@ -93,7 +92,6 @@ export function PostRow({
       await onChanged()
     } finally {
       setBusy(false)
-      setMenuOpen(false)
     }
   }
   const onDelete = async () => {
@@ -104,7 +102,6 @@ export function PostRow({
       await onChanged()
     } finally {
       setBusy(false)
-      setMenuOpen(false)
     }
   }
 
@@ -225,88 +222,59 @@ export function PostRow({
         </div>
       ) : null}
       <div className="relative">
-        <button
-          type="button"
-          onClick={() => setMenuOpen((o) => !o)}
-          className="rounded p-1.5 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-          aria-label="Row actions"
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
-        {menuOpen ? (
-          <div className="absolute right-0 top-full z-10 mt-1 w-52 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 text-sm shadow-lg">
-            {liveUrl ? (
-              <a
-                href={liveUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-              >
-                <ExternalLink className="h-3 w-3" /> View on platform
-              </a>
-            ) : null}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-              onClick={() => {
-                setMenuOpen(false)
-                setRescheduling(true)
-              }}
+              className="rounded p-1.5 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              aria-label="Row actions"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            {liveUrl ? (
+              <DropdownMenuItem asChild>
+                <a href={liveUrl} target="_blank" rel="noreferrer">
+                  <ExternalLink className="h-3 w-3" /> View on platform
+                </a>
+              </DropdownMenuItem>
+            ) : null}
+            <DropdownMenuItem
+              onSelect={() => setRescheduling(true)}
               disabled={post.status === 'published'}
             >
               <CalendarClock className="h-3 w-3" /> Reschedule
-            </button>
+            </DropdownMenuItem>
             {post.status !== 'published' ? (
-              <Link
-                to="/$workspaceSlug/compose"
-                params={{ workspaceSlug }}
-                search={{ postId: post.id }}
-                className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                onClick={() => setMenuOpen(false)}
-              >
-                <Pencil className="h-3 w-3" /> Edit
-              </Link>
+              <DropdownMenuItem asChild>
+                <Link
+                  to="/$workspaceSlug/compose"
+                  params={{ workspaceSlug }}
+                  search={{ postId: post.id }}
+                >
+                  <Pencil className="h-3 w-3" /> Edit
+                </Link>
+              </DropdownMenuItem>
             ) : null}
-            <button
-              type="button"
-              className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-              onClick={onDuplicate}
-              disabled={busy}
-            >
+            <DropdownMenuItem onSelect={onDuplicate} disabled={busy}>
               <Copy className="h-3 w-3" /> Duplicate
-            </button>
+            </DropdownMenuItem>
             {isDraft ? (
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                onClick={() => {
-                  setMenuOpen(false)
-                  setRecurringOpen(true)
-                }}
-              >
+              <DropdownMenuItem onSelect={() => setRecurringOpen(true)}>
                 <RotateCw className="h-3 w-3" /> {t('recurring.repeat')}
-              </button>
+              </DropdownMenuItem>
             ) : null}
             {post.status === 'failed' ? (
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                onClick={onRetry}
-                disabled={busy}
-              >
+              <DropdownMenuItem onSelect={onRetry} disabled={busy}>
                 <RotateCw className="h-3 w-3" /> Retry
-              </button>
+              </DropdownMenuItem>
             ) : null}
-            <button
-              type="button"
-              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-red-600 hover:bg-red-50"
-              onClick={onDelete}
-              disabled={busy}
-            >
+            <DropdownMenuItem onSelect={onDelete} disabled={busy} className="text-red-600 focus:bg-red-50 dark:focus:bg-red-950/40">
               <Trash2 className="h-3 w-3" /> Delete
-            </button>
-          </div>
-        ) : null}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         {rescheduling ? (
           <div className="absolute right-0 top-full z-10 mt-1 w-80 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 shadow-lg">
             <div className="mb-2 text-sm font-semibold">Reschedule</div>
