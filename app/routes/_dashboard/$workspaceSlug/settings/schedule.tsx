@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
@@ -14,6 +14,10 @@ import {
 import {
   ensureCalendarFeedToken,
   regenerateCalendarFeedToken,
+  ensureShareCalendarToken,
+  regenerateShareCalendarToken,
+  revokeShareCalendarToken,
+  getShareCalendarStatus,
 } from '~/server/calendarFeed'
 import { cn } from '~/lib/utils'
 import { useT } from '~/lib/i18n'
@@ -77,6 +81,7 @@ function SchedulePage() {
     <div className="space-y-4">
       <SettingsNav workspaceSlug={workspaceSlug} active="schedule" />
       <CalendarFeedCard workspaceSlug={workspaceSlug} />
+      <ShareCalendarCard workspaceSlug={workspaceSlug} />
       <Card>
         <div className="space-y-3 p-4">
           <div className="flex items-center justify-between">
@@ -257,6 +262,110 @@ function CalendarFeedCard({ workspaceSlug }: { workspaceSlug: string }) {
         ) : (
           <Button size="sm" onClick={generate} disabled={busy}>
             {busy ? <Spinner /> : null} {t('schedule.generateFeedUrl')}
+          </Button>
+        )}
+      </div>
+    </Card>
+  )
+}
+
+function ShareCalendarCard({ workspaceSlug }: { workspaceSlug: string }) {
+  const [url, setUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const load = async () => {
+    setLoading(true)
+    try {
+      const res = await getShareCalendarStatus({ data: { workspaceSlug } })
+      setUrl(res.url)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void load()
+    // Intentionally runs once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const generate = async () => {
+    setBusy(true)
+    try {
+      const res = await ensureShareCalendarToken({ data: { workspaceSlug } })
+      setUrl(res.url)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const rotate = async () => {
+    if (!confirm('Rotating invalidates the existing shareable URL.')) return
+    setBusy(true)
+    try {
+      const res = await regenerateShareCalendarToken({ data: { workspaceSlug } })
+      setUrl(res.url)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const revoke = async () => {
+    if (!confirm('Revoke the shareable URL? Anyone using it will lose access.')) return
+    setBusy(true)
+    try {
+      await revokeShareCalendarToken({ data: { workspaceSlug } })
+      setUrl(null)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const copy = async () => {
+    if (!url) return
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // ignore
+    }
+  }
+
+  return (
+    <Card>
+      <div className="space-y-3 p-4">
+        <div>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+            Shareable calendar URL
+          </h3>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            A read-only web page showing upcoming scheduled and recently published posts.
+            Anyone with the link can view it — share with clients or stakeholders.
+          </p>
+        </div>
+        {loading ? (
+          <Spinner />
+        ) : url ? (
+          <>
+            <Input readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant="outline" onClick={copy}>
+                {copied ? 'Copied!' : 'Copy URL'}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={rotate} disabled={busy}>
+                Regenerate
+              </Button>
+              <Button size="sm" variant="ghost" onClick={revoke} disabled={busy} className="text-red-600">
+                Revoke
+              </Button>
+            </div>
+          </>
+        ) : (
+          <Button size="sm" onClick={generate} disabled={busy}>
+            {busy ? <Spinner /> : null} Generate share URL
           </Button>
         )}
       </div>

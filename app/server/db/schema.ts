@@ -333,6 +333,10 @@ export const workspaces = pgTable(
     // of the billing provider's subscription record. Values: the plan
     // names in PLAN_LIMITS (free/starter/pro/business).
     planOverride: text('plan_override'),
+    // When set, /c/$token exposes a read-only HTML calendar of scheduled
+    // and published posts. Distinct from calendarFeedToken which is the
+    // iCal feed (ICS) read by Google Calendar / Apple Calendar.
+    shareCalendarToken: text('share_calendar_token').unique(),
     createdAt: now(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

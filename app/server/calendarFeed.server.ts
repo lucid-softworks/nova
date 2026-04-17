@@ -135,3 +135,150 @@ export async function buildFeedForTokenImpl(token: string): Promise<string | nul
 
   return buildIcs(org?.name ?? 'Nova', events)
 }
+
+// ---------- Public shareable calendar -----------------------------------
+
+export type SharedCalendarPost = {
+  id: string
+  status: 'scheduled' | 'published' | 'publishing'
+  scheduledAt: string | null
+  publishedAt: string | null
+  content: string
+  platforms: string[]
+}
+
+export type SharedCalendar = {
+  workspaceName: string
+  posts: SharedCalendarPost[]
+}
+
+export async function ensureShareCalendarTokenImpl(slug: string): Promise<string> {
+  const r = await requireWorkspaceAccess(slug)
+  if (!r.ok) throw new Error(r.reason)
+  if (r.workspace.role !== 'admin' && r.workspace.role !== 'manager') {
+    throw new Error('Only admins or managers can expose the shareable calendar')
+  }
+  const ws = await db.query.workspaces.findFirst({
+    where: eq(schema.workspaces.id, r.workspace.id),
+  })
+  if (ws?.shareCalendarToken) return ws.shareCalendarToken
+  const token = mintToken()
+  await db
+    .update(schema.workspaces)
+    .set({ shareCalendarToken: token })
+    .where(eq(schema.workspaces.id, r.workspace.id))
+  return token
+}
+
+export async function regenerateShareCalendarTokenImpl(slug: string): Promise<string> {
+  const r = await requireWorkspaceAccess(slug)
+  if (!r.ok) throw new Error(r.reason)
+  if (r.workspace.role !== 'admin' && r.workspace.role !== 'manager') {
+    throw new Error('Only admins or managers can rotate the shareable calendar')
+  }
+  const token = mintToken()
+  await db
+    .update(schema.workspaces)
+    .set({ shareCalendarToken: token })
+    .where(eq(schema.workspaces.id, r.workspace.id))
+  return token
+}
+
+export async function revokeShareCalendarTokenImpl(slug: string): Promise<void> {
+  const r = await requireWorkspaceAccess(slug)
+  if (!r.ok) throw new Error(r.reason)
+  if (r.workspace.role !== 'admin' && r.workspace.role !== 'manager') {
+    throw new Error('Only admins or managers can revoke the shareable calendar')
+  }
+  await db
+    .update(schema.workspaces)
+    .set({ shareCalendarToken: null })
+    .where(eq(schema.workspaces.id, r.workspace.id))
+}
+
+export async function getShareCalendarStatusImpl(slug: string): Promise<{ token: string | null }> {
+  const r = await requireWorkspaceAccess(slug)
+  if (!r.ok) throw new Error(r.reason)
+  const ws = await db.query.workspaces.findFirst({
+    where: eq(schema.workspaces.id, r.workspace.id),
+    columns: { shareCalendarToken: true },
+  })
+  return { token: ws?.shareCalendarToken ?? null }
+}
+
+export async function getSharedCalendarImpl(token: string): Promise<SharedCalendar | null> {
+  const ws = await db.query.workspaces.findFirst({
+    where: eq(schema.workspaces.shareCalendarToken, token),
+  })
+  if (!ws) return null
+  const org = await db.query.organization.findFirst({
+    where: eq(schema.organization.id, ws.organizationId),
+  })
+  const now = new Date()
+  const windowStart = new Date(now.getTime() - 14 * 24 * 3600 * 1000)
+  const windowEnd = new Date(now.getTime() + 90 * 24 * 3600 * 1000)
+
+  const posts = await db
+    .select({
+      id: schema.posts.id,
+      status: schema.posts.status,
+      scheduledAt: schema.posts.scheduledAt,
+      publishedAt: schema.posts.publishedAt,
+    })
+    .from(schema.posts)
+    .where(
+      and(
+        eq(schema.posts.workspaceId, ws.id),
+        inArray(schema.posts.status, ['scheduled', 'published', 'publishing']),
+        or(
+          and(
+            gte(schema.posts.scheduledAt, windowStart),
+            lte(schema.posts.scheduledAt, windowEnd),
+          ),
+          and(
+            gte(schema.posts.publishedAt, windowStart),
+            lte(schema.posts.publishedAt, windowEnd),
+          ),
+        ),
+      ),
+    )
+  if (posts.length === 0) {
+    return { workspaceName: org?.name ?? 'Shared calendar', posts: [] }
+  }
+
+  const versionRows = await db
+    .select({
+      postId: schema.postVersions.postId,
+      content: schema.postVersions.content,
+      isDefault: schema.postVersions.isDefault,
+      platforms: schema.postVersions.platforms,
+    })
+    .from(schema.postVersions)
+    .where(
+      inArray(
+        schema.postVersions.postId,
+        posts.map((p) => p.id),
+      ),
+    )
+
+  const defaultContent = new Map<string, string>()
+  const platformsByPost = new Map<string, string[]>()
+  for (const v of versionRows) {
+    if (v.isDefault) defaultContent.set(v.postId, v.content)
+    const existing = platformsByPost.get(v.postId) ?? []
+    for (const p of v.platforms) if (!existing.includes(p)) existing.push(p)
+    platformsByPost.set(v.postId, existing)
+  }
+
+  return {
+    workspaceName: org?.name ?? 'Shared calendar',
+    posts: posts.map((p) => ({
+      id: p.id,
+      status: p.status as 'scheduled' | 'published' | 'publishing',
+      scheduledAt: p.scheduledAt ? p.scheduledAt.toISOString() : null,
+      publishedAt: p.publishedAt ? p.publishedAt.toISOString() : null,
+      content: (defaultContent.get(p.id) ?? '').slice(0, 280),
+      platforms: platformsByPost.get(p.id) ?? [],
+    })),
+  }
+}
