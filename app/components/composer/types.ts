@@ -53,6 +53,9 @@ export type ComposerState = {
   /** When set, publishers that thread (Bluesky / Mastodon / X / Threads)
    * will emit this post as a reply to the given platform post id. */
   replyToPostId: string | null
+  /** When set, the post quotes the given platform post id (Bluesky
+   * only today). The original content appears as a recordEmbed. */
+  quotePostId: string | null
 }
 
 export type ConnectedAccount = {
@@ -119,6 +122,7 @@ export function hydrateStateFromPost(post: LoadedPost): ComposerState {
         }
       : defaultRedditFields(),
     replyToPostId: null,
+    quotePostId: null,
   }
 }
 
@@ -146,5 +150,6 @@ export function initialState(): ComposerState {
     mediaById: {},
     reddit: defaultRedditFields(),
     replyToPostId: null,
+    quotePostId: null,
   }
 }

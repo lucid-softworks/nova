@@ -153,6 +153,7 @@ export type SaveDraftInput = {
     spoiler: boolean
   } | null
   replyToPostId?: string | null
+  quotePostId?: string | null
 }
 
 export async function saveDraftImpl(input: SaveDraftInput) {
@@ -219,6 +220,7 @@ export async function saveDraftImpl(input: SaveDraftInput) {
       if (version.isDefault) {
         Object.assign(extras, redditVars)
         if (input.replyToPostId) extras.replyToPostId = input.replyToPostId
+        if (input.quotePostId) extras.quotePostId = input.quotePostId
       }
       if (version.blueskyLabels && version.blueskyLabels.length > 0) {
         extras.bluesky_labels = version.blueskyLabels.join(',')

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { RefreshCw, ExternalLink, Check, Reply } from 'lucide-react'
+import { RefreshCw, ExternalLink, Check, Reply, Quote } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
@@ -57,6 +57,22 @@ function InboxPage() {
         replyTo,
         replyHandle: item.actorHandle ?? '',
         replyAccountId: item.socialAccountId,
+      } as never,
+    })
+  }
+
+  const quoteItem = (item: InboxRow) => {
+    const quoteTo = item.platformItemId.replace(
+      /:(mention|reply|like|repost|follow|quote)$/,
+      '',
+    )
+    navigate({
+      to: '/$workspaceSlug/compose',
+      params: { workspaceSlug },
+      search: {
+        quoteTo,
+        quoteHandle: item.actorHandle ?? '',
+        quoteAccountId: item.socialAccountId,
       } as never,
     })
   }
@@ -190,6 +206,15 @@ function InboxPage() {
                         className="inline-flex items-center gap-0.5 font-medium text-indigo-600 hover:underline dark:text-indigo-400"
                       >
                         <Reply className="h-3 w-3" /> {t('inbox.reply')}
+                      </button>
+                    ) : null}
+                    {i.platform === 'bluesky' ? (
+                      <button
+                        type="button"
+                        onClick={() => quoteItem(i)}
+                        className="inline-flex items-center gap-0.5 font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+                      >
+                        <Quote className="h-3 w-3" /> Quote
                       </button>
                     ) : null}
                     {i.permalink ? (

@@ -45,6 +45,7 @@ export function StandardComposer({
   existing,
   initialScheduledAt,
   reply,
+  quote,
 }: {
   workspaceSlug: string
   accounts: ConnectedAccount[]
@@ -53,6 +54,7 @@ export function StandardComposer({
   existing: LoadedPost | null
   initialScheduledAt: string | null
   reply: { replyTo: string; handle: string; accountId: string | null } | null
+  quote: { quoteTo: string; handle: string; accountId: string | null } | null
 }) {
   const t = useT()
   const needsApproval = requireApproval && userRole === 'editor'
@@ -68,6 +70,12 @@ export function StandardComposer({
         if (defaultVersion && reply.handle) defaultVersion.content = `@${reply.handle} `
         if (reply.accountId && accounts.some((a) => a.id === reply.accountId)) {
           base.selectedAccountIds = [reply.accountId]
+        }
+      }
+      if (quote) {
+        base.quotePostId = quote.quoteTo
+        if (quote.accountId && accounts.some((a) => a.id === quote.accountId)) {
+          base.selectedAccountIds = [quote.accountId]
         }
       }
       return base
@@ -175,6 +183,7 @@ export function StandardComposer({
         })),
         reddit: redditSelected ? state.reddit : null,
         replyToPostId: state.replyToPostId,
+        quotePostId: state.quotePostId,
       },
     })
     return postId

@@ -15,6 +15,7 @@ export function ComposerPage({
   existing,
   initialScheduledAt,
   reply,
+  quote,
 }: {
   workspaceSlug: string
   accounts: ConnectedAccount[]
@@ -23,6 +24,7 @@ export function ComposerPage({
   existing?: LoadedPost | null
   initialScheduledAt?: string | null
   reply?: { replyTo: string; handle: string; accountId: string | null } | null
+  quote?: { quoteTo: string; handle: string; accountId: string | null } | null
 }) {
   const t = useT()
   const [mode, setMode] = useState<'standard' | 'campaign'>('standard')
@@ -66,6 +68,7 @@ export function ComposerPage({
           existing={existing ?? null}
           initialScheduledAt={initialScheduledAt ?? null}
           reply={reply ?? null}
+          quote={quote ?? null}
         />
       ) : (
         <CampaignComposer workspaceSlug={workspaceSlug} accounts={accounts} />

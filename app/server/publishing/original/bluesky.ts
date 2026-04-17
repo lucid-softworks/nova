@@ -213,12 +213,15 @@ async function resolveHandleToDid(session: Session, handle: string): Promise<str
   }
 }
 
+type RecordRef = { uri: string; cid: string }
+
 async function createPost(
   session: Session,
   text: string,
   images: Array<{ alt: string; image: BlobRef }>,
   video: VideoEmbed | null,
   external: ExternalEmbed | null,
+  quote: RecordRef | null,
   labels: string[],
   facets: Facet[],
   reply?: { root: { uri: string; cid: string }; parent: { uri: string; cid: string } },
@@ -238,14 +241,27 @@ async function createPost(
     langs: ['en'],
   }
   if (facets.length > 0) record.facets = facets
-  // Bluesky embeds are mutually exclusive. Precedence: video > images >
-  // external link card. That mirrors what a media-rich post expects and
-  // lets the publisher always attempt a link card without clobbering
-  // media.
-  if (video) {
-    record.embed = video
-  } else if (images.length > 0) {
-    record.embed = { $type: 'app.bsky.embed.images', images }
+  // Bluesky embeds are mutually exclusive, with one exception:
+  // recordWithMedia lets a quote carry either images or video alongside.
+  // Precedence when no quote is attached: video > images > external.
+  // When a quote is present, combine it with media if available,
+  // otherwise emit a plain record embed.
+  const media =
+    video != null
+      ? video
+      : images.length > 0
+        ? ({ $type: 'app.bsky.embed.images', images } as const)
+        : null
+  if (quote && media) {
+    record.embed = {
+      $type: 'app.bsky.embed.recordWithMedia',
+      record: { $type: 'app.bsky.embed.record', record: quote },
+      media,
+    }
+  } else if (quote) {
+    record.embed = { $type: 'app.bsky.embed.record', record: quote }
+  } else if (media) {
+    record.embed = media
   } else if (external) {
     record.embed = external
   }
@@ -377,6 +393,15 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
     !video && images.length === 0
       ? await withRefresh(() => buildLinkCard(session, ctx.version.content))
       : null
+  let quoteRef: RecordRef | null = null
+  const quoteTarget = ctx.version.platformVariables.quotePostId
+  if (quoteTarget && quoteTarget.startsWith('at://')) {
+    try {
+      quoteRef = await resolveAtUriToRef(session, quoteTarget)
+    } catch {
+      // Non-fatal: publish without the quote embed.
+    }
+  }
   const first = await withRefresh(() =>
     createPost(
       session,
@@ -384,6 +409,7 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
       images,
       video,
       firstExternal,
+      quoteRef,
       labels,
       firstFacets,
       replyRef,
@@ -400,7 +426,7 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
       )
       const partExternal = await withRefresh(() => buildLinkCard(session, part.content))
       const next = await withRefresh(() =>
-        createPost(session, part.content, [], null, partExternal, labels, partFacets, {
+        createPost(session, part.content, [], null, partExternal, null, labels, partFacets, {
           root,
           parent,
         }),
