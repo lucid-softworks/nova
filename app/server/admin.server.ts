@@ -665,6 +665,7 @@ export type AdminWorkspaceDetail = {
   appName: string | null
   logoUrl: string | null
   createdAt: string
+  planOverride: string | null
   counts: {
     posts: number
     media: number
@@ -678,6 +679,19 @@ export type AdminWorkspaceDetail = {
     role: string
     joinedAt: string
   }>
+}
+
+export async function setWorkspacePlanOverrideImpl(
+  workspaceId: string,
+  planOverride: string | null,
+): Promise<{ ok: true }> {
+  await requireAdmin()
+  await db
+    .update(schema.workspaces)
+    .set({ planOverride, updatedAt: new Date() })
+    .where(eq(schema.workspaces.id, workspaceId))
+  await writeAudit('workspace.planOverride', 'workspace', workspaceId, { planOverride })
+  return { ok: true }
 }
 
 export async function getWorkspaceDetailImpl(workspaceId: string): Promise<AdminWorkspaceDetail> {
@@ -724,6 +738,7 @@ export async function getWorkspaceDetailImpl(workspaceId: string): Promise<Admin
     appName: ws.appName,
     logoUrl: org.logo,
     createdAt: org.createdAt.toISOString(),
+    planOverride: ws.planOverride ?? null,
     counts: {
       posts: posts[0]?.n ?? 0,
       media: media[0]?.n ?? 0,

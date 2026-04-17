@@ -53,6 +53,13 @@ function normalise(plan: string | null, status: string): keyof typeof LIMITS {
 }
 
 export async function limitsFor(workspaceId: string): Promise<PlanLimits> {
+  const ws = await db.query.workspaces.findFirst({
+    where: eq(schema.workspaces.id, workspaceId),
+    columns: { planOverride: true },
+  })
+  if (ws?.planOverride && ws.planOverride in LIMITS) {
+    return LIMITS[ws.planOverride as keyof typeof LIMITS]!
+  }
   const sub = await getSubscription(workspaceId)
   return LIMITS[normalise(sub?.plan ?? null, sub?.status ?? 'none')] ?? LIMITS.free!
 }

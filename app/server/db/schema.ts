@@ -329,6 +329,10 @@ export const workspaces = pgTable(
     customDomain: text('custom_domain').unique(),
     domainVerified: boolean('domain_verified').default(false).notNull(),
     utmDefaults: jsonb('utm_defaults').$type<Record<string, string>>().default({}).notNull(),
+    // Admin-set plan override. When non-null, limitsFor uses this instead
+    // of the billing provider's subscription record. Values: the plan
+    // names in PLAN_LIMITS (free/starter/pro/business).
+    planOverride: text('plan_override'),
     createdAt: now(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

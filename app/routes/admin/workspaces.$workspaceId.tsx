@@ -1,8 +1,22 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router'
+import { useState } from 'react'
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
-import { getAdminWorkspaceDetail, deleteAdminWorkspace } from '~/server/admin'
+import { Field } from '~/components/ui/field'
+import {
+  getAdminWorkspaceDetail,
+  deleteAdminWorkspace,
+  setAdminWorkspacePlanOverride,
+} from '~/server/admin'
+
+const PLAN_CHOICES = [
+  { value: '', label: 'No override (use billing subscription)' },
+  { value: 'free', label: 'Free' },
+  { value: 'starter', label: 'Starter' },
+  { value: 'pro', label: 'Pro' },
+  { value: 'business', label: 'Business' },
+] as const
 
 export const Route = createFileRoute('/admin/workspaces/$workspaceId')({
   loader: async ({ params }) =>
@@ -13,11 +27,31 @@ export const Route = createFileRoute('/admin/workspaces/$workspaceId')({
 function WorkspaceDetailPage() {
   const ws = Route.useLoaderData()
   const navigate = useNavigate()
+  const router = useRouter()
+  const [planOverride, setPlanOverride] = useState<string>(ws.planOverride ?? '')
+  const [savingPlan, setSavingPlan] = useState(false)
 
   const onDelete = async () => {
     if (!confirm(`Delete workspace "${ws.name}"? This cascades to every post, media asset, and connected account.`)) return
     await deleteAdminWorkspace({ data: { workspaceId: ws.id } })
     navigate({ to: '/admin/workspaces' })
+  }
+
+  const onSavePlan = async () => {
+    setSavingPlan(true)
+    try {
+      await setAdminWorkspacePlanOverride({
+        data: {
+          workspaceId: ws.id,
+          planOverride: planOverride === ''
+            ? null
+            : (planOverride as 'free' | 'starter' | 'pro' | 'business'),
+        },
+      })
+      await router.invalidate()
+    } finally {
+      setSavingPlan(false)
+    }
   }
 
   return (
@@ -58,6 +92,39 @@ function WorkspaceDetailPage() {
         <Stat label="Accounts" value={ws.counts.socialAccounts} />
         <Stat label="Campaigns" value={ws.counts.campaigns} />
       </div>
+
+      <Card>
+        <div className="p-4 space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+              Plan override
+            </h3>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              Force this workspace onto a specific plan regardless of their billing
+              subscription. Useful for comp accounts, internal testing, and temporary upgrades.
+            </p>
+          </div>
+          <div className="flex items-end gap-2">
+            <Field label="Plan" htmlFor="plan-override" className="flex-1 max-w-md">
+              <select
+                id="plan-override"
+                value={planOverride}
+                onChange={(e) => setPlanOverride(e.target.value)}
+                className="h-10 w-full rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 text-sm"
+              >
+                {PLAN_CHOICES.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Button onClick={onSavePlan} disabled={savingPlan}>
+              Save
+            </Button>
+          </div>
+        </div>
+      </Card>
 
       <div>
         <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">

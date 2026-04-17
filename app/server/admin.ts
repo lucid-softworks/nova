@@ -16,6 +16,7 @@ import {
   markUserVerifiedImpl,
   resendVerificationImpl,
   getWorkspaceDetailImpl,
+  setWorkspacePlanOverrideImpl,
   listApiKeysImpl,
   revokeApiKeyImpl,
   listLoginAttemptsImpl,
@@ -134,3 +135,12 @@ export const revokeAdminApiKey = createServerFn({ method: 'POST' })
 export const listAdminLoginAttempts = createServerFn({ method: 'GET' }).handler(async () =>
   listLoginAttemptsImpl(),
 )
+
+const planOverrideSchema = z.object({
+  workspaceId: z.string().uuid(),
+  planOverride: z.enum(['free', 'starter', 'pro', 'business']).nullable(),
+})
+
+export const setAdminWorkspacePlanOverride = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => planOverrideSchema.parse(d))
+  .handler(async ({ data }) => setWorkspacePlanOverrideImpl(data.workspaceId, data.planOverride))
