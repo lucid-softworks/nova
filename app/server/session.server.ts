@@ -17,12 +17,51 @@ export function withSessionOverride<T>(ctx: SessionContext, fn: () => Promise<T>
   return overrideStorage.run(ctx, fn)
 }
 
+async function loadPlatformSurface() {
+  const row = await db.query.platformSettings.findFirst({
+    where: eq(schema.platformSettings.id, 'singleton'),
+  })
+  return {
+    maintenanceMode: row?.maintenanceMode ?? false,
+    announcementBanner: row?.announcementBanner ?? null,
+    featureFlags: row?.featureFlags ?? {},
+  }
+}
+
+/**
+ * Call from mutation server functions to refuse the write when the
+ * platform is in maintenance mode. Admins bypass so they can still
+ * flip the toggle back off and fix things.
+ */
+export async function assertNotInMaintenance(): Promise<void> {
+  const ctx = await loadSessionContext()
+  if (!ctx.platform.maintenanceMode) return
+  if (ctx.user) {
+    const row = await db.query.user.findFirst({ where: eq(schema.user.id, ctx.user.id) })
+    if (row?.role === 'admin') return
+  }
+  throw new Error('Nova is in maintenance mode. Please try again shortly.')
+}
+
+/**
+ * Call from server functions that implement a feature gated by a platform
+ * feature flag. Throws if the flag is explicitly false. Missing/true
+ * is treated as enabled so flipping a flag on isn't required.
+ */
+export async function assertFeatureEnabled(key: string): Promise<void> {
+  const ctx = await loadSessionContext()
+  if (ctx.platform.featureFlags[key] === false) {
+    throw new Error(`The ${key} feature is currently disabled.`)
+  }
+}
+
 export async function loadSessionContext(): Promise<SessionContext> {
   bootQueues()
   const override = overrideStorage.getStore()
   if (override) return override
   const session = await auth.api.getSession({ headers: getRequest().headers })
-  if (!session?.user) return { user: null, workspaces: [], activeOrganizationId: null }
+  const platform = await loadPlatformSurface()
+  if (!session?.user) return { user: null, workspaces: [], activeOrganizationId: null, platform }
 
   const rows = await db
     .select({
@@ -56,6 +95,7 @@ export async function loadSessionContext(): Promise<SessionContext> {
     activeOrganizationId:
       (session.session as { activeOrganizationId?: string | null } | undefined)
         ?.activeOrganizationId ?? null,
+    platform,
   }
 }
 

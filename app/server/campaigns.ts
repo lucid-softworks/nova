@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { saveCampaignImpl } from './campaigns.server'
+import { assertFeatureEnabled } from './session.server'
 
 const stepSchema = z.object({
   clientId: z.string(),
@@ -22,4 +23,7 @@ const saveSchema = z.object({
 
 export const saveCampaign = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => saveSchema.parse(d))
-  .handler(async ({ data }) => saveCampaignImpl(data))
+  .handler(async ({ data }) => {
+    await assertFeatureEnabled('campaigns')
+    return saveCampaignImpl(data)
+  })

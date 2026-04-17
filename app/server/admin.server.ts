@@ -326,12 +326,24 @@ export type PlatformSettings = {
   signupsEnabled: boolean
   signupRateLimitMax: number | null
   signupRateLimitWindowHours: number
+  signupEmailAllowlist: string[]
+  signupEmailBlocklist: string[]
+  disabledPlatforms: string[]
+  maintenanceMode: boolean
+  announcementBanner: string | null
+  featureFlags: Record<string, boolean>
 }
 
 const DEFAULT_SETTINGS: PlatformSettings = {
   signupsEnabled: true,
   signupRateLimitMax: null,
   signupRateLimitWindowHours: 1,
+  signupEmailAllowlist: [],
+  signupEmailBlocklist: [],
+  disabledPlatforms: [],
+  maintenanceMode: false,
+  announcementBanner: null,
+  featureFlags: {},
 }
 
 /**
@@ -347,6 +359,12 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
     signupsEnabled: row.signupsEnabled,
     signupRateLimitMax: row.signupRateLimitMax,
     signupRateLimitWindowHours: row.signupRateLimitWindowHours,
+    signupEmailAllowlist: row.signupEmailAllowlist ?? [],
+    signupEmailBlocklist: row.signupEmailBlocklist ?? [],
+    disabledPlatforms: row.disabledPlatforms ?? [],
+    maintenanceMode: row.maintenanceMode,
+    announcementBanner: row.announcementBanner,
+    featureFlags: row.featureFlags ?? {},
   }
 }
 

@@ -1,11 +1,12 @@
 import { and, asc, eq, gte } from 'drizzle-orm'
 import { db, schema } from './db'
-import { requireWorkspaceAccess } from './session.server'
+import { assertNotInMaintenance, requireWorkspaceAccess } from './session.server'
 import { notifyUser, notifyWorkspaceApprovers } from './notifications.server'
 import { publishWebhookEvent } from './webhooks.server'
 import { assertWithinLimit } from '~/lib/billing/limits'
 
 async function ensureWs(slug: string) {
+  await assertNotInMaintenance()
   const r = await requireWorkspaceAccess(slug)
   if (!r.ok) throw new Error(r.reason)
   return r

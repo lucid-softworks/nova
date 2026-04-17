@@ -150,6 +150,7 @@ export async function withApiAuth<T>(ctx: ApiAuthContext, fn: () => Promise<T>):
       },
     ],
     activeOrganizationId: ctx.organizationId,
+    platform: { maintenanceMode: false, announcementBanner: null, featureFlags: {} },
   }
   return withSessionOverride(session, fn)
 }

@@ -18,8 +18,15 @@ export type WorkspaceSummary = {
   appName: string | null
 }
 
+export type PlatformSurface = {
+  maintenanceMode: boolean
+  announcementBanner: string | null
+  featureFlags: Record<string, boolean>
+}
+
 export type SessionContext = {
   user: SessionUser | null
   workspaces: WorkspaceSummary[]
   activeOrganizationId: string | null
+  platform: PlatformSurface
 }

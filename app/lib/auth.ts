@@ -259,6 +259,23 @@ export const auth = betterAuth({
       if (!enabled) {
         throw new APIError('FORBIDDEN', { message: 'Sign-ups are disabled.' })
       }
+
+      const email = (ctx.body as { email?: unknown } | undefined)?.email
+      const domain =
+        typeof email === 'string' ? email.split('@')[1]?.toLowerCase() ?? '' : ''
+      const blocklist = (row?.signupEmailBlocklist ?? []).map((d) => d.toLowerCase())
+      const allowlist = (row?.signupEmailAllowlist ?? []).map((d) => d.toLowerCase())
+      if (domain && blocklist.includes(domain)) {
+        throw new APIError('FORBIDDEN', {
+          message: 'Sign-ups from this email domain are not allowed.',
+        })
+      }
+      if (allowlist.length > 0 && !allowlist.includes(domain)) {
+        throw new APIError('FORBIDDEN', {
+          message: 'Sign-ups are restricted to specific email domains.',
+        })
+      }
+
       const max = row?.signupRateLimitMax ?? null
       const windowHours = row?.signupRateLimitWindowHours ?? 1
       if (max != null && max > 0) {

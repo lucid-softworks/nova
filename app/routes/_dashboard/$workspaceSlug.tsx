@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, redirect, useLocation } from '@tanstack/react-router'
 import { useState } from 'react'
-import { X } from 'lucide-react'
+import { Megaphone, Wrench, X } from 'lucide-react'
 import { setActiveWorkspace } from '~/server/auth-context'
 import { useT } from '~/lib/i18n'
 import type { SessionContext } from '~/server/auth-context'
@@ -90,12 +90,40 @@ function WorkspaceLayout() {
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar title={title} workspaceSlug={workspace.slug} onOpenSidebar={() => setMobileOpen(true)} />
+        <PlatformBanners platform={session.platform} />
         <main className="flex-1 overflow-auto p-6">
           <div className="mx-auto max-w-7xl">
             <Outlet />
           </div>
         </main>
       </div>
+    </div>
+  )
+}
+
+function PlatformBanners({
+  platform,
+}: {
+  platform: SessionContext['platform']
+}) {
+  if (!platform.maintenanceMode && !platform.announcementBanner) return null
+  return (
+    <div className="space-y-1 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+      {platform.maintenanceMode ? (
+        <div className="flex items-center gap-2 bg-yellow-100 dark:bg-yellow-950/50 px-4 py-2 text-sm text-yellow-900 dark:text-yellow-200">
+          <Wrench className="h-4 w-4 shrink-0" />
+          <span>
+            <strong>Maintenance mode is on.</strong> Most write actions are disabled while the
+            platform is being worked on.
+          </span>
+        </div>
+      ) : null}
+      {platform.announcementBanner ? (
+        <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/40 px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">
+          <Megaphone className="h-4 w-4 shrink-0" />
+          <span>{platform.announcementBanner}</span>
+        </div>
+      ) : null}
     </div>
   )
 }

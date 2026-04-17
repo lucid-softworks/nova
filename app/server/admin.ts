@@ -67,6 +67,12 @@ const platformSettingsSchema = z.object({
   signupsEnabled: z.boolean(),
   signupRateLimitMax: z.number().int().min(1).max(10000).nullable(),
   signupRateLimitWindowHours: z.number().int().min(1).max(720),
+  signupEmailAllowlist: z.array(z.string().min(1).max(253)).max(500),
+  signupEmailBlocklist: z.array(z.string().min(1).max(253)).max(500),
+  disabledPlatforms: z.array(z.string().min(1).max(50)).max(50),
+  maintenanceMode: z.boolean(),
+  announcementBanner: z.string().max(500).nullable(),
+  featureFlags: z.record(z.string(), z.boolean()),
 })
 
 export const updateAdminPlatformSettings = createServerFn({ method: 'POST' })

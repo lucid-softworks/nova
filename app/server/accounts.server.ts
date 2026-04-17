@@ -12,11 +12,16 @@ import { assertWithinLimit } from '~/lib/billing/limits'
 /**
  * Which platforms are connectable given the current env. Bluesky + Mastodon
  * don't need platform-level secrets (Bluesky uses an app password, Mastodon
- * registers an app per-instance on first connect), so they're always on.
+ * registers an app per-instance on first connect), so they're normally on;
+ * either can still be turned off via the platform disabledPlatforms setting.
  */
-export function listAvailablePlatformsImpl(): PlatformKey[] {
+export async function listAvailablePlatformsImpl(): Promise<PlatformKey[]> {
+  const { getPlatformSettings } = await import('./admin.server')
+  const settings = await getPlatformSettings()
+  const disabled = new Set(settings.disabledPlatforms)
   const out: PlatformKey[] = []
   for (const p of PLATFORM_KEYS) {
+    if (disabled.has(p)) continue
     if (p === 'bluesky' || p === 'mastodon') {
       out.push(p)
       continue
@@ -217,6 +222,11 @@ export async function startOAuthImpl(
 ) {
   const { workspace } = await ensureWs(slug)
   await assertWithinLimit(workspace.id, 'account')
+  const { getPlatformSettings } = await import('./admin.server')
+  const settings = await getPlatformSettings()
+  if (settings.disabledPlatforms.includes(platform)) {
+    throw new Error(`${platform} is disabled on this platform.`)
+  }
   const provider = getProvider(platform)
   if (!provider) {
     throw new Error(

@@ -865,11 +865,25 @@ export const notifications = pgTable(
 )
 
 // Singleton row (id = 'singleton') holding platform-wide admin toggles.
+// Array/record fields default to [] / {} so reads never need null checks.
 export const platformSettings = pgTable('platform_settings', {
   id: text('id').primaryKey().default('singleton'),
   signupsEnabled: boolean('signups_enabled').default(true).notNull(),
   signupRateLimitMax: integer('signup_rate_limit_max'),
   signupRateLimitWindowHours: integer('signup_rate_limit_window_hours').default(1).notNull(),
+  // Case-insensitive email domain lists. Allowlist, when non-empty, is
+  // strictly enforced (must match). Blocklist rejects regardless of
+  // allowlist.
+  signupEmailAllowlist: jsonb('signup_email_allowlist').$type<string[]>().default([]).notNull(),
+  signupEmailBlocklist: jsonb('signup_email_blocklist').$type<string[]>().default([]).notNull(),
+  // PlatformKey values (strings). Listed platforms are hidden from the
+  // connect-account UI even when OAuth creds are configured.
+  disabledPlatforms: jsonb('disabled_platforms').$type<string[]>().default([]).notNull(),
+  maintenanceMode: boolean('maintenance_mode').default(false).notNull(),
+  announcementBanner: text('announcement_banner'),
+  // Boolean map of feature flags. Missing key => feature enabled.
+  // Known keys: aiAssist, campaigns, analytics, scheduling, bioPages.
+  featureFlags: jsonb('feature_flags').$type<Record<string, boolean>>().default({}).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
 

@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { and, desc, eq } from 'drizzle-orm'
 import { db, schema } from './db'
-import { requireWorkspaceAccess } from './session.server'
+import { assertFeatureEnabled, requireWorkspaceAccess } from './session.server'
 
 export type BioPageRow = {
   id: string
@@ -77,6 +77,7 @@ const upsertInput = z.object({
 export const upsertBioPage = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => upsertInput.parse(d))
   .handler(async ({ data }) => {
+    await assertFeatureEnabled('bioPages')
     const { workspace } = await ensureWs(data.workspaceSlug)
     const values = {
       workspaceId: workspace.id,
