@@ -65,7 +65,9 @@ export function MediaZone({
     <div className="space-y-2">
       <div
         className={`rounded-md border-2 border-dashed p-6 text-center transition-colors ${
-          dragActive ? 'border-indigo-400 bg-indigo-50' : 'border-neutral-300 bg-neutral-50'
+          dragActive
+            ? 'border-indigo-400 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-950/40'
+            : 'border-neutral-300 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900'
         }`}
         onDragOver={(e) => {
           e.preventDefault()
