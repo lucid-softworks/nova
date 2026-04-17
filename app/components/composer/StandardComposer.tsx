@@ -646,6 +646,18 @@ function VersionTabs({
 }) {
   const t = useT()
   const [addOpen, setAddOpen] = useState(false)
+  const addMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!addOpen) return
+    const onDown = (e: MouseEvent) => {
+      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
+        setAddOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [addOpen])
 
   return (
     <div className="flex flex-wrap items-center gap-1 border-b border-neutral-200 dark:border-neutral-800">
@@ -689,7 +701,7 @@ function VersionTabs({
         )
       })}
       {mode === 'shared' && unassignedPlatforms.length > 0 ? (
-        <div className="relative">
+        <div ref={addMenuRef} className="relative">
           <button
             type="button"
             onClick={() => setAddOpen((o) => !o)}
