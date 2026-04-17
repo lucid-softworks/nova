@@ -25,6 +25,8 @@ import {
   inviteAdminUser,
   revokeAdminUserSessions,
   resetAdminUserTwoFactor,
+  markAdminUserVerified,
+  resendAdminVerification,
   type AdminUserRow,
 } from '~/server/admin'
 import { authClient } from '~/lib/auth-client'
@@ -94,6 +96,24 @@ function UsersPage() {
       setBusy(null)
     }
   }
+  const onMarkVerified = async (u: AdminUserRow) => {
+    setBusy(u.id)
+    try {
+      await markAdminUserVerified({ data: { userId: u.id } })
+      await reload()
+    } finally {
+      setBusy(null)
+    }
+  }
+  const onResendVerification = async (u: AdminUserRow) => {
+    setBusy(u.id)
+    try {
+      await resendAdminVerification({ data: { userId: u.id } })
+      alert(`Verification email sent to ${u.email}.`)
+    } finally {
+      setBusy(null)
+    }
+  }
 
   const filtered = rows.filter((r) => {
     const q = filter.toLowerCase()
@@ -144,13 +164,20 @@ function UsersPage() {
                     </span>
                   </td>
                   <td className="px-3 py-2">
-                    {u.banned ? (
-                      <span className="rounded-full bg-red-50 dark:bg-red-950/40 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-300">
-                        Banned
-                      </span>
-                    ) : (
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400">Active</span>
-                    )}
+                    <div className="flex flex-col gap-1">
+                      {u.banned ? (
+                        <span className="rounded-full bg-red-50 dark:bg-red-950/40 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-300 w-fit">
+                          Banned
+                        </span>
+                      ) : (
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400">Active</span>
+                      )}
+                      {!u.emailVerified ? (
+                        <span className="rounded-full bg-yellow-50 dark:bg-yellow-950/40 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:text-yellow-300 w-fit">
+                          Unverified
+                        </span>
+                      ) : null}
+                    </div>
                   </td>
                   <td className="px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400">
                     {new Date(u.createdAt).toLocaleDateString()}
@@ -187,6 +214,16 @@ function UsersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56">
+                          {!u.emailVerified ? (
+                            <>
+                              <DropdownMenuItem onSelect={() => onResendVerification(u)}>
+                                Resend verification email
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => onMarkVerified(u)}>
+                                Mark verified
+                              </DropdownMenuItem>
+                            </>
+                          ) : null}
                           <DropdownMenuItem onSelect={() => onRevokeSessions(u)}>
                             Revoke all sessions
                           </DropdownMenuItem>

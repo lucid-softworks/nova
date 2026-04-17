@@ -13,6 +13,8 @@ import {
   listAuditLogImpl,
   revokeUserSessionsImpl,
   resetUserTwoFactorImpl,
+  markUserVerifiedImpl,
+  resendVerificationImpl,
   type AdminUserRow,
   type AdminWorkspaceRow,
   type AdminWebhookDelivery,
@@ -91,3 +93,11 @@ export const revokeAdminUserSessions = createServerFn({ method: 'POST' })
 export const resetAdminUserTwoFactor = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => userIdSchema.parse(d))
   .handler(async ({ data }) => resetUserTwoFactorImpl(data.userId))
+
+export const markAdminUserVerified = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => userIdSchema.parse(d))
+  .handler(async ({ data }) => markUserVerifiedImpl(data.userId))
+
+export const resendAdminVerification = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => userIdSchema.parse(d))
+  .handler(async ({ data }) => resendVerificationImpl(data.userId))

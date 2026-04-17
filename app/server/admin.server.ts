@@ -14,6 +14,7 @@ export type AdminUserRow = {
   name: string
   role: string | null
   banned: boolean
+  emailVerified: boolean
   createdAt: string
 }
 
@@ -154,6 +155,7 @@ export async function listUsersImpl(): Promise<AdminUserRow[]> {
       name: schema.user.name,
       role: schema.user.role,
       banned: schema.user.banned,
+      emailVerified: schema.user.emailVerified,
       createdAt: schema.user.createdAt,
     })
     .from(schema.user)
@@ -165,6 +167,7 @@ export async function listUsersImpl(): Promise<AdminUserRow[]> {
     name: r.name,
     role: r.role,
     banned: r.banned ?? false,
+    emailVerified: r.emailVerified ?? false,
     createdAt: r.createdAt.toISOString(),
   }))
 }
@@ -439,5 +442,27 @@ export async function resetUserTwoFactorImpl(userId: string): Promise<{ ok: true
     .set({ twoFactorEnabled: false })
     .where(eq(schema.user.id, userId))
   await writeAudit('user.resetTwoFactor', 'user', userId)
+  return { ok: true }
+}
+
+export async function markUserVerifiedImpl(userId: string): Promise<{ ok: true }> {
+  await requireAdmin()
+  await db
+    .update(schema.user)
+    .set({ emailVerified: true })
+    .where(eq(schema.user.id, userId))
+  await writeAudit('user.markVerified', 'user', userId)
+  return { ok: true }
+}
+
+export async function resendVerificationImpl(userId: string): Promise<{ ok: true }> {
+  await requireAdmin()
+  const row = await db.query.user.findFirst({ where: eq(schema.user.id, userId) })
+  if (!row) throw new Error('User not found')
+  await auth.api.sendVerificationEmail({
+    headers: getRequest().headers,
+    body: { email: row.email, callbackURL: '/login' },
+  })
+  await writeAudit('user.resendVerification', 'user', userId)
   return { ok: true }
 }
