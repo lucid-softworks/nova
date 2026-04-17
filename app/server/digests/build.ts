@@ -143,7 +143,7 @@ export async function buildDigestFor(
 }
 
 export function renderDigest(summary: DigestSummary): { subject: string; text: string; html: string } {
-  const subject = `Your weekly SocialHub summary — ${summary.workspaceName}`
+  const subject = `Your weekly Nova summary — ${summary.workspaceName}`
   const platformLines = Object.entries(summary.publishedByPlatform)
     .map(([p, n]) => `  • ${p}: ${n}`)
     .join('\n')
@@ -166,7 +166,7 @@ Unread inbox: ${summary.unreadInbox}
 Coming up next 7 days:
 ${upcomingLines || '  (nothing scheduled)'}
 
-— SocialHub
+— Nova
 
 Unsubscribe: ${unsub}`
 

@@ -84,7 +84,7 @@ export async function testBrrrPushImpl() {
     userId: me.id,
     workspaceId: ws[0].id,
     type: 'post_published',
-    title: 'Test push from SocialHub',
+    title: 'Test push from Nova',
     body: 'If you see this on your device, brrr.now is wired up.',
     data: {},
   })

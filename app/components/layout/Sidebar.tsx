@@ -69,7 +69,7 @@ export function Sidebar({
   workspaces: WorkspaceSummary[]
 }) {
   const t = useT()
-  const appName = workspace.appName ?? 'SocialHub'
+  const appName = workspace.appName ?? 'Nova'
   const initials = user.name
     .split(' ')
     .slice(0, 2)

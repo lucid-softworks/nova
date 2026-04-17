@@ -610,7 +610,7 @@ export const en = {
   "team.requireApprovalLabel": "Require approval before publishing",
   "team.promoteForApproval": "Promote a member to Manager or Admin to make them an approver.",
   "team.inviteAMember": "Invite a member",
-  "team.inviteDialogDescription": "Adds an existing SocialHub user to this workspace.",
+  "team.inviteDialogDescription": "Adds an existing Nova user to this workspace.",
   "team.alreadyInWorkspace": "That user is already in this workspace.",
 
   // ── Activity extras ───────────────────────────────────

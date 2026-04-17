@@ -84,16 +84,16 @@ const plugins = [
     },
   }),
   twoFactor(),
-  passkey({ rpName: 'SocialHub' }),
+  passkey({ rpName: 'Nova' }),
   magicLink({
     sendMagicLink: async ({ email, url }) => {
       await sendEmail({
         to: email,
-        subject: 'Your SocialHub sign-in link',
-        text: `Sign in to SocialHub:\n\n${url}\n\nThis link expires in 5 minutes.`,
+        subject: 'Your Nova sign-in link',
+        text: `Sign in to Nova:\n\n${url}\n\nThis link expires in 5 minutes.`,
         html: `
           <div style="font-family:system-ui;max-width:480px;margin:24px auto;color:#111">
-            <h2 style="margin:0 0 12px">Sign in to SocialHub</h2>
+            <h2 style="margin:0 0 12px">Sign in to Nova</h2>
             <p>Click the button below to sign in. This link expires in 5 minutes.</p>
             <p style="margin:20px 0">
               <a href="${escapeHtml(url)}" style="display:inline-block;background:#6366f1;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Sign in</a>
@@ -110,7 +110,7 @@ const plugins = [
     sendVerificationOTP: async ({ email, otp, type }) => {
       await sendEmail({
         to: email,
-        subject: `Your SocialHub code: ${otp}`,
+        subject: `Your Nova code: ${otp}`,
         text: `Your verification code is ${otp} (${type}).`,
         html: `
           <div style="font-family:system-ui;max-width:480px;margin:24px auto;color:#111">
@@ -148,11 +148,11 @@ const plugins = [
       await sendEmail({
         to: email,
         subject: `${inviter.user.name} invited you to "${organization.name}"`,
-        text: `You've been invited to join ${organization.name} on SocialHub.\n\nAccept: ${inviteUrl}\n\nThis invitation expires in 48 hours.`,
+        text: `You've been invited to join ${organization.name} on Nova.\n\nAccept: ${inviteUrl}\n\nThis invitation expires in 48 hours.`,
         html: `
           <div style="font-family:system-ui;max-width:480px;margin:24px auto;color:#111">
             <h2 style="margin:0 0 12px">You've been invited</h2>
-            <p>${escapeHtml(inviter.user.name)} invited you to join <strong>${escapeHtml(organization.name)}</strong> on SocialHub as a ${escapeHtml(invitation.role ?? 'member')}.</p>
+            <p>${escapeHtml(inviter.user.name)} invited you to join <strong>${escapeHtml(organization.name)}</strong> on Nova as a ${escapeHtml(invitation.role ?? 'member')}.</p>
             <p style="margin:20px 0">
               <a href="${escapeHtml(inviteUrl)}" style="display:inline-block;background:#6366f1;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Accept invitation</a>
             </p>
@@ -229,7 +229,7 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       await sendEmail({
         to: user.email,
-        subject: 'Verify your SocialHub email',
+        subject: 'Verify your Nova email',
         text: `Verify your email: ${url}`,
         html: `
           <div style="font-family:system-ui;max-width:480px;margin:24px auto;color:#111">

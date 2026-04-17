@@ -6,7 +6,7 @@ export default defineConfig({
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? 'postgresql://user:pass@localhost:5432/socialhub',
+    url: process.env.DATABASE_URL ?? 'postgresql://user:pass@localhost:5432/nova',
   },
   casing: 'snake_case',
 })

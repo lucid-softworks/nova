@@ -126,7 +126,7 @@ export async function connectBlueskyImpl(slug: string, identifier: string, passw
   return { id }
 }
 
-const OAUTH_COOKIE = 'socialhub_oauth_state'
+const OAUTH_COOKIE = 'nova_oauth_state'
 
 function normalizeInstance(raw: string): string {
   const trimmed = raw.trim().replace(/^https?:\/\//, '').replace(/\/+$/, '')
@@ -152,7 +152,7 @@ export async function startMastodonOAuthImpl(slug: string, instanceRaw: string) 
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      client_name: 'SocialHub',
+      client_name: 'Nova',
       redirect_uris: redirectUri,
       scopes: MASTODON_SCOPES,
       website: baseUrl,

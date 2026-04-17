@@ -32,12 +32,12 @@ import { logger } from '~/lib/logger'
 import { initSentry } from '~/lib/sentry'
 
 declare global {
-  var __socialhubQueuesBooted: boolean | undefined
-  var __socialhubQueueCleanup: (() => Promise<void>) | undefined
+  var __novaQueuesBooted: boolean | undefined
+  var __novaQueueCleanup: (() => Promise<void>) | undefined
 }
 
 export function bootQueues() {
-  if (globalThis.__socialhubQueuesBooted) return
+  if (globalThis.__novaQueuesBooted) return
   if (process.env.DISABLE_INLINE_WORKER === '1') {
     // Prod: web process doesn't run the worker; it's a separate `pnpm worker`
     // process. Set this in the web container only.
@@ -48,7 +48,7 @@ export function bootQueues() {
     return
   }
   initSentry()
-  globalThis.__socialhubQueuesBooted = true
+  globalThis.__novaQueuesBooted = true
   const queue = getPostQueue()
   const worker = getPostWorker()
   const analyticsQueue = getAnalyticsQueue()
@@ -87,7 +87,7 @@ export function bootQueues() {
   void recurringQueue
   void recurringWorker
 
-  globalThis.__socialhubQueueCleanup = async () => {
+  globalThis.__novaQueueCleanup = async () => {
     stopScheduler()
     await Promise.all([
       worker.close(),
@@ -113,7 +113,7 @@ export function bootQueues() {
     resetInbox()
     resetDigest()
     resetRecurring()
-    globalThis.__socialhubQueuesBooted = false
+    globalThis.__novaQueuesBooted = false
   }
 }
 
@@ -121,7 +121,7 @@ export function bootQueues() {
 // fresh module graph can boot a new one on the next request.
 if (import.meta.hot) {
   import.meta.hot.dispose(async () => {
-    const cleanup = globalThis.__socialhubQueueCleanup
+    const cleanup = globalThis.__novaQueueCleanup
     if (cleanup) {
       try {
         await cleanup()

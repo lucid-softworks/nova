@@ -48,7 +48,7 @@ function AdminLayout() {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-6">
             <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              SocialHub · Admin
+              Nova · Admin
             </div>
             <nav className="flex items-center gap-3 text-sm">
               {NAV.map((n) => (

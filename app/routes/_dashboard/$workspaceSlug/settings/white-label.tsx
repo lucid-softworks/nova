@@ -80,7 +80,7 @@ function WhiteLabelPage() {
     }
   }
 
-  const effectiveAppName = appName.trim() || 'SocialHub'
+  const effectiveAppName = appName.trim() || 'Nova'
 
   return (
     <div className="space-y-4">

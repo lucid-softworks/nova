@@ -17,7 +17,7 @@ function getResend(): Resend | null {
 }
 
 function defaultFrom(): string {
-  return process.env.RESEND_FROM ?? 'SocialHub <onboarding@resend.dev>'
+  return process.env.RESEND_FROM ?? 'Nova <onboarding@resend.dev>'
 }
 
 /**

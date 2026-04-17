@@ -1,4 +1,4 @@
-/* SocialHub service worker — minimal stale-while-revalidate for static
+/* Nova service worker — minimal stale-while-revalidate for static
  * assets + an offline fallback. Bump CACHE_VERSION to invalidate. */
 const CACHE_VERSION = 'v1'
 const STATIC_CACHE = `sh-static-${CACHE_VERSION}`

@@ -76,7 +76,7 @@ export async function buildFeedForTokenImpl(token: string): Promise<string | nul
     )
 
   if (posts.length === 0) {
-    return buildIcs(org?.name ?? 'SocialHub', [])
+    return buildIcs(org?.name ?? 'Nova', [])
   }
 
   const postIds = posts.map((p) => p.id)
@@ -133,5 +133,5 @@ export async function buildFeedForTokenImpl(token: string): Promise<string | nul
     }
   })
 
-  return buildIcs(org?.name ?? 'SocialHub', events)
+  return buildIcs(org?.name ?? 'Nova', events)
 }

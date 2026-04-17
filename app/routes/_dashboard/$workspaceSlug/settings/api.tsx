@@ -222,7 +222,7 @@ function ApiSettings() {
                 id="wh-url"
                 value={newWebhookUrl}
                 onChange={(e) => setNewWebhookUrl(e.target.value)}
-                placeholder="https://example.com/webhooks/socialhub"
+                placeholder="https://example.com/webhooks/nova"
               />
             </Field>
             <div>
@@ -266,7 +266,7 @@ function ApiSettings() {
                 </Button>
               </div>
               <p className="mt-2 text-xs text-indigo-700 dark:text-indigo-300">
-                Requests are signed with <code>X-SocialHub-Signature: sha256={'{hmac}'}</code>.
+                Requests are signed with <code>X-Nova-Signature: sha256={'{hmac}'}</code>.
               </p>
             </div>
           ) : null}

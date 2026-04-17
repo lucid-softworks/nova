@@ -76,9 +76,9 @@ async function deliverOnce(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-SocialHub-Signature': `sha256=${signature}`,
-        'X-SocialHub-Event': event,
-        'User-Agent': 'SocialHub-Webhooks/1',
+        'X-Nova-Signature': `sha256=${signature}`,
+        'X-Nova-Event': event,
+        'User-Agent': 'Nova-Webhooks/1',
       },
       body,
       signal: controller.signal,

@@ -145,7 +145,7 @@ export async function notifyUser(params: {
     .where(eq(schema.workspaces.id, params.workspaceId))
     .limit(1)
   const ws = wsRow[0] ?? null
-  const appName = ws?.appName ?? 'SocialHub'
+  const appName = ws?.appName ?? 'Nova'
   const deepUrl = buildDeepLink(ws?.orgSlug ?? null, params.type, params.data ?? {})
 
   const jobs: Array<Promise<unknown>> = []
