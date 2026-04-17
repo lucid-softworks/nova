@@ -873,3 +873,21 @@ export const platformSettings = pgTable('platform_settings', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
+// Append-only log of platform-admin actions. Every mutation that runs
+// with admin privilege should write a row so we can answer "who did what"
+// after the fact. Target fields are free-form strings so any entity type
+// can be referenced (user, workspace, settings, …).
+export const adminAuditLog = pgTable(
+  'admin_audit_log',
+  {
+    id: id(),
+    actorUserId: text('actor_user_id').references(() => user.id, { onDelete: 'set null' }),
+    action: text('action').notNull(),
+    targetType: text('target_type'),
+    targetId: text('target_id'),
+    metadata: jsonb('metadata').default({}).notNull(),
+    createdAt: now(),
+  },
+  (t) => [index('admin_audit_log_created_idx').on(t.createdAt)],
+)
+

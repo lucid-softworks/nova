@@ -73,6 +73,78 @@ async function requireAdmin() {
   return row
 }
 
+/**
+ * Append a row to the admin audit log. Best-effort — never throw,
+ * because losing audit context shouldn't fail the underlying action.
+ * Callers must have already verified admin status; we re-read the
+ * actor from the session to record it.
+ */
+export async function writeAudit(
+  action: string,
+  targetType: string | null,
+  targetId: string | null,
+  metadata: Record<string, unknown> = {},
+): Promise<void> {
+  try {
+    const ctx = await loadSessionContext()
+    const actorUserId = ctx.user?.id ?? null
+    await db.insert(schema.adminAuditLog).values({
+      actorUserId,
+      action,
+      targetType,
+      targetId,
+      metadata,
+    })
+  } catch {
+    // swallow — audit failure must not break the action
+  }
+}
+
+export type AdminAuditRow = {
+  id: string
+  actorUserId: string | null
+  actorName: string | null
+  actorEmail: string | null
+  action: string
+  targetType: string | null
+  targetId: string | null
+  // Serialized as JSON text so TanStack Start's serializer is happy with
+  // the arbitrary-shaped metadata payload. Callers parse on the client.
+  metadataJson: string
+  createdAt: string
+}
+
+export async function listAuditLogImpl(limit = 200): Promise<AdminAuditRow[]> {
+  await requireAdmin()
+  const rows = await db
+    .select({
+      id: schema.adminAuditLog.id,
+      actorUserId: schema.adminAuditLog.actorUserId,
+      actorName: schema.user.name,
+      actorEmail: schema.user.email,
+      action: schema.adminAuditLog.action,
+      targetType: schema.adminAuditLog.targetType,
+      targetId: schema.adminAuditLog.targetId,
+      metadata: schema.adminAuditLog.metadata,
+      createdAt: schema.adminAuditLog.createdAt,
+    })
+    .from(schema.adminAuditLog)
+    .leftJoin(schema.user, eq(schema.user.id, schema.adminAuditLog.actorUserId))
+    .orderBy(desc(schema.adminAuditLog.createdAt))
+    .limit(limit)
+  return rows.map((r) => ({
+    id: r.id,
+    actorUserId: r.actorUserId,
+    actorName: r.actorName,
+    actorEmail: r.actorEmail,
+    action: r.action,
+    targetType: r.targetType,
+    targetId: r.targetId,
+    metadataJson: JSON.stringify(r.metadata ?? {}),
+    createdAt: r.createdAt.toISOString(),
+  }))
+}
+
 export async function listUsersImpl(): Promise<AdminUserRow[]> {
   await requireAdmin()
   const rows = await db
@@ -135,7 +207,15 @@ export async function deleteWorkspaceImpl(workspaceId: string) {
     where: eq(schema.workspaces.id, workspaceId),
   })
   if (!ws) return { ok: true }
+  const org = await db.query.organization.findFirst({
+    where: eq(schema.organization.id, ws.organizationId),
+  })
   await db.delete(schema.organization).where(eq(schema.organization.id, ws.organizationId))
+  await writeAudit('workspace.delete', 'workspace', workspaceId, {
+    organizationId: ws.organizationId,
+    name: org?.name ?? null,
+    slug: org?.slug ?? null,
+  })
   return { ok: true }
 }
 
@@ -203,6 +283,7 @@ export async function getJobStatsImpl(): Promise<AdminJobStats> {
 
 export async function retryJobImpl(jobId: string, queueName: QueueName = 'posts') {
   await requireAdmin()
+  await writeAudit('job.retry', 'job', jobId, { queue: queueName })
   const queue = queueName === 'analytics' ? getAnalyticsQueue() : getPostQueue()
   const job = await queue.getJob(jobId)
   if (!job) throw new Error('Job not found')
@@ -280,6 +361,7 @@ export async function updatePlatformSettingsImpl(input: PlatformSettings): Promi
       target: schema.platformSettings.id,
       set: { ...input, updatedAt: new Date() },
     })
+  await writeAudit('settings.update', 'settings', 'singleton', input as unknown as Record<string, unknown>)
   return input
 }
 
@@ -322,6 +404,7 @@ export async function inviteUserImpl(email: string, name: string): Promise<Invit
       headers,
       body: { email, callbackURL: '/' },
     })
+    await writeAudit('user.invite', 'user', userId, { email, name })
     return { ok: true, userId }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Invite failed' }

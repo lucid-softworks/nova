@@ -275,6 +275,40 @@ export const auth = betterAuth({
         }
       }
     }),
+    after: createAuthMiddleware(async (ctx) => {
+      // Mirror admin-plugin mutations into our audit log so actions taken
+      // directly via the Better Auth client (ban / impersonate / set-role)
+      // aren't invisible. Best-effort — never throw.
+      const auditable: Record<string, string> = {
+        '/admin/ban-user': 'user.ban',
+        '/admin/unban-user': 'user.unban',
+        '/admin/impersonate-user': 'user.impersonate',
+        '/admin/stop-impersonating': 'user.stopImpersonate',
+        '/admin/set-role': 'user.setRole',
+        '/admin/set-password': 'user.setPassword',
+        '/admin/remove-user': 'user.remove',
+      }
+      const action = auditable[ctx.path]
+      if (!action) return
+      try {
+        const actorUserId = ctx.context.session?.user?.id ?? null
+        const body = (ctx.body ?? {}) as Record<string, unknown>
+        const targetId = typeof body.userId === 'string' ? body.userId : null
+        const metadata: Record<string, unknown> = {}
+        for (const k of ['role', 'banReason', 'banExpiresIn']) {
+          if (k in body) metadata[k] = body[k]
+        }
+        await db.insert(schema.adminAuditLog).values({
+          actorUserId,
+          action,
+          targetType: 'user',
+          targetId,
+          metadata,
+        })
+      } catch {
+        // swallow
+      }
+    }),
   },
 })
 
