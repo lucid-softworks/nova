@@ -28,9 +28,12 @@ const port = process.env.PORT ? Number(process.env.PORT) : 3000
 const app = new Hono()
 
 // Security headers — rebuild the response because TanStack Start returns
-// a Response with frozen headers that cannot be mutated in place.
+// a Response with frozen headers that cannot be mutated in place. The
+// body is buffered via arrayBuffer() so the new Response owns the data;
+// passing a streaming body directly locks it to the original response.
 app.use('*', async (c, next) => {
   await next()
+  const body = c.res.body ? await c.res.arrayBuffer() : null
   const headers = new Headers(c.res.headers)
   headers.set('X-Content-Type-Options', 'nosniff')
   headers.set('X-Frame-Options', 'DENY')
@@ -54,7 +57,7 @@ app.use('*', async (c, next) => {
   if (process.env.NODE_ENV === 'production') {
     headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
   }
-  c.res = new Response(c.res.body, {
+  c.res = new Response(body, {
     status: c.res.status,
     statusText: c.res.statusText,
     headers,
