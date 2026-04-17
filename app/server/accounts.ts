@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import {
   listAccountsImpl,
+  listAvailablePlatformsImpl,
   disconnectAccountImpl,
   connectBlueskyImpl,
   startOAuthImpl,
@@ -16,6 +17,9 @@ const workspaceInput = z.object({ workspaceSlug: z.string().min(1) })
 export const listAccounts = createServerFn({ method: 'GET' })
   .inputValidator((d: unknown) => workspaceInput.parse(d))
   .handler(async ({ data }) => listAccountsImpl(data.workspaceSlug))
+
+export const listAvailablePlatforms = createServerFn({ method: 'GET' })
+  .handler(async () => listAvailablePlatformsImpl())
 
 const disconnectInput = z.object({
   workspaceSlug: z.string().min(1),

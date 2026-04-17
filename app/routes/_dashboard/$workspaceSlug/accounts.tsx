@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { ChevronDown, Download, Plug, RotateCw } from 'lucide-react'
-import { listAccounts, disconnectAccount, type AccountSummary } from '~/server/accounts'
+import { listAccounts, listAvailablePlatforms, disconnectAccount, type AccountSummary } from '~/server/accounts'
 import { backfillBluesky, type BackfillResult } from '~/server/backfill'
 import { PLATFORM_KEYS, PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { Card, CardContent } from '~/components/ui/card'
@@ -16,6 +16,7 @@ import { useT } from '~/lib/i18n'
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/accounts')({
   loader: async ({ params }) => ({
     accounts: await listAccounts({ data: { workspaceSlug: params.workspaceSlug } }),
+    availablePlatforms: await listAvailablePlatforms(),
   }),
   component: AccountsPage,
 })
@@ -59,6 +60,7 @@ function AccountsPage() {
         <AddAccountDialog
           workspaceSlug={workspaceSlug}
           connectedCounts={counts}
+          availablePlatforms={initial.availablePlatforms}
           onConnected={reload}
         />
       </div>

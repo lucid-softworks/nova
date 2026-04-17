@@ -22,12 +22,15 @@ type Mode = { kind: 'grid' } | { kind: 'bluesky' } | { kind: 'mastodon' }
 export function AddAccountDialog({
   workspaceSlug,
   connectedCounts,
+  availablePlatforms,
   onConnected,
 }: {
   workspaceSlug: string
   connectedCounts: Partial<Record<PlatformKey, number>>
+  availablePlatforms: PlatformKey[]
   onConnected: () => void
 }) {
+  const availableSet = new Set(availablePlatforms)
   const t = useT()
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<Mode>({ kind: 'grid' })
@@ -83,13 +86,15 @@ export function AddAccountDialog({
             <div className="grid grid-cols-3 gap-3">
               {PLATFORM_LIST.map((p) => {
                 const count = connectedCounts[p.key] ?? 0
+                const available = availableSet.has(p.key)
                 return (
                   <button
                     key={p.key}
                     type="button"
                     onClick={() => handlePlatform(p.key)}
-                    disabled={busy !== null}
-                    className="relative flex flex-col items-center gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 hover:border-indigo-300 hover:bg-indigo-50/50 disabled:opacity-60"
+                    disabled={busy !== null || !available}
+                    title={available ? undefined : `${p.label} is not configured on this server`}
+                    className="relative flex flex-col items-center gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 hover:border-indigo-300 hover:bg-indigo-50/50 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-200 dark:disabled:hover:border-neutral-800 disabled:hover:bg-transparent"
                   >
                     <PlatformIcon platform={p.key} size={40} />
                     <div className="text-xs font-medium text-neutral-700 dark:text-neutral-200">{p.label}</div>
@@ -99,7 +104,7 @@ export function AddAccountDialog({
                       </span>
                     ) : null}
                     {busy === p.key ? (
-                      <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                      <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-neutral-900/70">
                         <Spinner />
                       </div>
                     ) : null}

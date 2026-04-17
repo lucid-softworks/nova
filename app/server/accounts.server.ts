@@ -5,9 +5,26 @@ import { db, schema } from './db'
 import { requireWorkspaceAccess } from './session.server'
 import { encrypt } from '~/lib/encryption'
 import { safeFetch } from '~/lib/safe-fetch'
-import type { PlatformKey } from '~/lib/platforms'
+import { PLATFORM_KEYS, type PlatformKey } from '~/lib/platforms'
 import { buildAuthorizeUrl, getProvider, makePkce, saveSocialAccount } from './oauth/flow.server'
 import { assertWithinLimit } from '~/lib/billing/limits'
+
+/**
+ * Which platforms are connectable given the current env. Bluesky + Mastodon
+ * don't need platform-level secrets (Bluesky uses an app password, Mastodon
+ * registers an app per-instance on first connect), so they're always on.
+ */
+export function listAvailablePlatformsImpl(): PlatformKey[] {
+  const out: PlatformKey[] = []
+  for (const p of PLATFORM_KEYS) {
+    if (p === 'bluesky' || p === 'mastodon') {
+      out.push(p)
+      continue
+    }
+    if (getProvider(p)) out.push(p)
+  }
+  return out
+}
 
 export type AccountSummary = {
   id: string
