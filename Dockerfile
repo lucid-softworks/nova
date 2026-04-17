@@ -37,7 +37,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/app ./app
-COPY server-entry.js ./server-entry.js
+COPY server-entry.js tsconfig.json ./
 
 # Non-root by default.
 RUN useradd --uid 10001 --create-home --shell /usr/sbin/nologin nova \
