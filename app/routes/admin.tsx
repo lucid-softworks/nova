@@ -36,6 +36,7 @@ const NAV = [
   { to: '/admin/workspaces', label: 'admin.workspaces' },
   { to: '/admin/jobs', label: 'admin.jobs' },
   { to: '/admin/webhooks', label: 'admin.webhooks' },
+  { to: '/admin/api-keys', label: 'admin.apiKeys' },
   { to: '/admin/audit', label: 'admin.audit' },
   { to: '/admin/settings', label: 'admin.settings' },
 ] as const

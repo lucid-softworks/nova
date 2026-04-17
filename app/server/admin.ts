@@ -16,6 +16,8 @@ import {
   markUserVerifiedImpl,
   resendVerificationImpl,
   getWorkspaceDetailImpl,
+  listApiKeysImpl,
+  revokeApiKeyImpl,
   type AdminUserRow,
   type AdminWorkspaceRow,
   type AdminWebhookDelivery,
@@ -24,9 +26,10 @@ import {
   type InviteUserResult,
   type AdminAuditRow,
   type AdminWorkspaceDetail,
+  type AdminApiKeyRow,
 } from './admin.server'
 
-export type { AdminUserRow, AdminWorkspaceRow, AdminWebhookDelivery, AdminJobStats, PlatformSettings, InviteUserResult, AdminAuditRow, AdminWorkspaceDetail }
+export type { AdminUserRow, AdminWorkspaceRow, AdminWebhookDelivery, AdminJobStats, PlatformSettings, InviteUserResult, AdminAuditRow, AdminWorkspaceDetail, AdminApiKeyRow }
 
 export const listAdminUsers = createServerFn({ method: 'GET' }).handler(async () =>
   listUsersImpl(),
@@ -115,3 +118,13 @@ const workspaceIdSchema = z.object({ workspaceId: z.string().uuid() })
 export const getAdminWorkspaceDetail = createServerFn({ method: 'GET' })
   .inputValidator((d: unknown) => workspaceIdSchema.parse(d))
   .handler(async ({ data }) => getWorkspaceDetailImpl(data.workspaceId))
+
+export const listAdminApiKeys = createServerFn({ method: 'GET' }).handler(async () =>
+  listApiKeysImpl(),
+)
+
+const keyIdSchema = z.object({ keyId: z.string().min(1) })
+
+export const revokeAdminApiKey = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => keyIdSchema.parse(d))
+  .handler(async ({ data }) => revokeApiKeyImpl(data.keyId))

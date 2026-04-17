@@ -480,6 +480,7 @@ export const en = {
   "admin.workspaces": "Workspaces",
   "admin.jobs": "Jobs",
   "admin.webhooks": "Webhooks",
+  "admin.apiKeys": "API keys",
   "admin.audit": "Audit log",
   "admin.settings": "Settings",
   "admin.backToApp": "Back to app",

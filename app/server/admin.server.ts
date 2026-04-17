@@ -485,6 +485,106 @@ export async function resendVerificationImpl(userId: string): Promise<{ ok: true
   return { ok: true }
 }
 
+export type AdminApiKeyRow = {
+  id: string
+  /** Masked fingerprint: `{prefix}{start}••••` — never the full key. */
+  display: string
+  name: string | null
+  ownerUserId: string
+  ownerName: string | null
+  ownerEmail: string | null
+  workspaceId: string | null
+  workspaceName: string | null
+  enabled: boolean
+  lastRequest: string | null
+  createdAt: string
+  expiresAt: string | null
+  requestCount: number
+}
+
+function parseKeyMetadata(raw: string | null): { workspaceId?: string } {
+  if (!raw) return {}
+  try {
+    const v = JSON.parse(raw) as { workspaceId?: unknown }
+    return typeof v?.workspaceId === 'string' ? { workspaceId: v.workspaceId } : {}
+  } catch {
+    return {}
+  }
+}
+
+export async function listApiKeysImpl(): Promise<AdminApiKeyRow[]> {
+  await requireAdmin()
+  const rows = await db
+    .select({
+      id: schema.apikey.id,
+      name: schema.apikey.name,
+      prefix: schema.apikey.prefix,
+      start: schema.apikey.start,
+      referenceId: schema.apikey.referenceId,
+      enabled: schema.apikey.enabled,
+      lastRequest: schema.apikey.lastRequest,
+      requestCount: schema.apikey.requestCount,
+      createdAt: schema.apikey.createdAt,
+      expiresAt: schema.apikey.expiresAt,
+      metadata: schema.apikey.metadata,
+      ownerName: schema.user.name,
+      ownerEmail: schema.user.email,
+    })
+    .from(schema.apikey)
+    .leftJoin(schema.user, eq(schema.user.id, schema.apikey.referenceId))
+    .orderBy(desc(schema.apikey.createdAt))
+    .limit(500)
+
+  // Resolve workspace names from the metadata workspaceId when present.
+  const workspaceIds = Array.from(
+    new Set(rows.map((r) => parseKeyMetadata(r.metadata).workspaceId).filter((v): v is string => !!v)),
+  )
+  const orgByWorkspace = new Map<string, { name: string }>()
+  if (workspaceIds.length > 0) {
+    const wsRows = await db
+      .select({
+        workspaceId: schema.workspaces.id,
+        orgName: schema.organization.name,
+      })
+      .from(schema.workspaces)
+      .innerJoin(schema.organization, eq(schema.organization.id, schema.workspaces.organizationId))
+    for (const r of wsRows) {
+      orgByWorkspace.set(r.workspaceId, { name: r.orgName })
+    }
+  }
+
+  return rows.map((r) => {
+    const meta = parseKeyMetadata(r.metadata)
+    const workspaceId = meta.workspaceId ?? null
+    const workspaceName =
+      workspaceId && orgByWorkspace.has(workspaceId) ? orgByWorkspace.get(workspaceId)!.name : null
+    const prefix = r.prefix ?? ''
+    const start = r.start ?? ''
+    return {
+      id: r.id,
+      display: `${prefix}${start}••••`,
+      name: r.name,
+      ownerUserId: r.referenceId,
+      ownerName: r.ownerName,
+      ownerEmail: r.ownerEmail,
+      workspaceId,
+      workspaceName,
+      enabled: r.enabled,
+      lastRequest: r.lastRequest ? r.lastRequest.toISOString() : null,
+      createdAt: r.createdAt.toISOString(),
+      expiresAt: r.expiresAt ? r.expiresAt.toISOString() : null,
+      requestCount: r.requestCount ?? 0,
+    }
+  })
+}
+
+export async function revokeApiKeyImpl(keyId: string): Promise<{ ok: true }> {
+  await requireAdmin()
+  await db.delete(schema.apikey).where(eq(schema.apikey.id, keyId))
+  await writeAudit('apikey.revoke', 'apikey', keyId)
+  return { ok: true }
+}
+
 export type AdminWorkspaceDetail = {
   id: string
   name: string
