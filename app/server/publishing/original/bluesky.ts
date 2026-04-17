@@ -4,6 +4,7 @@ import { encrypt } from '~/lib/encryption'
 import { PublishError } from '../errors'
 import { loadMediaBuffer } from '../helpers'
 import type { PublishContext, PublishMedia, PublishResult } from '../index'
+import { buildFacets, detectRawFacets, type Facet } from './bluesky-facets'
 
 const ENTRYWAY = 'https://bsky.social'
 const PLC_DIRECTORY = 'https://plc.directory'
@@ -145,12 +146,26 @@ type CreateRecordResponse = { uri: string; cid: string }
 
 const VALID_LABELS = new Set(['suggestive', 'nudity', 'porn', 'graphic-media'])
 
+async function resolveHandleToDid(session: Session, handle: string): Promise<string | null> {
+  try {
+    const url = new URL(`${session.pdsUrl}/xrpc/com.atproto.identity.resolveHandle`)
+    url.searchParams.set('handle', handle)
+    const res = await fetch(url.toString())
+    if (!res.ok) return null
+    const json = (await res.json()) as { did?: string }
+    return json.did ?? null
+  } catch {
+    return null
+  }
+}
+
 async function createPost(
   session: Session,
   text: string,
   images: Array<{ alt: string; image: BlobRef }>,
   video: VideoEmbed | null,
   labels: string[],
+  facets: Facet[],
   reply?: { root: { uri: string; cid: string }; parent: { uri: string; cid: string } },
 ): Promise<CreateRecordResponse> {
   if (graphemeCount(text) > MAX_GRAPHEMES) {
@@ -167,6 +182,7 @@ async function createPost(
     createdAt: new Date().toISOString(),
     langs: ['en'],
   }
+  if (facets.length > 0) record.facets = facets
   // Bluesky embeds are mutually exclusive: video takes precedence when
   // both video and images are present on the same post.
   if (video) {
@@ -293,8 +309,11 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
   }
   const labelsRaw = (ctx.version.platformVariables.bluesky_labels ?? '') as string
   const labels = labelsRaw ? labelsRaw.split(',').filter(Boolean) : []
+  const firstFacets = await buildFacets(detectRawFacets(ctx.version.content), (h) =>
+    resolveHandleToDid(session, h),
+  )
   const first = await withRefresh(() =>
-    createPost(session, ctx.version.content, images, video, labels, replyRef),
+    createPost(session, ctx.version.content, images, video, labels, firstFacets, replyRef),
   )
 
   if (ctx.version.isThread && ctx.version.threadParts.length > 1) {
@@ -302,8 +321,11 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
     const root = { uri: first.uri, cid: first.cid }
     for (let i = 1; i < ctx.version.threadParts.length; i++) {
       const part = ctx.version.threadParts[i]!
+      const partFacets = await buildFacets(detectRawFacets(part.content), (h) =>
+        resolveHandleToDid(session, h),
+      )
       const next = await withRefresh(() =>
-        createPost(session, part.content, [], null, labels, { root, parent }),
+        createPost(session, part.content, [], null, labels, partFacets, { root, parent }),
       )
       parent = { uri: next.uri, cid: next.cid }
     }
