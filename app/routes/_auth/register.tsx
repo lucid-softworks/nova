@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -25,8 +25,8 @@ export const Route = createFileRoute('/_auth/register')({ component: RegisterPag
 
 function RegisterPage() {
   const t = useT()
-  const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
+  const [sentTo, setSentTo] = useState<string | null>(null)
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: '', email: '', password: '', confirm: '' },
@@ -43,7 +43,26 @@ function RegisterPage() {
       setError(e.message ?? 'Could not create account')
       return
     }
-    navigate({ to: '/onboarding' })
+    setSentTo(values.email)
+  }
+
+  if (sentTo) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Check your email</CardTitle>
+          <CardDescription>
+            We've sent a verification link to <strong>{sentTo}</strong>. Click it to activate your
+            account, then sign in.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link to="/login" className="text-sm text-indigo-600 hover:underline">
+            Back to sign in
+          </Link>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
