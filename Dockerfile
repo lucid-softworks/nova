@@ -13,8 +13,7 @@ ENV PNPM_HOME="/pnpm" PATH="/pnpm:$PATH"
 RUN corepack enable && corepack prepare pnpm@10.12.2 --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 FROM node:22-bookworm-slim AS build
 ENV PNPM_HOME="/pnpm" PATH="/pnpm:$PATH"
@@ -35,8 +34,7 @@ WORKDIR /app
 # Runtime only needs prod deps + the built output + the TS worker entry
 # (tsx compiles it on-demand).
 COPY package.json pnpm-lock.yaml ./
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/app ./app
 COPY server-entry.js ./server-entry.js
