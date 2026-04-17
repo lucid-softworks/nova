@@ -2,7 +2,7 @@ import { betterAuth, APIError } from 'better-auth'
 import { createAuthMiddleware } from 'better-auth/api'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
-import { eq, gte, count } from 'drizzle-orm'
+import { and, desc, eq, gte, count } from 'drizzle-orm'
 import { apiKey } from '@better-auth/api-key'
 import { passkey } from '@better-auth/passkey'
 import {
@@ -251,6 +251,31 @@ export const auth = betterAuth({
   plugins,
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      // Log the sign-in attempt up-front with success=false,
+      // reason='pending'. The after-hook flips it to success=true if the
+      // endpoint completes; otherwise the row stays "failed".
+      const isSignIn =
+        ctx.path === '/sign-in/email' ||
+        ctx.path === '/sign-in/magic-link' ||
+        ctx.path === '/magic-link/verify' ||
+        ctx.path === '/email-otp/verify-email'
+      if (isSignIn) {
+        try {
+          const body = (ctx.body ?? {}) as Record<string, unknown>
+          const email = typeof body.email === 'string' ? body.email : null
+          const headers = ctx.headers
+          await db.insert(schema.authLoginAttempts).values({
+            email,
+            ipAddress: headers?.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+            userAgent: headers?.get('user-agent') ?? null,
+            success: false,
+            reason: 'pending',
+          })
+        } catch {
+          // swallow
+        }
+      }
+
       if (ctx.path !== '/sign-up/email') return
       const row = await db.query.platformSettings.findFirst({
         where: eq(schema.platformSettings.id, 'singleton'),
@@ -306,24 +331,69 @@ export const auth = betterAuth({
         '/admin/remove-user': 'user.remove',
       }
       const action = auditable[ctx.path]
-      if (!action) return
-      try {
-        const actorUserId = ctx.context.session?.user?.id ?? null
-        const body = (ctx.body ?? {}) as Record<string, unknown>
-        const targetId = typeof body.userId === 'string' ? body.userId : null
-        const metadata: Record<string, unknown> = {}
-        for (const k of ['role', 'banReason', 'banExpiresIn']) {
-          if (k in body) metadata[k] = body[k]
+      if (action) {
+        try {
+          const actorUserId = ctx.context.session?.user?.id ?? null
+          const body = (ctx.body ?? {}) as Record<string, unknown>
+          const targetId = typeof body.userId === 'string' ? body.userId : null
+          const metadata: Record<string, unknown> = {}
+          for (const k of ['role', 'banReason', 'banExpiresIn']) {
+            if (k in body) metadata[k] = body[k]
+          }
+          await db.insert(schema.adminAuditLog).values({
+            actorUserId,
+            action,
+            targetType: 'user',
+            targetId,
+            metadata,
+          })
+        } catch {
+          // swallow
         }
-        await db.insert(schema.adminAuditLog).values({
-          actorUserId,
-          action,
-          targetType: 'user',
-          targetId,
-          metadata,
-        })
-      } catch {
-        // swallow
+      }
+
+      // When the after-hook runs and the path was a sign-in, mark the
+      // pending attempt row (inserted by the before-hook) as successful.
+      // If the endpoint threw, this block never runs and the row stays
+      // pending — which reads as a failure.
+      const isSignIn =
+        ctx.path === '/sign-in/email' ||
+        ctx.path === '/sign-in/magic-link' ||
+        ctx.path === '/magic-link/verify' ||
+        ctx.path === '/email-otp/verify-email'
+      if (isSignIn) {
+        try {
+          const body = (ctx.body ?? {}) as Record<string, unknown>
+          const email =
+            typeof body.email === 'string'
+              ? body.email
+              : ctx.context.newSession?.user?.email ?? null
+          // Flip the most recent pending row for this email.
+          const recent = await db
+            .select({ id: schema.authLoginAttempts.id })
+            .from(schema.authLoginAttempts)
+            .where(
+              and(
+                email ? eq(schema.authLoginAttempts.email, email) : eq(schema.authLoginAttempts.email, ''),
+                eq(schema.authLoginAttempts.success, false),
+                eq(schema.authLoginAttempts.reason, 'pending'),
+                gte(
+                  schema.authLoginAttempts.createdAt,
+                  new Date(Date.now() - 30 * 1000),
+                ),
+              ),
+            )
+            .orderBy(desc(schema.authLoginAttempts.createdAt))
+            .limit(1)
+          if (recent[0]) {
+            await db
+              .update(schema.authLoginAttempts)
+              .set({ success: true, reason: null })
+              .where(eq(schema.authLoginAttempts.id, recent[0].id))
+          }
+        } catch {
+          // swallow
+        }
       }
     }),
   },

@@ -18,6 +18,7 @@ import {
   getWorkspaceDetailImpl,
   listApiKeysImpl,
   revokeApiKeyImpl,
+  listLoginAttemptsImpl,
   type AdminUserRow,
   type AdminWorkspaceRow,
   type AdminWebhookDelivery,
@@ -27,9 +28,10 @@ import {
   type AdminAuditRow,
   type AdminWorkspaceDetail,
   type AdminApiKeyRow,
+  type AdminLoginAttemptRow,
 } from './admin.server'
 
-export type { AdminUserRow, AdminWorkspaceRow, AdminWebhookDelivery, AdminJobStats, PlatformSettings, InviteUserResult, AdminAuditRow, AdminWorkspaceDetail, AdminApiKeyRow }
+export type { AdminUserRow, AdminWorkspaceRow, AdminWebhookDelivery, AdminJobStats, PlatformSettings, InviteUserResult, AdminAuditRow, AdminWorkspaceDetail, AdminApiKeyRow, AdminLoginAttemptRow }
 
 export const listAdminUsers = createServerFn({ method: 'GET' }).handler(async () =>
   listUsersImpl(),
@@ -128,3 +130,7 @@ const keyIdSchema = z.object({ keyId: z.string().min(1) })
 export const revokeAdminApiKey = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => keyIdSchema.parse(d))
   .handler(async ({ data }) => revokeApiKeyImpl(data.keyId))
+
+export const listAdminLoginAttempts = createServerFn({ method: 'GET' }).handler(async () =>
+  listLoginAttemptsImpl(),
+)

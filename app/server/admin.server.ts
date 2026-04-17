@@ -585,6 +585,35 @@ export async function revokeApiKeyImpl(keyId: string): Promise<{ ok: true }> {
   return { ok: true }
 }
 
+export type AdminLoginAttemptRow = {
+  id: string
+  email: string | null
+  ipAddress: string | null
+  userAgent: string | null
+  success: boolean
+  reason: string | null
+  createdAt: string
+}
+
+export async function listLoginAttemptsImpl(limit = 200): Promise<AdminLoginAttemptRow[]> {
+  await requireAdmin()
+  const rows = await db
+    .select()
+    .from(schema.authLoginAttempts)
+    .orderBy(desc(schema.authLoginAttempts.createdAt))
+    .limit(limit)
+  return rows.map((r) => ({
+    id: r.id,
+    email: r.email,
+    ipAddress: r.ipAddress,
+    userAgent: r.userAgent,
+    // A still-"pending" row means the after-hook never fired → failure.
+    success: r.success,
+    reason: r.reason === 'pending' ? 'incomplete' : r.reason,
+    createdAt: r.createdAt.toISOString(),
+  }))
+}
+
 function escapeCsvCell(value: string): string {
   if (/["\n,]/.test(value)) {
     return `"${value.replace(/"/g, '""')}"`

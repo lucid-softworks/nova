@@ -905,3 +905,19 @@ export const adminAuditLog = pgTable(
   (t) => [index('admin_audit_log_created_idx').on(t.createdAt)],
 )
 
+// Sign-in attempt log for security visibility. Captures both success
+// and failure.
+export const authLoginAttempts = pgTable(
+  'auth_login_attempts',
+  {
+    id: id(),
+    email: text('email'),
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    success: boolean('success').default(false).notNull(),
+    reason: text('reason'),
+    createdAt: now(),
+  },
+  (t) => [index('auth_login_attempts_created_idx').on(t.createdAt)],
+)
+

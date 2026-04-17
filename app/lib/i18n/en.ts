@@ -481,6 +481,7 @@ export const en = {
   "admin.jobs": "Jobs",
   "admin.webhooks": "Webhooks",
   "admin.apiKeys": "API keys",
+  "admin.logins": "Sign-ins",
   "admin.audit": "Audit log",
   "admin.settings": "Settings",
   "admin.backToApp": "Back to app",
