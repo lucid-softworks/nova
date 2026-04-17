@@ -27,14 +27,16 @@ import handler from './dist/server/server.js'
 const port = process.env.PORT ? Number(process.env.PORT) : 3000
 const app = new Hono()
 
-// Security headers
+// Security headers — rebuild the response because TanStack Start returns
+// a Response with frozen headers that cannot be mutated in place.
 app.use('*', async (c, next) => {
   await next()
-  c.res.headers.set('X-Content-Type-Options', 'nosniff')
-  c.res.headers.set('X-Frame-Options', 'DENY')
-  c.res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  c.res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  c.res.headers.set(
+  const headers = new Headers(c.res.headers)
+  headers.set('X-Content-Type-Options', 'nosniff')
+  headers.set('X-Frame-Options', 'DENY')
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  headers.set(
     'Content-Security-Policy',
     [
       "default-src 'self'",
@@ -50,8 +52,13 @@ app.use('*', async (c, next) => {
     ].join('; '),
   )
   if (process.env.NODE_ENV === 'production') {
-    c.res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+    headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
   }
+  c.res = new Response(c.res.body, {
+    status: c.res.status,
+    statusText: c.res.statusText,
+    headers,
+  })
 })
 
 // Serve the Vite client bundle first (static assets like /assets/*.js + css).
