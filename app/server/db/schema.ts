@@ -864,3 +864,12 @@ export const notifications = pgTable(
   (t) => [index('notifications_user_unread_idx').on(t.userId, t.readAt)],
 )
 
+// Singleton row (id = 'singleton') holding platform-wide admin toggles.
+export const platformSettings = pgTable('platform_settings', {
+  id: text('id').primaryKey().default('singleton'),
+  signupsEnabled: boolean('signups_enabled').default(true).notNull(),
+  signupRateLimitMax: integer('signup_rate_limit_max'),
+  signupRateLimitWindowHours: integer('signup_rate_limit_window_hours').default(1).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+

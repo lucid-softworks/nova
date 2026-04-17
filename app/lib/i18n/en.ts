@@ -479,6 +479,7 @@ export const en = {
   "admin.workspaces": "Workspaces",
   "admin.jobs": "Jobs",
   "admin.webhooks": "Webhooks",
+  "admin.settings": "Settings",
   "admin.backToApp": "Back to app",
   "admin.waiting": "Waiting",
   "admin.active": "Active",

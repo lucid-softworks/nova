@@ -7,13 +7,16 @@ import {
   getJobStatsImpl,
   retryJobImpl,
   listWebhookDeliveriesImpl,
+  getPlatformSettingsAdminImpl,
+  updatePlatformSettingsImpl,
   type AdminUserRow,
   type AdminWorkspaceRow,
   type AdminWebhookDelivery,
   type AdminJobStats,
+  type PlatformSettings,
 } from './admin.server'
 
-export type { AdminUserRow, AdminWorkspaceRow, AdminWebhookDelivery, AdminJobStats }
+export type { AdminUserRow, AdminWorkspaceRow, AdminWebhookDelivery, AdminJobStats, PlatformSettings }
 
 export const listAdminUsers = createServerFn({ method: 'GET' }).handler(async () =>
   listUsersImpl(),
@@ -45,3 +48,17 @@ export const retryAdminJob = createServerFn({ method: 'POST' })
 export const listAdminWebhookDeliveries = createServerFn({ method: 'GET' }).handler(async () =>
   listWebhookDeliveriesImpl(),
 )
+
+export const getAdminPlatformSettings = createServerFn({ method: 'GET' }).handler(async () =>
+  getPlatformSettingsAdminImpl(),
+)
+
+const platformSettingsSchema = z.object({
+  signupsEnabled: z.boolean(),
+  signupRateLimitMax: z.number().int().min(1).max(10000).nullable(),
+  signupRateLimitWindowHours: z.number().int().min(1).max(720),
+})
+
+export const updateAdminPlatformSettings = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => platformSettingsSchema.parse(d))
+  .handler(async ({ data }) => updatePlatformSettingsImpl(data))

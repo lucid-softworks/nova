@@ -1,6 +1,8 @@
-import { betterAuth } from 'better-auth'
+import { betterAuth, APIError } from 'better-auth'
+import { createAuthMiddleware } from 'better-auth/api'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
+import { eq, gte, count } from 'drizzle-orm'
 import { apiKey } from '@better-auth/api-key'
 import { passkey } from '@better-auth/passkey'
 import {
@@ -247,6 +249,33 @@ export const auth = betterAuth({
     },
   },
   plugins,
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== '/sign-up/email') return
+      const row = await db.query.platformSettings.findFirst({
+        where: eq(schema.platformSettings.id, 'singleton'),
+      })
+      const enabled = row?.signupsEnabled ?? true
+      if (!enabled) {
+        throw new APIError('FORBIDDEN', { message: 'Sign-ups are disabled.' })
+      }
+      const max = row?.signupRateLimitMax ?? null
+      const windowHours = row?.signupRateLimitWindowHours ?? 1
+      if (max != null && max > 0) {
+        const since = new Date(Date.now() - windowHours * 60 * 60 * 1000)
+        const [r] = await db
+          .select({ n: count() })
+          .from(schema.user)
+          .where(gte(schema.user.createdAt, since))
+        const recent = r?.n ?? 0
+        if (recent >= max) {
+          throw new APIError('TOO_MANY_REQUESTS', {
+            message: 'Sign-up limit reached. Please try again later.',
+          })
+        }
+      }
+    }),
+  },
 })
 
 export type Auth = typeof auth

@@ -234,3 +234,48 @@ export async function listWebhookDeliveriesImpl(): Promise<AdminWebhookDelivery[
     workspaceName: r.workspaceName,
   }))
 }
+
+export type PlatformSettings = {
+  signupsEnabled: boolean
+  signupRateLimitMax: number | null
+  signupRateLimitWindowHours: number
+}
+
+const DEFAULT_SETTINGS: PlatformSettings = {
+  signupsEnabled: true,
+  signupRateLimitMax: null,
+  signupRateLimitWindowHours: 1,
+}
+
+/**
+ * Reads the singleton platform settings row. Callable without admin
+ * credentials because the signup hook needs it on every sign-up.
+ */
+export async function getPlatformSettings(): Promise<PlatformSettings> {
+  const row = await db.query.platformSettings.findFirst({
+    where: eq(schema.platformSettings.id, 'singleton'),
+  })
+  if (!row) return DEFAULT_SETTINGS
+  return {
+    signupsEnabled: row.signupsEnabled,
+    signupRateLimitMax: row.signupRateLimitMax,
+    signupRateLimitWindowHours: row.signupRateLimitWindowHours,
+  }
+}
+
+export async function getPlatformSettingsAdminImpl(): Promise<PlatformSettings> {
+  await requireAdmin()
+  return getPlatformSettings()
+}
+
+export async function updatePlatformSettingsImpl(input: PlatformSettings): Promise<PlatformSettings> {
+  await requireAdmin()
+  await db
+    .insert(schema.platformSettings)
+    .values({ id: 'singleton', ...input, updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: schema.platformSettings.id,
+      set: { ...input, updatedAt: new Date() },
+    })
+  return input
+}
