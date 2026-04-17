@@ -661,7 +661,7 @@ function VersionTabs({
                 'flex items-center gap-1.5 px-3 py-2 text-xs font-medium',
                 v.id === activeId
                   ? 'border-b-2 border-indigo-500 text-indigo-600'
-                  : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900',
+                  : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-50',
               )}
             >
               {hasIssue ? (
@@ -1077,7 +1077,7 @@ function PlatformPreviewSection({
     <div className="border-t border-neutral-200 dark:border-neutral-800 pt-3">
       <button
         type="button"
-        className="flex w-full items-center gap-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"
+        className="flex w-full items-center gap-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-50 dark:hover:text-neutral-100"
         onClick={() => setOpen((o) => !o)}
       >
         <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} />

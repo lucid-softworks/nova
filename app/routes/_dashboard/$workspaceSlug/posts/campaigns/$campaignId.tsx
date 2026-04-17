@@ -91,7 +91,7 @@ function CampaignDetailPage() {
               'px-3 py-2 text-sm font-medium',
               tab === k
                 ? 'border-b-2 border-indigo-500 text-indigo-600'
-                : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900',
+                : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-50',
             )}
           >
             {k === 'steps' ? t('campaign.stepsTab') : t('campaign.analyticsTab')}

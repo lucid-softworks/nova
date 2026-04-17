@@ -127,7 +127,7 @@ function InboxPage() {
               'px-3 py-2 text-sm font-medium',
               kind === tb.key
                 ? 'border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900',
+                : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-50',
             )}
           >
             {t(tb.i18nKey)}
