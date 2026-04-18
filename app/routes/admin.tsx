@@ -37,6 +37,9 @@ const NAV = [
   { to: '/admin/users', label: 'admin.users' },
   { to: '/admin/workspaces', label: 'admin.workspaces' },
   { to: '/admin/jobs', label: 'admin.jobs' },
+  // External link (bull-board UI served from an API handler). Rendered
+  // as an <a> rather than a Link in the nav map below.
+  { to: '/api/admin/queues', label: 'admin.queues', external: true },
   { to: '/admin/webhooks', label: 'admin.webhooks' },
   { to: '/admin/api-keys', label: 'admin.apiKeys' },
   { to: '/admin/logins', label: 'admin.logins' },
@@ -57,19 +60,27 @@ function AdminLayout() {
               Nova · Admin
             </div>
             <nav className="flex items-center gap-3 text-sm">
-              {NAV.map((n) => (
-                <Link
-                  key={n.to}
-                  to={n.to}
-                  className={cn(
-                    'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100',
-                    pathname === n.to &&
-                      'font-semibold text-indigo-600 dark:text-indigo-400',
-                  )}
-                >
-                  {t(n.label)}
-                </Link>
-              ))}
+              {NAV.map((n) => {
+                const className = cn(
+                  'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100',
+                  pathname === n.to && 'font-semibold text-indigo-600 dark:text-indigo-400',
+                )
+                return 'external' in n ? (
+                  <a
+                    key={n.to}
+                    href={n.to}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={className}
+                  >
+                    {t(n.label)} ↗
+                  </a>
+                ) : (
+                  <Link key={n.to} to={n.to} className={className}>
+                    {t(n.label)}
+                  </Link>
+                )
+              })}
             </nav>
           </div>
           <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
