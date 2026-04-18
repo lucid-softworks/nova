@@ -18,9 +18,11 @@ export type PublicPlan = {
 
 // In-memory price cache for the billing provider lookup. The marketing
 // page is hit by every anonymous visitor, so hitting the provider API on
-// every request would eat rate limits and slow down first paint.
+// every request would slow down first paint. Prices change rarely enough
+// that a 1h window is plenty fresh — restart the web service (or a deploy)
+// if you need to invalidate sooner.
 let priceCache: { fetchedAt: number; prices: Map<string, string> } | null = null
-const PRICE_CACHE_TTL_MS = 5 * 60 * 1000
+const PRICE_CACHE_TTL_MS = 60 * 60 * 1000
 
 function formatCurrency(cents: number, currency: string, interval: string | null): string {
   const code = currency.toUpperCase()
