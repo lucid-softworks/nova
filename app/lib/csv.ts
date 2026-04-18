@@ -63,8 +63,14 @@ export function parseCsv(text: string): string[][] {
 }
 
 function escape(value: string): string {
-  if (/[,"\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`
-  return value
+  // Formula-injection guard: Excel / LibreOffice interpret a cell starting
+  // with =, +, -, or @ as a formula. Prefix with a tab so it renders as a
+  // plain cell even if the spreadsheet app tries to auto-execute. The tab
+  // is stripped when the cell is copied back out.
+  let v = value
+  if (/^[=+\-@\t\r]/.test(v)) v = `\t${v}`
+  if (/[,"\n\r]/.test(v)) return `"${v.replace(/"/g, '""')}"`
+  return v
 }
 
 export function toCsv(rows: Array<Array<string | number | null | undefined>>): string {

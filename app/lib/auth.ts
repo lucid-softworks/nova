@@ -191,6 +191,13 @@ const plugins = [
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
+  // Explicit CSRF origin allowlist. Better Auth defaults to just the
+  // baseURL, but being explicit means any extra staging/preview domain
+  // needs a deliberate env var change instead of silently relaxing.
+  trustedOrigins: [
+    process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
+    process.env.APP_URL ?? 'http://localhost:3000',
+  ].filter((v, i, a) => v && a.indexOf(v) === i),
   secret: requireEnv('BETTER_AUTH_SECRET'),
   rateLimit: {
     window: 60,
@@ -199,8 +206,16 @@ export const auth = betterAuth({
       '/sign-in/*': { window: 60, max: 5 },
       '/sign-up/*': { window: 60, max: 5 },
       '/forget-password': { window: 60, max: 3 },
+      // Magic-link + OTP send endpoints are a spray / enumeration vector —
+      // tighter limits slow down an attacker harvesting valid emails.
+      '/magic-link/send-verification': { window: 3600, max: 5 },
+      '/email-otp/send-verification-otp': { window: 3600, max: 5 },
       '/magic-link/*': { window: 60, max: 5 },
       '/email-otp/*': { window: 60, max: 5 },
+      // Admin actions shouldn't fire hundreds of times/minute even from a
+      // real admin — cap at a sane ceiling.
+      '/admin/impersonate-user': { window: 3600, max: 20 },
+      '/admin/set-role': { window: 3600, max: 30 },
     },
   },
   database: drizzleAdapter(db, {

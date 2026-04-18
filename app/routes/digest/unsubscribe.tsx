@@ -11,6 +11,9 @@ export const Route = createFileRoute('/digest/unsubscribe')({
     const { processUnsubscribe } = await import('~/server/digests/unsubscribe.server')
     return processUnsubscribe(deps.uid, deps.token)
   },
+  head: () => ({
+    meta: [{ name: 'robots', content: 'noindex, nofollow' }],
+  }),
   component: UnsubscribePage,
 })
 

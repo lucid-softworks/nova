@@ -70,4 +70,13 @@ describe('toCsv', () => {
     ]
     expect(parseCsv(toCsv(rows))).toEqual(rows)
   })
+
+  it('defuses cells that Excel would treat as a formula', () => {
+    // Each of =, +, -, @, \t, \r at the start of a cell triggers
+    // formula evaluation in Excel / LibreOffice. Prefix with a tab.
+    expect(toCsv([['=HYPERLINK("evil")']])).toBe('"\t=HYPERLINK(""evil"")"')
+    expect(toCsv([['+1+1']])).toBe('\t+1+1')
+    expect(toCsv([['-2']])).toBe('\t-2')
+    expect(toCsv([['@SUM(A1)']])).toBe('\t@SUM(A1)')
+  })
 })

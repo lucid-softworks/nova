@@ -19,6 +19,9 @@ export const Route = createFileRoute('/review/$token')({
     const result = await getReviewContext({ data: { token: params.token } })
     return { result, token: params.token }
   },
+  head: () => ({
+    meta: [{ name: 'robots', content: 'noindex, nofollow' }],
+  }),
   component: ReviewPage,
 })
 

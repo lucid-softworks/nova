@@ -48,6 +48,9 @@ export const Route = createFileRoute('/admin')({
     }
     return { userName: status.userName }
   },
+  head: () => ({
+    meta: [{ name: 'robots', content: 'noindex, nofollow' }],
+  }),
   component: AdminLayout,
   errorComponent: RouteErrorBoundary,
 })

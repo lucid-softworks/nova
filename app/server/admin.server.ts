@@ -450,7 +450,8 @@ export async function revokeUserSessionsImpl(userId: string): Promise<{ revoked:
 /**
  * Remove the user's 2FA enrollment. After this they can sign in with just
  * their password (and must re-enroll). For recovery when the authenticator
- * is lost.
+ * is lost. Also revokes every existing session so a pre-reset token theft
+ * can't keep the attacker in while the legitimate user re-enrolls.
  */
 export async function resetUserTwoFactorImpl(userId: string): Promise<{ ok: true }> {
   await requireAdmin()
@@ -459,6 +460,7 @@ export async function resetUserTwoFactorImpl(userId: string): Promise<{ ok: true
     .update(schema.user)
     .set({ twoFactorEnabled: false })
     .where(eq(schema.user.id, userId))
+  await db.delete(schema.session).where(eq(schema.session.userId, userId))
   await writeAudit('user.resetTwoFactor', 'user', userId)
   return { ok: true }
 }

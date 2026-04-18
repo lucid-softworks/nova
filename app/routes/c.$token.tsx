@@ -19,6 +19,9 @@ export const Route = createFileRoute('/c/$token')({
     if (!data) throw notFound()
     return data
   },
+  head: () => ({
+    meta: [{ name: 'robots', content: 'noindex, nofollow' }],
+  }),
   component: SharedCalendarPage,
 })
 

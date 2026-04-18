@@ -58,7 +58,7 @@
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.0",
     "dub": "^0.71.6",
-    "hono": "^4.12.12",
+    "hono": "^4.12.14",
     "ioredis": "^5.4.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",

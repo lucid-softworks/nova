@@ -16,8 +16,19 @@ async function ensureWs(slug: string) {
 const MAX_UPLOAD_SIZE = 50 * 1024 * 1024 // 50 MB
 const ALLOWED_MIME_PREFIXES = ['image/', 'video/', 'audio/']
 const ALLOWED_MIME_EXACT = ['application/pdf']
+// SVG + XML images can execute embedded JavaScript when opened in a
+// browser context, so we reject them even though they match image/*.
+const BLOCKED_MIME_EXACT = new Set([
+  'image/svg+xml',
+  'image/svg',
+  'application/xml',
+  'text/xml',
+  'text/html',
+  'application/x-xhtml+xml',
+])
 
 function isAllowedMime(mime: string): boolean {
+  if (BLOCKED_MIME_EXACT.has(mime)) return false
   return ALLOWED_MIME_PREFIXES.some((p) => mime.startsWith(p)) || ALLOWED_MIME_EXACT.includes(mime)
 }
 

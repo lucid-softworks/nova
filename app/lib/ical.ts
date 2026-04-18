@@ -63,7 +63,7 @@ export function buildIcs(name: string, events: IcsEvent[]): string {
     lines.push(`DTEND:${fmt(ev.end ?? new Date(ev.start.getTime() + 15 * 60 * 1000))}`)
     lines.push(foldLine(`SUMMARY:${escapeText(ev.summary)}`))
     if (ev.description) lines.push(foldLine(`DESCRIPTION:${escapeText(ev.description)}`))
-    if (ev.url) lines.push(foldLine(`URL:${ev.url}`))
+    if (ev.url) lines.push(foldLine(`URL:${escapeText(ev.url)}`))
     lines.push('END:VEVENT')
   }
   lines.push('END:VCALENDAR')
