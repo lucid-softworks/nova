@@ -5,6 +5,8 @@ import { getRequest } from '@tanstack/react-start/server'
 import globalsCss from '../styles/globals.css?url'
 import { I18nProvider, parseAcceptLanguage, type Locale } from '~/lib/i18n'
 import { RouteErrorBoundary } from '~/components/RouteErrorBoundary'
+import { Toaster } from '~/components/ui/toast'
+import { ConfirmProvider } from '~/components/ui/confirm'
 
 const detectLocale = createServerFn({ method: 'GET' }).handler(async (): Promise<Locale> => {
   try {
@@ -41,9 +43,12 @@ function RootComponent() {
   const { locale } = Route.useLoaderData()
   return (
     <I18nProvider locale={locale}>
-      <RootDocument locale={locale}>
-        <Outlet />
-      </RootDocument>
+      <ConfirmProvider>
+        <RootDocument locale={locale}>
+          <Outlet />
+          <Toaster />
+        </RootDocument>
+      </ConfirmProvider>
     </I18nProvider>
   )
 }
