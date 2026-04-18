@@ -42,12 +42,31 @@ const LIMITS: Record<string, PlanLimits> = {
   },
 }
 
-function normalise(plan: string | null, status: string): keyof typeof LIMITS {
+/**
+ * Resolve an incoming subscription to a plan key, preferring exact
+ * provider-ID matches set on platform_plans. Falls back to substring
+ * matching on the plan string so legacy setups (before admins populated
+ * provider IDs) still work.
+ */
+async function resolvePlanKey(
+  provider: string | null,
+  plan: string | null,
+  status: string,
+): Promise<string> {
   if (!plan) return 'free'
   if (status !== 'active' && status !== 'trialing') return 'free'
+
+  if (provider) {
+    const rows = await db.select().from(schema.platformPlans)
+    for (const row of rows) {
+      const ids = (row.providerIds ?? {})[provider] ?? []
+      if (ids.includes(plan)) return row.key
+    }
+  }
+
   const lower = plan.toLowerCase()
   for (const key of Object.keys(LIMITS)) {
-    if (lower.includes(key)) return key as keyof typeof LIMITS
+    if (lower.includes(key)) return key
   }
   return 'free'
 }
@@ -79,7 +98,7 @@ export async function limitsFor(workspaceId: string): Promise<PlanLimits> {
     return resolvePlanLimits(ws.planOverride)
   }
   const sub = await getSubscription(workspaceId)
-  const key = normalise(sub?.plan ?? null, sub?.status ?? 'none')
+  const key = await resolvePlanKey(sub?.provider ?? null, sub?.plan ?? null, sub?.status ?? 'none')
   return resolvePlanLimits(key)
 }
 
