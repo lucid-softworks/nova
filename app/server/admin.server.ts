@@ -768,7 +768,6 @@ export type AdminPlanRow = {
   sortOrder: number
   priceDisplay: string | null
   description: string | null
-  featured: boolean
   updatedAt: string
 }
 
@@ -786,7 +785,6 @@ export async function listAdminPlansImpl(): Promise<AdminPlanRow[]> {
     sortOrder: r.sortOrder,
     priceDisplay: r.priceDisplay,
     description: r.description,
-    featured: r.featured,
     updatedAt: r.updatedAt.toISOString(),
   }))
 }
@@ -802,7 +800,6 @@ export type AdminPlanInput = {
   sortOrder: number
   priceDisplay: string | null
   description: string | null
-  featured: boolean
 }
 
 export async function upsertAdminPlanImpl(input: AdminPlanInput): Promise<{ ok: true }> {

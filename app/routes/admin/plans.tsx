@@ -197,7 +197,6 @@ function PlanEditor({
   const [sortOrder, setSortOrder] = useState(plan?.sortOrder ?? 99)
   const [priceDisplay, setPriceDisplay] = useState(plan?.priceDisplay ?? '')
   const [description, setDescription] = useState(plan?.description ?? '')
-  const [featured, setFeatured] = useState(plan?.featured ?? false)
   const [providerIds, setProviderIds] = useState<Record<string, string>>(() => {
     const out: Record<string, string> = {}
     for (const p of PROVIDERS) {
@@ -241,7 +240,6 @@ function PlanEditor({
           sortOrder,
           priceDisplay: priceDisplay.trim() === '' ? null : priceDisplay.trim(),
           description: description.trim() === '' ? null : description.trim(),
-          featured,
         },
       })
       toast.success(t('adminPlans.saved', { key }))
@@ -357,15 +355,9 @@ function PlanEditor({
                 />
               </Field>
             </div>
-            <label className="inline-flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                checked={featured}
-                onChange={(e) => setFeatured(e.target.checked)}
-                className="h-4 w-4"
-              />
-              <span className="text-sm">{t('adminPlans.featuredToggle')}</span>
-            </label>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              {t('adminPlans.mostPopularHint')}
+            </p>
           </div>
 
           <div className="space-y-2 rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3">

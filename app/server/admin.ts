@@ -165,7 +165,6 @@ const planSchema = z.object({
   sortOrder: z.number().int().min(0).max(1000),
   priceDisplay: z.string().max(60).nullable(),
   description: z.string().max(400).nullable(),
-  featured: z.boolean(),
 })
 
 export const upsertAdminPlan = createServerFn({ method: 'POST' })

@@ -1014,7 +1014,7 @@ export const en = {
   "adminPlans.fieldPriceDisplay": "Price display",
   "adminPlans.fieldDescription": "Short description",
   "adminPlans.fieldDescriptionPlaceholder": "For solo creators just getting started",
-  "adminPlans.featuredToggle": "Highlight this plan on the homepage",
+  "adminPlans.mostPopularHint": "The \"Most popular\" badge on the homepage is computed from active paid subscriptions — whichever plan has the highest count gets it automatically.",
   "adminPlans.statMembers": "Members",
   "adminPlans.statAccounts": "Connected accounts",
   "adminPlans.statPosts": "Scheduled posts / mo",

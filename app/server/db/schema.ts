@@ -907,10 +907,10 @@ export const platformPlans = pgTable('platform_plans', {
   sortOrder: integer('sort_order').default(0).notNull(),
   // Marketing / landing page fields. Free-form so admins can write
   // "$9/mo", "Free forever", "Contact sales" without us baking in a
-  // currency or period.
+  // currency or period. "Most popular" is NOT stored — it's computed
+  // from active subscription counts at render time.
   priceDisplay: text('price_display'),
   description: text('description'),
-  featured: boolean('featured').default(false).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
