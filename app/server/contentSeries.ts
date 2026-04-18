@@ -4,7 +4,7 @@ import {
   listContentSeriesImpl,
   createContentSeriesImpl,
   deleteContentSeriesImpl,
-  useContentSeriesImpl,
+  applyContentSeriesImpl,
   type ContentSeriesRow,
   type ContentSeriesSlot,
 } from './contentSeries.server'
@@ -56,8 +56,8 @@ const useSchema = z.object({
   startDate: z.string().min(1),
 })
 
-export const useContentSeries = createServerFn({ method: 'POST' })
+export const applyContentSeries = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => useSchema.parse(d))
   .handler(async ({ data }) =>
-    useContentSeriesImpl(data.workspaceSlug, data.seriesId, data.startDate),
+    applyContentSeriesImpl(data.workspaceSlug, data.seriesId, data.startDate),
   )

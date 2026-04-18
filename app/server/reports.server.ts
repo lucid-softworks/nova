@@ -117,7 +117,7 @@ export async function buildAnalyticsPdf(
   doc.setTextColor(30, 30, 30)
   doc.text('Platform Breakdown', 40, 50)
 
-  autoTable(doc as any, {
+  autoTable(doc as Parameters<typeof autoTable>[0], {
     startY: 70,
     head: [['Platform', 'Posts', 'Reach', 'Impressions', 'Engagements', 'Eng. Rate']],
     body: platformTable.map((r) => [
@@ -138,7 +138,7 @@ export async function buildAnalyticsPdf(
   doc.setTextColor(30, 30, 30)
   doc.text('Top Posts', 40, 50)
 
-  autoTable(doc as any, {
+  autoTable(doc as Parameters<typeof autoTable>[0], {
     startY: 70,
     head: [['Content', 'Platforms', 'Likes', 'Comments', 'Shares', 'Engagements']],
     body: topPosts.map((p) => [

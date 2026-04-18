@@ -119,7 +119,7 @@ export const getPublicBioPage = createServerFn({ method: 'GET' })
     const row = rows[0]
     if (!row) return null
 
-    let recentPosts: PublicBioPage['recentPosts'] = []
+    const recentPosts: PublicBioPage['recentPosts'] = []
     if (row.showRecentPosts && row.recentPostCount > 0) {
       const posts = await db
         .select({

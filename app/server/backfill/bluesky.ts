@@ -176,11 +176,15 @@ export async function backfillBlueskyImpl(
   try {
     const { enqueueManualSync } = await import('~/server/queues/analyticsSync')
     await enqueueManualSync({ workspaceId: r.workspace.id, socialAccountId })
-  } catch {}
+  } catch (err) {
+    logger.warn({ err, socialAccountId }, 'analytics sync enqueue failed after backfill')
+  }
   try {
     const { getInboxQueue } = await import('~/server/inbox/schedule')
     await getInboxQueue().add('inbox:backfill', {} as never)
-  } catch {}
+  } catch (err) {
+    logger.warn({ err, socialAccountId }, 'inbox backfill enqueue failed')
+  }
 
   logger.info(
     { socialAccountId, imported, skipped, total },

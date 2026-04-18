@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Card } from '~/components/ui/card'
 import { listAdminWebhookDeliveries } from '~/server/admin'
-import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/admin/webhooks')({
   loader: async () => ({ deliveries: await listAdminWebhookDeliveries() }),
@@ -9,7 +8,6 @@ export const Route = createFileRoute('/admin/webhooks')({
 })
 
 function WebhooksPage() {
-  const t = useT()
   const { deliveries } = Route.useLoaderData()
   return (
     <Card>

@@ -1,4 +1,4 @@
-import { and, asc, eq, or, isNull } from 'drizzle-orm'
+import { and, asc, eq, or } from 'drizzle-orm'
 import { db, schema } from './db'
 import { requireWorkspaceAccess } from './session.server'
 
@@ -148,7 +148,7 @@ export async function deleteContentSeriesImpl(slug: string, id: string): Promise
   return { ok: true }
 }
 
-export async function useContentSeriesImpl(
+export async function applyContentSeriesImpl(
   slug: string,
   seriesId: string,
   startDate: string,

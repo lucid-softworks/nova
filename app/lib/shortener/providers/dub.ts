@@ -1,4 +1,5 @@
 import { Dub } from 'dub'
+import { dubAnalytics } from '@dub/better-auth'
 import { eq } from 'drizzle-orm'
 import { db, schema } from '~/server/db'
 import type { ShortenCtx, ShortenResult, ShortenerProvider } from '../types'
@@ -54,12 +55,6 @@ export const dubProvider: ShortenerProvider = {
   betterAuthPlugin() {
     const token = process.env.DUB_API_KEY
     if (!token) return null
-    // Lazy import so the plugin only loads when configured.
-    const mod = require('@dub/better-auth') as {
-      dubAnalytics?: (opts: unknown) => unknown
-    }
-    const factory = mod.dubAnalytics
-    if (!factory) return null
-    return factory({ dubClient: dub() })
+    return dubAnalytics({ dubClient: dub() })
   },
 }

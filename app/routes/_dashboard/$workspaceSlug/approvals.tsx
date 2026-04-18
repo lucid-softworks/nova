@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, Link } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Check, X, LinkIcon, Copy, Trash2, UserPlus } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
@@ -14,7 +14,7 @@ import {
   DialogDescription,
 } from '~/components/ui/dialog'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
-import { PLATFORMS, type PlatformKey } from '~/lib/platforms'
+import { PLATFORMS } from '~/lib/platforms'
 import { listPosts, type PostRow } from '~/server/posts'
 import { approvePost, requestChanges } from '~/server/scheduling'
 import {
@@ -298,7 +298,6 @@ function InviteReviewerDialog({
   workspaceSlug: string
   onCreated: () => void
 }) {
-  const t = useT()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Body renders only while open, so local state is fresh every time. */}

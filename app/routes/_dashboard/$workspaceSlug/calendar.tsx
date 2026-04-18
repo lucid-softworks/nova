@@ -573,7 +573,6 @@ function QuickViewPopover({
   onClose: () => void
   onChanged: () => Promise<void>
 }) {
-  const t = useT()
   // Early-exit before useState so unmount on null post is predictable.
   // The parent keys this component on post.id, so when the user switches
   // to a different post, the whole subtree remounts and state resets.

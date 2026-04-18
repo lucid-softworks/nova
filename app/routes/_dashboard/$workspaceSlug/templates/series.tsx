@@ -13,11 +13,10 @@ import {
   listContentSeries,
   createContentSeries,
   deleteContentSeries,
-  useContentSeries,
+  applyContentSeries,
   type ContentSeriesRow,
   type ContentSeriesSlot,
 } from '~/server/contentSeries'
-import { cn } from '~/lib/utils'
 import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/templates/series')({
@@ -197,7 +196,7 @@ function UseSeriesDialog({
     if (!series) return
     setLoading(true)
     try {
-      const result = await useContentSeries({
+      const result = await applyContentSeries({
         data: { workspaceSlug, seriesId: series.id, startDate },
       })
       await onUsed(result.created)

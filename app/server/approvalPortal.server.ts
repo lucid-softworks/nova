@@ -12,23 +12,6 @@ async function ensureAdminOrManager(slug: string) {
   return r
 }
 
-async function workspaceBySlug(slug: string) {
-  const row = await db
-    .select({
-      id: schema.workspaces.id,
-      orgName: schema.organization.name,
-      orgSlug: schema.organization.slug,
-    })
-    .from(schema.workspaces)
-    .innerJoin(
-      schema.organization,
-      eq(schema.organization.id, schema.workspaces.organizationId),
-    )
-    .where(eq(schema.organization.slug, slug))
-    .limit(1)
-  return row[0] ?? null
-}
-
 export async function createApprovalTokenImpl(
   slug: string,
   input: { email: string; name?: string | null; expiresInDays?: number },

@@ -4,7 +4,6 @@ import { encrypt } from '~/lib/encryption'
 import { logger } from '~/lib/logger'
 import type { InboxAccountCtx, InboxFetchItem, InboxKind } from './types'
 
-const PLC_DIRECTORY = 'https://plc.directory'
 
 type Notification = {
   uri: string
@@ -42,16 +41,6 @@ function mapKind(reason: Notification['reason']): InboxKind | null {
 function uriToUrl(handle: string, uri: string): string {
   const rkey = uri.split('/').pop()
   return `https://bsky.app/profile/${handle}/post/${rkey}`
-}
-
-async function resolvePds(did: string): Promise<string> {
-  const res = await fetch(`${PLC_DIRECTORY}/${encodeURIComponent(did)}`)
-  if (!res.ok) return 'https://bsky.social'
-  const doc = (await res.json()) as {
-    service?: Array<{ id: string; serviceEndpoint: string }>
-  }
-  const pds = doc.service?.find((s) => s.id === '#atproto_pds')
-  return pds?.serviceEndpoint?.replace(/\/+$/, '') ?? 'https://bsky.social'
 }
 
 async function refreshAndPersist(
