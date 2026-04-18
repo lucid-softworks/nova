@@ -27,11 +27,12 @@ import handler from './dist/server/server.js'
 const port = process.env.PORT ? Number(process.env.PORT) : 3000
 const app = new Hono()
 
-function withSecurityHeaders(response, pathname) {
-  // Merge our headers onto the downstream response. Keeps Content-Type,
-  // Content-Length, and any other headers the handler set; then layers
-  // security + Link headers on top.
-  const headers = new Headers(response.headers)
+function withSecurityHeaders(body, originalHeaders, status, pathname) {
+  // Build the final response in one pass: our security + Link headers
+  // layered onto the downstream handler's Content-Type / Cache-Control,
+  // with the body as a plain ArrayBuffer so we never pass a consumed
+  // stream to the Response constructor.
+  const headers = new Headers(originalHeaders)
   headers.set('X-Content-Type-Options', 'nosniff')
   headers.set('X-Frame-Options', 'DENY')
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
@@ -70,11 +71,7 @@ function withSecurityHeaders(response, pathname) {
       '</sitemap.xml>; rel="sitemap"; type="application/xml"',
     ].join(', '),
   )
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  })
+  return new Response(body, { status, headers })
 }
 
 // RFC 9727 API Catalog — served ahead of the TanStack handler because
@@ -139,15 +136,17 @@ app.get('/.well-known/api-catalog', () => {
 })
 
 // Everything else falls through to the TanStack Start fetch handler.
-// Buffer the body to ArrayBuffer before rebuilding the response — some
-// TanStack-produced responses (/healthz, /mcp, /api/v1/openapi/json)
-// lose their body if we re-wrap a still-streaming Response; buffering
-// materialises it once so the rebuild can hand a fresh stream back.
+// Materialise the body once, then hand withSecurityHeaders the buffer
+// directly — two Response(stream, ...) rebuilds in series drain the
+// stream between them, which is how /healthz + /mcp ended up sending
+// 0-byte responses even though the handler returned a populated body.
 app.all('*', async (c) => {
   const response = await handler.fetch(c.req.raw)
   const buffer = await response.arrayBuffer()
   return withSecurityHeaders(
-    new Response(buffer, { status: response.status, headers: response.headers }),
+    buffer,
+    response.headers,
+    response.status,
     new URL(c.req.url).pathname,
   )
 })
