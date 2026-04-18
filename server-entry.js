@@ -139,6 +139,10 @@ app.use('/og-image.svg', serveStatic({ path: './dist/client/og-image.svg' }))
 app.use('/sw.js', serveStatic({ path: './dist/client/sw.js' }))
 app.use('/offline.html', serveStatic({ path: './dist/client/offline.html' }))
 app.use('/icons/*', serveStatic({ root: './dist/client' }))
+app.use(
+  '/.well-known/mcp/server-card.json',
+  serveStatic({ path: './dist/client/.well-known/mcp/server-card.json' }),
+)
 
 // RFC 9727 API catalog. Kept as a short JSON constant because the
 // content is purely configuration — it can't reach the app's DB.

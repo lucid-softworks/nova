@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AcceptInvitationRouteImport } from './routes/accept-invitation'
@@ -99,6 +100,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HealthzRoute = HealthzRouteImport.update({
@@ -531,6 +537,7 @@ export interface FileRoutesByFullPath {
   '/accept-invitation': typeof AcceptInvitationRoute
   '/admin': typeof AdminRouteWithChildren
   '/healthz': typeof HealthzRoute
+  '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/forgot-password': typeof AuthForgotPasswordRoute
@@ -611,6 +618,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accept-invitation': typeof AcceptInvitationRoute
   '/healthz': typeof HealthzRoute
+  '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/forgot-password': typeof AuthForgotPasswordRoute
@@ -694,6 +702,7 @@ export interface FileRoutesById {
   '/accept-invitation': typeof AcceptInvitationRoute
   '/admin': typeof AdminRouteWithChildren
   '/healthz': typeof HealthzRoute
+  '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -777,6 +786,7 @@ export interface FileRouteTypes {
     | '/accept-invitation'
     | '/admin'
     | '/healthz'
+    | '/mcp'
     | '/onboarding'
     | '/sitemap.xml'
     | '/forgot-password'
@@ -857,6 +867,7 @@ export interface FileRouteTypes {
     | '/'
     | '/accept-invitation'
     | '/healthz'
+    | '/mcp'
     | '/onboarding'
     | '/sitemap.xml'
     | '/forgot-password'
@@ -939,6 +950,7 @@ export interface FileRouteTypes {
     | '/accept-invitation'
     | '/admin'
     | '/healthz'
+    | '/mcp'
     | '/onboarding'
     | '/sitemap.xml'
     | '/_auth/forgot-password'
@@ -1023,6 +1035,7 @@ export interface RootRouteChildren {
   AcceptInvitationRoute: typeof AcceptInvitationRoute
   AdminRoute: typeof AdminRouteWithChildren
   HealthzRoute: typeof HealthzRoute
+  McpRoute: typeof McpRoute
   OnboardingRoute: typeof OnboardingRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   BioHandleRoute: typeof BioHandleRoute
@@ -1067,6 +1080,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/healthz': {
@@ -1822,6 +1842,7 @@ const rootRouteChildren: RootRouteChildren = {
   AcceptInvitationRoute: AcceptInvitationRoute,
   AdminRoute: AdminRouteWithChildren,
   HealthzRoute: HealthzRoute,
+  McpRoute: McpRoute,
   OnboardingRoute: OnboardingRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   BioHandleRoute: BioHandleRoute,

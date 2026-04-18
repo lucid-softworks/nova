@@ -1,0 +1,17 @@
+{
+  "serverInfo": {
+    "name": "io.skeduleit/nova",
+    "version": "0.0.0"
+  },
+  "description": "Nova is a multi-platform social media management SaaS. The MCP endpoint is a placeholder while we scope the first tool set — agents can connect and initialize, but no tools are exposed yet.",
+  "websiteUrl": "https://skeduleit.org",
+  "transport": {
+    "type": "streamable-http",
+    "url": "https://skeduleit.org/mcp"
+  },
+  "capabilities": {
+    "tools": {},
+    "resources": {},
+    "prompts": {}
+  }
+}
