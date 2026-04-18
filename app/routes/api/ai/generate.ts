@@ -78,27 +78,34 @@ export const Route = createFileRoute('/api/ai/generate')({
           return Response.json({ error: message }, { status: 500 })
         }
 
-        // Pipe textStream manually so provider errors (401, 429 quota, etc.)
-        // get appended to the stream instead of silently closing it, which is
-        // what toTextStreamResponse() does. Catches both throwing iterators
-        // (textStream.throw) and errors delivered only via onError.
+        // Use fullStream so provider errors (401, 429 quota, etc.) come
+        // through as explicit error events instead of silently closing
+        // the stream. toTextStreamResponse()/textStream alone swallow
+        // some of those paths.
         const stream = new ReadableStream<Uint8Array>({
           async start(controller) {
             const encoder = new TextEncoder()
             const emitError = (err: unknown) => {
-              const msg = err instanceof Error ? err.message : String(err)
+              const msg =
+                err instanceof Error
+                  ? err.message
+                  : typeof err === 'object' && err !== null && 'message' in err
+                    ? String((err as { message: unknown }).message)
+                    : String(err)
               controller.enqueue(
                 encoder.encode(`\n\n[${result.providerLabel} error: ${msg}]`),
               )
             }
             try {
-              for await (const chunk of result.result.textStream) {
-                controller.enqueue(encoder.encode(chunk))
+              for await (const part of result.result.fullStream) {
+                if (part.type === 'text-delta') {
+                  controller.enqueue(encoder.encode(part.textDelta))
+                } else if (part.type === 'error') {
+                  emitError(part.error)
+                }
               }
             } catch (err) {
               emitError(err)
-              controller.close()
-              return
             }
             if (result.errorBox.current) emitError(result.errorBox.current)
             controller.close()
