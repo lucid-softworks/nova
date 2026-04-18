@@ -109,57 +109,43 @@ const API_CATALOG = JSON.stringify({
   ],
 })
 
-// Post-middleware that wraps every response with security + Link
-// headers. Static files, the api-catalog, and TanStack Start routes all
-// go through the same withSecurityHeaders() so the header set is
-// uniform. Rebuilding the Response in-place — new Response(body, ...)
-// — preserves the body stream; the earlier attempt to do this via
-// c.res = new Response(...) inside a middleware *did* drain it, but
-// doing it in the TERMINAL handler works because Hono hasn't started
-// serializing yet.
-async function wrap(c, get) {
-  const response = await get()
-  return withSecurityHeaders(response, new URL(c.req.url).pathname)
-}
-
-function staticRoute(path, options) {
-  app.use(path, async (c, next) => {
-    // serveStatic writes into c.res when it finds a file; otherwise calls
-    // next(). We rebuild c.res afterwards so our headers land on the
-    // static file response too.
-    await serveStatic(options)(c, next)
-    if (c.res) c.res = withSecurityHeaders(c.res, new URL(c.req.url).pathname)
-  })
-}
-
-staticRoute('/assets/*', { root: './dist/client' })
-staticRoute('/favicon.ico', { path: './dist/client/favicon.ico' })
-staticRoute('/robots.txt', { path: './dist/client/robots.txt' })
-staticRoute('/manifest.webmanifest', { path: './dist/client/manifest.webmanifest' })
-staticRoute('/og-image.svg', { path: './dist/client/og-image.svg' })
-staticRoute('/sw.js', { path: './dist/client/sw.js' })
-staticRoute('/offline.html', { path: './dist/client/offline.html' })
-staticRoute('/icons/*', { root: './dist/client' })
-staticRoute('/.well-known/mcp/server-card.json', {
-  path: './dist/client/.well-known/mcp/server-card.json',
-})
-
-// RFC 9727 API catalog.
-app.get('/.well-known/api-catalog', (c) =>
-  wrap(
-    c,
-    async () =>
-      new Response(API_CATALOG, {
-        headers: {
-          'Content-Type': 'application/linkset+json; charset=utf-8',
-          'Cache-Control': 'public, max-age=3600',
-        },
-      }),
-  ),
+// Static assets from dist/client. serveStatic falls through on 404 so
+// TanStack routes still match. These ship without our security/Link
+// headers — serveStatic's own Content-Type + Cache-Control are what the
+// platform needs for these files to actually work (nosniff etc. break
+// og-image.svg delivery to social scrapers if we layered headers on
+// top incorrectly).
+app.use('/assets/*', serveStatic({ root: './dist/client' }))
+app.use('/favicon.ico', serveStatic({ path: './dist/client/favicon.ico' }))
+app.use('/robots.txt', serveStatic({ path: './dist/client/robots.txt' }))
+app.use('/manifest.webmanifest', serveStatic({ path: './dist/client/manifest.webmanifest' }))
+app.use('/og-image.svg', serveStatic({ path: './dist/client/og-image.svg' }))
+app.use('/sw.js', serveStatic({ path: './dist/client/sw.js' }))
+app.use('/offline.html', serveStatic({ path: './dist/client/offline.html' }))
+app.use('/icons/*', serveStatic({ root: './dist/client' }))
+app.use(
+  '/.well-known/mcp/server-card.json',
+  serveStatic({ path: './dist/client/.well-known/mcp/server-card.json' }),
 )
 
+// RFC 9727 API catalog — small enough to construct inline.
+app.get('/.well-known/api-catalog', () => {
+  return new Response(API_CATALOG, {
+    headers: {
+      'Content-Type': 'application/linkset+json; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+    },
+  })
+})
+
 // Everything else falls through to the TanStack Start fetch handler.
-app.all('*', (c) => wrap(c, () => handler.fetch(c.req.raw)))
+// Security + Link headers get layered here because this is the terminal
+// handler — Hono hasn't started serializing the response yet, so
+// rebuilding via new Response(body, ...) doesn't drain the stream.
+app.all('*', async (c) => {
+  const response = await handler.fetch(c.req.raw)
+  return withSecurityHeaders(response, new URL(c.req.url).pathname)
+})
 
 serve({ fetch: app.fetch, port, hostname: '0.0.0.0' }, (info) => {
   console.log(`[start] listening on http://localhost:${info.port}`)
