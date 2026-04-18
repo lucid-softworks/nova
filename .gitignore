@@ -12,3 +12,4 @@ build
 *.log
 /storage
 drizzle/
+.claude/
