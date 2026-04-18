@@ -144,10 +144,6 @@ app.all('*', async (c) => {
   const pathname = new URL(c.req.url).pathname
   const response = await handler.fetch(c.req.raw)
   const buffer = await response.arrayBuffer()
-  // Temp unconditional log to chase the 0-byte JSON response bug.
-  console.log(
-    `[wrap] ${c.req.method} ${pathname} -> ${response.status} ct=${response.headers.get('content-type')} bytes=${buffer.byteLength}`,
-  )
   return withSecurityHeaders(buffer, response.headers, response.status, pathname)
 })
 

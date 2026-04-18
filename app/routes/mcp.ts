@@ -70,15 +70,22 @@ export const Route = createFileRoute('/mcp')({
         try {
           body = (await request.json()) as JsonRpcRequest
         } catch {
-          return Response.json(rpcError(null, -32700, 'Parse error'), { status: 400 })
+          return new Response(JSON.stringify(rpcError(null, -32700, 'Parse error')), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          })
         }
         const response = await dispatch(body)
         if (response === null) {
           // Notification — respond 202 Accepted with no body per JSON-RPC 2.0.
           return new Response(null, { status: 202 })
         }
-        return Response.json(response, {
-          headers: { 'Content-Type': 'application/json' },
+        // Using new Response(string) + explicit Content-Type instead of
+        // Response.json() — the Response.json static shortcut was ending up
+        // as a 0-byte text/plain response after the TanStack Start handler
+        // pipeline. Same payload via string body works.
+        return new Response(JSON.stringify(response), {
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
         })
       },
     },
