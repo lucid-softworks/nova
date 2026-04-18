@@ -342,11 +342,11 @@ export function StandardComposer({
           </>
         ) : null}
 
-        <div className="flex items-center justify-between border-t border-neutral-200 dark:border-neutral-800 pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-200 dark:border-neutral-800 pt-4">
           <Button type="button" variant="ghost" onClick={onDiscard}>
             {t('compose.discard')}
           </Button>
-          <div className="relative flex gap-2">
+          <div className="relative flex flex-wrap justify-end gap-2">
             <Button
               type="button"
               variant="ghost"
@@ -690,13 +690,13 @@ function VersionTabs({
               {hasIssue ? (
                 <AlertTriangle className="h-3.5 w-3.5 text-yellow-600" />
               ) : (
-                <div className="flex -space-x-1">
+                <div className="flex shrink-0 -space-x-1">
                   {(v.platforms.length ? v.platforms : ['x']).slice(0, 3).map((p) => (
                     <PlatformIcon key={p} platform={p as PlatformKey} size={14} />
                   ))}
                 </div>
               )}
-              <span>{label}</span>
+              <span className="whitespace-nowrap">{label}</span>
             </button>
             {!v.isDefault ? (
               <button
@@ -1053,7 +1053,7 @@ function RedditFields({
             placeholder="r/yourSub"
           />
         </Field>
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <label className="flex items-center gap-1">
             {t('compose.postType')}
             <select
@@ -1226,7 +1226,7 @@ function BlueskyLabels({
           Self-labels attached to the post so viewers can filter or hide it.
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {BLUESKY_LABEL_CHOICES.map((choice) => {
           const checked = values.includes(choice.value)
           return (
