@@ -3,6 +3,10 @@
 # Marketing (/) and public bio pages (/bio/...) are intentionally crawlable.
 
 User-agent: *
+# Content Signals (draft-romm-aipref-contentsignals) —
+# AI training, AI input, and classical search are all OK on the
+# crawlable parts of the site.
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
 Disallow: /admin/
 Disallow: /api/
 Disallow: /review/

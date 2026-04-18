@@ -87,24 +87,30 @@ function withSecurityHeaders(response, pathname) {
 }
 
 // RFC 9727 API Catalog — served ahead of the TanStack handler because
-// /.well-known/* paths aren't individual routes. Tiny JSON, hand-built.
+// /.well-known/* paths aren't individual routes. Each entry describes
+// one API: anchor is the API base URL, service-desc is the machine-
+// readable OpenAPI spec, service-doc is human-readable documentation,
+// and status is the health endpoint per RFC 9727 Appendix A.
+const APP_BASE = (process.env.APP_URL ?? 'https://skeduleit.org').replace(/\/+$/, '')
 const API_CATALOG = JSON.stringify({
   linkset: [
     {
-      anchor: (process.env.APP_URL ?? 'https://skeduleit.org').replace(/\/+$/, '') + '/',
+      anchor: `${APP_BASE}/api/v1`,
       'service-desc': [
         {
-          href:
-            (process.env.APP_URL ?? 'https://skeduleit.org').replace(/\/+$/, '') +
-            '/api/v1/openapi/json',
+          href: `${APP_BASE}/api/v1/openapi/json`,
           type: 'application/json',
         },
       ],
       'service-doc': [
         {
-          href:
-            (process.env.APP_URL ?? 'https://skeduleit.org').replace(/\/+$/, '') +
-            '/api/v1/openapi/json',
+          href: `${APP_BASE}/api/v1/openapi/json`,
+          type: 'application/json',
+        },
+      ],
+      status: [
+        {
+          href: `${APP_BASE}/healthz`,
           type: 'application/json',
         },
       ],
