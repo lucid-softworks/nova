@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
@@ -25,9 +25,13 @@ import { useT } from '~/lib/i18n'
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/schedule')({
-  loader: async ({ params }) => ({
-    schedule: await getPostingSchedule({ data: { workspaceSlug: params.workspaceSlug } }),
-  }),
+  loader: async ({ params }) => {
+    const [schedule, share] = await Promise.all([
+      getPostingSchedule({ data: { workspaceSlug: params.workspaceSlug } }),
+      getShareCalendarStatus({ data: { workspaceSlug: params.workspaceSlug } }),
+    ])
+    return { schedule, shareCalendarUrl: share.url }
+  },
   component: SchedulePage,
 })
 
@@ -81,7 +85,7 @@ function SchedulePage() {
     <div className="space-y-4">
       <SettingsNav workspaceSlug={workspaceSlug} active="schedule" />
       <CalendarFeedCard workspaceSlug={workspaceSlug} />
-      <ShareCalendarCard workspaceSlug={workspaceSlug} />
+      <ShareCalendarCard workspaceSlug={workspaceSlug} initialUrl={initial.shareCalendarUrl} />
       <Card>
         <div className="space-y-3 p-4">
           <div className="flex items-center justify-between">
@@ -269,27 +273,16 @@ function CalendarFeedCard({ workspaceSlug }: { workspaceSlug: string }) {
   )
 }
 
-function ShareCalendarCard({ workspaceSlug }: { workspaceSlug: string }) {
-  const [url, setUrl] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+function ShareCalendarCard({
+  workspaceSlug,
+  initialUrl,
+}: {
+  workspaceSlug: string
+  initialUrl: string | null
+}) {
+  const [url, setUrl] = useState<string | null>(initialUrl)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
-
-  const load = async () => {
-    setLoading(true)
-    try {
-      const res = await getShareCalendarStatus({ data: { workspaceSlug } })
-      setUrl(res.url)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    void load()
-    // Intentionally runs once on mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   const generate = async () => {
     setBusy(true)
@@ -346,9 +339,7 @@ function ShareCalendarCard({ workspaceSlug }: { workspaceSlug: string }) {
             Anyone with the link can view it — share with clients or stakeholders.
           </p>
         </div>
-        {loading ? (
-          <Spinner />
-        ) : url ? (
+        {url ? (
           <>
             <Input readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
             <div className="flex flex-wrap items-center gap-2">

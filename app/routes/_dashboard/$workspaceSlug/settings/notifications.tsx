@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Check, Send } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
@@ -38,7 +38,10 @@ const DEFAULTS = {
 } as const
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/notifications')({
-  loader: async () => ({ settings: await getMySettings() }),
+  loader: async () => ({
+    settings: await getMySettings(),
+    digestOptIn: (await getDigestOptIn()).optIn,
+  }),
   component: NotificationsSettings,
 })
 
@@ -212,11 +215,9 @@ function NotificationsSettings() {
 
 function DigestCard() {
   const t = useT()
-  const [optIn, setOptIn] = useState<boolean | null>(null)
+  const { digestOptIn } = Route.useLoaderData()
+  const [optIn, setOptIn] = useState<boolean>(digestOptIn)
   const [busy, setBusy] = useState(false)
-  useEffect(() => {
-    getDigestOptIn().then((r) => setOptIn(r.optIn))
-  }, [])
   const toggle = async (v: boolean) => {
     setBusy(true)
     setOptIn(v)
@@ -238,8 +239,8 @@ function DigestCard() {
         <label className="inline-flex items-center gap-2 text-sm">
           <input
             type="checkbox"
-            checked={optIn ?? false}
-            disabled={optIn === null || busy}
+            checked={optIn}
+            disabled={busy}
             onChange={(e) => toggle(e.target.checked)}
           />
           {t('notifSettings.sendMeDigest')}
