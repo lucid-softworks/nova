@@ -23,11 +23,23 @@ let priceCache: { fetchedAt: number; prices: Map<string, string> } | null = null
 const PRICE_CACHE_TTL_MS = 5 * 60 * 1000
 
 function formatCurrency(cents: number, currency: string, interval: string | null): string {
-  const amount = (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)
   const code = currency.toUpperCase()
-  const symbol = code === 'USD' ? '$' : code === 'EUR' ? '€' : code === 'GBP' ? '£' : `${code} `
+  const amount = cents / 100
   const period = interval === 'year' ? '/yr' : interval === 'month' ? '/mo' : ''
-  return `${symbol}${amount}${period}`
+  try {
+    // Intl handles every ISO 4217 code + places the symbol/code correctly
+    // per locale. en-US keeps the marketing page consistent; visitors'
+    // currency still comes from whatever Polar returns on the product.
+    const formatted = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: code,
+      minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
+      maximumFractionDigits: 2,
+    }).format(amount)
+    return `${formatted}${period}`
+  } catch {
+    return `${amount.toFixed(cents % 100 === 0 ? 0 : 2)} ${code}${period}`
+  }
 }
 
 /**
