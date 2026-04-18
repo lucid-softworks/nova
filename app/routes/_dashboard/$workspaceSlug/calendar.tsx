@@ -30,7 +30,7 @@ import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { cn } from '~/lib/utils'
 import { useT, useLocale } from '~/lib/i18n'
 
-type View = 'month' | 'week'
+type View = 'month' | 'week' | 'agenda'
 
 export const Route = createFileRoute('/_dashboard/$workspaceSlug/calendar')({
   loader: async ({ params }) => {
@@ -62,7 +62,12 @@ function CalendarPage() {
   const navigate = useNavigate()
   const initial = Route.useLoaderData()
   const [anchor, setAnchor] = useState(() => new Date())
-  const [view, setView] = useState<View>('month')
+  const [view, setView] = useState<View>(() => {
+    // SSR-safe: default to month; if hydrating on a narrow viewport, swap
+    // to agenda in the effect below so grids don't try to render on a phone.
+    if (typeof window === 'undefined') return 'month'
+    return window.matchMedia('(max-width: 767px)').matches ? 'agenda' : 'month'
+  })
   const [posts, setPosts] = useState<PostRow[]>(initial.rows)
   const [loading, setLoading] = useState(false)
   const [preview, setPreview] = useState<PostRow | null>(null)
@@ -74,6 +79,14 @@ function CalendarPage() {
       const start = startOfWeek(startOfMonth(anchor))
       const end = new Date(start)
       end.setDate(end.getDate() + 41)
+      end.setHours(23, 59, 59, 999)
+      return { start, end }
+    }
+    if (view === 'agenda') {
+      const start = new Date(anchor)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(start)
+      end.setDate(end.getDate() + 30)
       end.setHours(23, 59, 59, 999)
       return { start, end }
     }
@@ -171,20 +184,30 @@ function CalendarPage() {
   const goPrev = () => {
     const n = new Date(anchor)
     if (view === 'month') n.setMonth(n.getMonth() - 1)
+    else if (view === 'agenda') n.setDate(n.getDate() - 30)
     else n.setDate(n.getDate() - 7)
     setAnchor(n)
   }
   const goNext = () => {
     const n = new Date(anchor)
     if (view === 'month') n.setMonth(n.getMonth() + 1)
+    else if (view === 'agenda') n.setDate(n.getDate() + 30)
     else n.setDate(n.getDate() + 7)
     setAnchor(n)
   }
 
+  const agendaEnd = useMemo(() => {
+    const d = new Date(anchor)
+    d.setDate(d.getDate() + 30)
+    return d
+  }, [anchor])
+
   const title =
     view === 'month'
       ? anchor.toLocaleString(dateLang, { month: 'long', year: 'numeric' })
-      : `${startOfWeek(anchor).toLocaleDateString(dateLang, { month: 'short', day: 'numeric' })} – ${endOfWeek(anchor).toLocaleDateString(dateLang, { month: 'short', day: 'numeric' })}`
+      : view === 'week'
+        ? `${startOfWeek(anchor).toLocaleDateString(dateLang, { month: 'short', day: 'numeric' })} – ${endOfWeek(anchor).toLocaleDateString(dateLang, { month: 'short', day: 'numeric' })}`
+        : `${anchor.toLocaleDateString(dateLang, { month: 'short', day: 'numeric' })} – ${agendaEnd.toLocaleDateString(dateLang, { month: 'short', day: 'numeric' })}`
 
   const openComposerForDate = (d: Date) => {
     navigate({
@@ -213,6 +236,13 @@ function CalendarPage() {
             >
               {t('calendar.week')}
             </button>
+            <button
+              type="button"
+              onClick={() => setView('agenda')}
+              className={cn('rounded px-2 py-1', view === 'agenda' ? 'bg-neutral-900 text-white' : 'text-neutral-600 dark:text-neutral-300')}
+            >
+              {t('calendar.agenda')}
+            </button>
           </div>
           <Button size="sm" variant="outline" onClick={goPrev} aria-label="Previous">
             <ChevronLeft className="h-4 w-4" />
@@ -235,15 +265,31 @@ function CalendarPage() {
 
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>
         {view === 'month' ? (
-          <MonthGrid
-            anchor={anchor}
-            postsByDay={postsByDay}
-            onClickEmpty={openComposerForDate}
-            onClickPost={(p) => setPreview(p)}
-            dateLang={dateLang}
-          />
+          <div className="-mx-2 overflow-x-auto sm:mx-0">
+            <div className="min-w-[700px]">
+              <MonthGrid
+                anchor={anchor}
+                postsByDay={postsByDay}
+                onClickEmpty={openComposerForDate}
+                onClickPost={(p) => setPreview(p)}
+                dateLang={dateLang}
+              />
+            </div>
+          </div>
+        ) : view === 'week' ? (
+          <div className="-mx-2 overflow-x-auto sm:mx-0">
+            <div className="min-w-[800px]">
+              <WeekGrid
+                anchor={anchor}
+                postsByDay={postsByDay}
+                onClickEmpty={openComposerForDate}
+                onClickPost={(p) => setPreview(p)}
+                dateLang={dateLang}
+              />
+            </div>
+          </div>
         ) : (
-          <WeekGrid
+          <AgendaView
             anchor={anchor}
             postsByDay={postsByDay}
             onClickEmpty={openComposerForDate}
@@ -702,5 +748,131 @@ function QuickViewBody({
         </div>
       </div>
     </div>
+  )
+}
+
+// --------------------------------------------------------------------------
+// Agenda view — mobile-friendly alternative to the month/week grids.
+// Lists the next ~30 days from `anchor` with each day's posts grouped
+// under a day header. Days without posts show a "Schedule a post" link.
+// --------------------------------------------------------------------------
+
+function AgendaView({
+  anchor,
+  postsByDay,
+  onClickEmpty,
+  onClickPost,
+  dateLang,
+}: {
+  anchor: Date
+  postsByDay: Map<string, PostRow[]>
+  onClickEmpty: (d: Date) => void
+  onClickPost: (p: PostRow) => void
+  dateLang: string
+}) {
+  const t = useT()
+  const days: Date[] = []
+  const start = new Date(anchor)
+  start.setHours(0, 0, 0, 0)
+  for (let i = 0; i < 31; i++) {
+    const d = new Date(start)
+    d.setDate(d.getDate() + i)
+    days.push(d)
+  }
+  const today = new Date()
+  return (
+    <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+      {days.map((day) => {
+        const posts = postsByDay.get(ymd(day)) ?? []
+        const isToday = sameDay(day, today)
+        return (
+          <div key={ymd(day)} className="border-b border-neutral-100 dark:border-neutral-800 last:border-0">
+            <div className="flex items-center justify-between gap-2 bg-neutral-50/80 dark:bg-neutral-900/60 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              <span className={cn('flex items-center gap-2', isToday && 'text-indigo-600 dark:text-indigo-400')}>
+                <span className="text-[11px]">
+                  {day.toLocaleDateString(dateLang, { weekday: 'short' })}
+                </span>
+                <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                  {day.toLocaleDateString(dateLang, { month: 'short', day: 'numeric' })}
+                </span>
+                {isToday ? (
+                  <span className="rounded-full bg-indigo-500 px-1.5 text-[10px] font-bold text-white">
+                    {t('calendar.today')}
+                  </span>
+                ) : null}
+              </span>
+              <button
+                type="button"
+                onClick={() => onClickEmpty(day)}
+                className="rounded px-2 py-0.5 text-[11px] font-medium text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/40"
+              >
+                {t('calendar.newPost')}
+              </button>
+            </div>
+            {posts.length === 0 ? (
+              <div className="px-3 py-3 text-xs text-neutral-400 dark:text-neutral-500">
+                {t('calendar.noPosts')}
+              </div>
+            ) : (
+              <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                {posts.map((p) => (
+                  <AgendaRow
+                    key={p.id}
+                    post={p}
+                    dateLang={dateLang}
+                    onClick={() => onClickPost(p)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function AgendaRow({
+  post,
+  dateLang,
+  onClick,
+}: {
+  post: PostRow
+  dateLang: string
+  onClick: () => void
+}) {
+  const when = post.publishedAt ?? post.scheduledAt
+  const timeLabel = when
+    ? new Date(when).toLocaleTimeString(dateLang, { hour: 'numeric', minute: '2-digit' })
+    : '—'
+  const preview = post.defaultContent?.slice(0, 120) ?? ''
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-start gap-3 px-3 py-2.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+    >
+      <div className="w-14 shrink-0 text-xs font-semibold tabular-nums text-neutral-700 dark:text-neutral-200">
+        {timeLabel}
+      </div>
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <PostStatusBadge status={post.status} />
+          <div className="flex gap-0.5">
+            {post.platforms.slice(0, 5).map((pp) => (
+              <PlatformIcon key={pp.socialAccountId} platform={pp.platform} size={14} />
+            ))}
+            {post.platforms.length > 5 ? (
+              <span className="text-[10px] text-neutral-500">
+                +{post.platforms.length - 5}
+              </span>
+            ) : null}
+          </div>
+        </div>
+        <div className="line-clamp-2 text-sm text-neutral-900 dark:text-neutral-100">
+          {preview || <span className="italic text-neutral-400">No content</span>}
+        </div>
+      </div>
+    </button>
   )
 }

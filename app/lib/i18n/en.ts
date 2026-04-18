@@ -140,6 +140,8 @@ export const en = {
   "calendar.title": "Calendar",
   "calendar.month": "Month",
   "calendar.week": "Week",
+  "calendar.agenda": "Agenda",
+  "calendar.noPosts": "No posts scheduled.",
   "calendar.today": "Today",
   "calendar.newPost": "New post",
   "calendar.more": "{count} more",
