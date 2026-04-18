@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Download, MoreHorizontal, UserPlus } from 'lucide-react'
+import { toast } from '~/components/ui/toast'
 import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -81,7 +82,7 @@ function UsersPage() {
     setBusy(u.id)
     try {
       const res = await revokeAdminUserSessions({ data: { userId: u.id } })
-      alert(`Revoked ${res.revoked} session${res.revoked === 1 ? '' : 's'}.`)
+      toast.success(`Revoked ${res.revoked} session${res.revoked === 1 ? '' : 's'}.`)
     } finally {
       setBusy(null)
     }
@@ -91,7 +92,7 @@ function UsersPage() {
     setBusy(u.id)
     try {
       await resetAdminUserTwoFactor({ data: { userId: u.id } })
-      alert('2FA reset. User can enroll again in security settings.')
+      toast.success('2FA reset. User can enroll again in security settings.')
     } finally {
       setBusy(null)
     }
@@ -109,7 +110,7 @@ function UsersPage() {
     setBusy(u.id)
     try {
       await resendAdminVerification({ data: { userId: u.id } })
-      alert(`Verification email sent to ${u.email}.`)
+      toast.success(`Verification email sent to ${u.email}.`)
     } finally {
       setBusy(null)
     }

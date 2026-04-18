@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { toast } from '~/components/ui/toast'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Search, Upload, Trash2, FolderInput, X } from 'lucide-react'
 import { Button } from '~/components/ui/button'
@@ -118,7 +119,7 @@ function MediaPage() {
       }
       await reloadAssets()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Upload failed')
+      toast.error(e instanceof Error ? e.message : 'Upload failed')
     } finally {
       setUploading((prev) => prev.filter((n) => !names.includes(n)))
     }

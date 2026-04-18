@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { toast } from '~/components/ui/toast'
 import { useEffect, useMemo, useState } from 'react'
 import {
   DndContext,
@@ -144,7 +145,7 @@ function CalendarPage() {
 
     if (target.getTime() === source.getTime()) return
     if (post.status === 'published') {
-      alert(t('calendar.cantRescheduleAlert'))
+      toast.error(t('calendar.cantRescheduleAlert'))
       return
     }
     // Optimistic update
@@ -161,7 +162,7 @@ function CalendarPage() {
       })
       await reload()
     } catch (err) {
-      alert(err instanceof Error ? err.message : t('calendar.rescheduleFailedAlert'))
+      toast.error(err instanceof Error ? err.message : t('calendar.rescheduleFailedAlert'))
       await reload()
     }
   }
@@ -610,7 +611,7 @@ function QuickViewBody({
       })
       await onChanged()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Reschedule failed')
+      toast.error(e instanceof Error ? e.message : 'Reschedule failed')
     } finally {
       setBusy(false)
     }

@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { toast } from '~/components/ui/toast'
 import { useEffect, useState } from 'react'
 import {
   ResponsiveContainer,
@@ -72,7 +73,7 @@ function SyncNowButton({ workspaceSlug }: { workspaceSlug: string }) {
       setDone(true)
       setTimeout(() => setDone(false), 3000)
     } catch (e) {
-      alert(e instanceof Error ? e.message : t('analytics.failedToSync'))
+      toast.error(e instanceof Error ? e.message : t('analytics.failedToSync'))
     } finally {
       setBusy(false)
     }

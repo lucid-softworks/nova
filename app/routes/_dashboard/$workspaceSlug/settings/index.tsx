@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { toast } from '~/components/ui/toast'
 import { useState } from 'react'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -93,7 +94,7 @@ function GeneralSettings() {
       await deleteWorkspace({ data: { workspaceSlug, confirmName: deleteConfirm } })
       navigate({ to: '/onboarding' })
     } catch (e) {
-      alert(e instanceof Error ? e.message : t('settings.deleteFailed'))
+      toast.error(e instanceof Error ? e.message : t('settings.deleteFailed'))
     }
   }
 

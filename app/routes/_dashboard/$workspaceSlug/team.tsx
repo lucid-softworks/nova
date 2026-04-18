@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { toast } from '~/components/ui/toast'
 import { useMemo, useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '~/components/ui/button'
@@ -97,7 +98,7 @@ function TeamPage() {
       await cancelInvitation({ data: { workspaceSlug, invitationId: inv.id } })
       await reload()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed')
+      toast.error(e instanceof Error ? e.message : 'Failed')
     }
   }
 
@@ -106,7 +107,7 @@ function TeamPage() {
       await updateMemberRole({ data: { workspaceSlug, memberId: member.id, role: newRole } })
       await reload()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed')
+      toast.error(e instanceof Error ? e.message : 'Failed')
     }
   }
 
@@ -116,7 +117,7 @@ function TeamPage() {
       await removeMember({ data: { workspaceSlug, memberId: member.id } })
       await reload()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed')
+      toast.error(e instanceof Error ? e.message : 'Failed')
     }
   }
 
@@ -126,7 +127,7 @@ function TeamPage() {
       await setRequireApproval({ data: { workspaceSlug, value: v } })
     } catch (e) {
       setRequireApprovalState(!v)
-      alert(e instanceof Error ? e.message : 'Failed')
+      toast.error(e instanceof Error ? e.message : 'Failed')
     }
   }
 
@@ -139,7 +140,7 @@ function TeamPage() {
       await setApprovers({ data: { workspaceSlug, userIds: next } })
     } catch (e) {
       setApproverUserIds(approverUserIds)
-      alert(e instanceof Error ? e.message : 'Failed')
+      toast.error(e instanceof Error ? e.message : 'Failed')
     }
   }
 

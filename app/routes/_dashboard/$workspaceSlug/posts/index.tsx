@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { toast } from '~/components/ui/toast'
 import { useEffect, useState } from 'react'
 import { AlertTriangle, ChevronDown, ChevronRight, Copy, Download, MoreHorizontal, Pause, Search, Target, Trash2, Upload, X } from 'lucide-react'
 import { Button } from '~/components/ui/button'
@@ -614,7 +615,7 @@ function CsvButtons({
       setReport(r)
       onImported()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Import failed')
+      toast.error(err instanceof Error ? err.message : 'Import failed')
     } finally {
       setBusy(null)
     }

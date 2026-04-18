@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { toast } from '~/components/ui/toast'
 import { useState } from 'react'
 import { Copy, Plus, Trash2 } from 'lucide-react'
 import { Button } from '~/components/ui/button'
@@ -73,7 +74,7 @@ function ApiSettings() {
       setNewKeyName('')
       await reload()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed')
+      toast.error(e instanceof Error ? e.message : 'Failed')
     } finally {
       setCreatingKey(false)
     }
@@ -100,7 +101,7 @@ function ApiSettings() {
       setNewWebhookEvents([...EVENTS])
       await reload()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed')
+      toast.error(e instanceof Error ? e.message : 'Failed')
     } finally {
       setCreatingWebhook(false)
     }

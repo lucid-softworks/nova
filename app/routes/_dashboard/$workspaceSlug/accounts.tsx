@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { toast } from '~/components/ui/toast'
 import { useState } from 'react'
 import { ChevronDown, Download, Plug, RotateCw } from 'lucide-react'
 import { listAccounts, listAvailablePlatforms, disconnectAccount, type AccountSummary } from '~/server/accounts'
@@ -229,7 +230,7 @@ function BackfillButton({
       })
       setResult(res)
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Backfill failed')
+      toast.error(e instanceof Error ? e.message : 'Backfill failed')
     } finally {
       setBusy(false)
     }
