@@ -4,6 +4,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import globalsCss from '../styles/globals.css?url'
 import { I18nProvider, parseAcceptLanguage, type Locale } from '~/lib/i18n'
+import { RouteErrorBoundary } from '~/components/RouteErrorBoundary'
 
 const detectLocale = createServerFn({ method: 'GET' }).handler(async (): Promise<Locale> => {
   try {
@@ -33,6 +34,7 @@ export const Route = createRootRoute({
     ],
   }),
   component: RootComponent,
+  errorComponent: RouteErrorBoundary,
 })
 
 function RootComponent() {

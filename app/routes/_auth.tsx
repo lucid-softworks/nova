@@ -1,7 +1,9 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { RouteErrorBoundary } from '~/components/RouteErrorBoundary'
 
 export const Route = createFileRoute('/_auth')({
   component: AuthLayout,
+  errorComponent: RouteErrorBoundary,
 })
 
 function AuthLayout() {

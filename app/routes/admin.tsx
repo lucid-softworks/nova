@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { createServerFn } from '@tanstack/react-start'
 import { db, schema } from '~/server/db'
 import { loadSessionContext } from '~/server/session.server'
+import { RouteErrorBoundary } from '~/components/RouteErrorBoundary'
 import { cn } from '~/lib/utils'
 import { useT } from '~/lib/i18n'
 
@@ -28,6 +29,7 @@ export const Route = createFileRoute('/admin')({
     return { userName: status.userName }
   },
   component: AdminLayout,
+  errorComponent: RouteErrorBoundary,
 })
 
 const NAV = [

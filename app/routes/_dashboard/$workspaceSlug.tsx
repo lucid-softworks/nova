@@ -6,6 +6,7 @@ import { useT } from '~/lib/i18n'
 import type { SessionContext } from '~/server/auth-context'
 import { Sidebar } from '~/components/layout/Sidebar'
 import { TopBar } from '~/components/layout/TopBar'
+import { RouteErrorBoundary } from '~/components/RouteErrorBoundary'
 import { cn } from '~/lib/utils'
 
 type LoaderCtx = { session: SessionContext }
@@ -27,6 +28,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug')({
     return { workspace: ws, session }
   },
   component: WorkspaceLayout,
+  errorComponent: RouteErrorBoundary,
 })
 
 const TITLE_KEYS = {
