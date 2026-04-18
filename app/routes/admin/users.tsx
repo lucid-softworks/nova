@@ -182,7 +182,7 @@ function UsersPage() {
                           Banned
                         </span>
                       ) : (
-                        <span className="text-xs text-neutral-500 dark:text-neutral-400">Active</span>
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400">{t('admin.active')}</span>
                       )}
                       {!u.emailVerified ? (
                         <span className="rounded-full bg-yellow-50 dark:bg-yellow-950/40 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:text-yellow-300 w-fit">
@@ -257,6 +257,7 @@ function UsersPage() {
 }
 
 function InviteUserButton({ onInvited }: { onInvited: () => Promise<void> }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
@@ -301,14 +302,14 @@ function InviteUserButton({ onInvited }: { onInvited: () => Promise<void> }) {
     >
       <DialogTrigger asChild>
         <Button>
-          <UserPlus className="h-4 w-4" /> Invite user
+          <UserPlus className="h-4 w-4" /> {t('admin.inviteUser')}
         </Button>
       </DialogTrigger>
       <DialogContent>
         {sentTo ? (
           <>
             <DialogHeader>
-              <DialogTitle>Invitation sent</DialogTitle>
+              <DialogTitle>{t('admin.invitationSent')}</DialogTitle>
               <DialogDescription>
                 A magic-link has been emailed to <strong>{sentTo}</strong>. They can click it to
                 sign in. Bypasses the sign-ups toggle.
@@ -323,7 +324,7 @@ function InviteUserButton({ onInvited }: { onInvited: () => Promise<void> }) {
         ) : (
           <form onSubmit={submit} className="space-y-4">
             <DialogHeader>
-              <DialogTitle>Invite user</DialogTitle>
+              <DialogTitle>{t('admin.inviteUser')}</DialogTitle>
               <DialogDescription>
                 Creates an account and emails a one-click sign-in link. The user is marked
                 verified automatically since you're vouching for them.

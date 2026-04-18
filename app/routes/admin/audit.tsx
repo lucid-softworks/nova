@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Card } from '~/components/ui/card'
 import { listAdminAuditLog, type AdminAuditRow } from '~/server/admin'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/admin/audit')({
   loader: async () => ({ rows: await listAdminAuditLog() }),
@@ -8,6 +9,7 @@ export const Route = createFileRoute('/admin/audit')({
 })
 
 function AuditPage() {
+  const t = useT()
   const { rows } = Route.useLoaderData()
 
   return (
@@ -25,11 +27,11 @@ function AuditPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                <th className="px-3 py-2">When</th>
-                <th className="px-3 py-2">Actor</th>
-                <th className="px-3 py-2">Action</th>
-                <th className="px-3 py-2">Target</th>
-                <th className="px-3 py-2">Metadata</th>
+                <th className="px-3 py-2">{t('admin.col.when')}</th>
+                <th className="px-3 py-2">{t('admin.col.actor')}</th>
+                <th className="px-3 py-2">{t('admin.col.action')}</th>
+                <th className="px-3 py-2">{t('admin.col.target')}</th>
+                <th className="px-3 py-2">{t('admin.col.metadata')}</th>
               </tr>
             </thead>
             <tbody>

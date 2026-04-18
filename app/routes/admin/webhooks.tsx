@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Card } from '~/components/ui/card'
 import { listAdminWebhookDeliveries } from '~/server/admin'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/admin/webhooks')({
   loader: async () => ({ deliveries: await listAdminWebhookDeliveries() }),
@@ -8,6 +9,7 @@ export const Route = createFileRoute('/admin/webhooks')({
 })
 
 function WebhooksPage() {
+  const t = useT()
   const { deliveries } = Route.useLoaderData()
   return (
     <Card>
@@ -15,11 +17,11 @@ function WebhooksPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-              <th className="px-3 py-2">Event</th>
-              <th className="px-3 py-2">Workspace</th>
-              <th className="px-3 py-2">Status</th>
-              <th className="px-3 py-2">Code</th>
-              <th className="px-3 py-2">When</th>
+              <th className="px-3 py-2">{t('admin.col.event')}</th>
+              <th className="px-3 py-2">{t('admin.col.workspace')}</th>
+              <th className="px-3 py-2">{t('admin.col.status')}</th>
+              <th className="px-3 py-2">{t('admin.col.code')}</th>
+              <th className="px-3 py-2">{t('admin.col.when')}</th>
             </tr>
           </thead>
           <tbody>

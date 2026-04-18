@@ -4,6 +4,7 @@ import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { listAdminApiKeys, revokeAdminApiKey, type AdminApiKeyRow } from '~/server/admin'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/admin/api-keys')({
   loader: async () => ({ keys: await listAdminApiKeys() }),
@@ -11,6 +12,7 @@ export const Route = createFileRoute('/admin/api-keys')({
 })
 
 function ApiKeysPage() {
+  const t = useT()
   const initial = Route.useLoaderData()
   const [rows, setRows] = useState<AdminApiKeyRow[]>(initial.keys)
   const [filter, setFilter] = useState('')
@@ -41,7 +43,7 @@ function ApiKeysPage() {
   return (
     <div className="space-y-3">
       <div>
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">API keys</h2>
+        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{t('admin.apiKeysTitle')}</h2>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Keys across every workspace. Full key values are never displayed — only the
           prefix. Revoking deletes the row immediately.
@@ -58,12 +60,12 @@ function ApiKeysPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                <th className="px-3 py-2">Key</th>
-                <th className="px-3 py-2">Owner</th>
-                <th className="px-3 py-2">Workspace</th>
-                <th className="px-3 py-2">Last used</th>
-                <th className="px-3 py-2">Requests</th>
-                <th className="px-3 py-2">Created</th>
+                <th className="px-3 py-2">{t('admin.col.key')}</th>
+                <th className="px-3 py-2">{t('admin.col.owner')}</th>
+                <th className="px-3 py-2">{t('admin.col.workspace')}</th>
+                <th className="px-3 py-2">{t('admin.col.lastUsed')}</th>
+                <th className="px-3 py-2">{t('admin.col.requests')}</th>
+                <th className="px-3 py-2">{t('admin.col.created')}</th>
                 <th className="px-3 py-2" />
               </tr>
             </thead>

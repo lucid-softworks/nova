@@ -9,6 +9,7 @@ import {
   deleteAdminWorkspace,
   setAdminWorkspacePlanOverride,
 } from '~/server/admin'
+import { useT } from '~/lib/i18n'
 
 const PLAN_CHOICES = [
   { value: '', label: 'No override (use billing subscription)' },
@@ -25,6 +26,7 @@ export const Route = createFileRoute('/admin/workspaces/$workspaceId')({
 })
 
 function WorkspaceDetailPage() {
+  const t = useT()
   const ws = Route.useLoaderData()
   const navigate = useNavigate()
   const router = useRouter()
@@ -135,9 +137,9 @@ function WorkspaceDetailPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                  <th className="px-3 py-2">User</th>
-                  <th className="px-3 py-2">Role</th>
-                  <th className="px-3 py-2">Joined</th>
+                  <th className="px-3 py-2">{t('admin.col.user')}</th>
+                  <th className="px-3 py-2">{t('admin.col.role')}</th>
+                  <th className="px-3 py-2">{t('admin.col.joined')}</th>
                 </tr>
               </thead>
               <tbody>

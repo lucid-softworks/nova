@@ -11,6 +11,7 @@ import {
   updateAdminPlatformSettings,
   type PlatformSettings,
 } from '~/server/admin'
+import { useT } from '~/lib/i18n'
 
 const FEATURE_FLAGS = [
   { key: 'aiAssist', label: 'AI assist (hashtags, generate)' },
@@ -26,6 +27,7 @@ export const Route = createFileRoute('/admin/settings')({
 })
 
 function SettingsPage() {
+  const t = useT()
   const initial = Route.useLoaderData()
   const [settings, setSettings] = useState<PlatformSettings>(initial.settings)
   const [maxInput, setMaxInput] = useState<string>(
@@ -248,7 +250,7 @@ function SettingsPage() {
         </Button>
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
         {savedAt && !error ? (
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Saved</p>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">{t('admin.saved')}</p>
         ) : null}
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Card } from '~/components/ui/card'
 import { listAdminLoginAttempts, type AdminLoginAttemptRow } from '~/server/admin'
+import { useT } from '~/lib/i18n'
 
 export const Route = createFileRoute('/admin/logins')({
   loader: async () => ({ attempts: await listAdminLoginAttempts() }),
@@ -8,6 +9,7 @@ export const Route = createFileRoute('/admin/logins')({
 })
 
 function LoginsPage() {
+  const t = useT()
   const { attempts } = Route.useLoaderData()
   return (
     <div className="space-y-3">
@@ -24,11 +26,11 @@ function LoginsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                <th className="px-3 py-2">When</th>
-                <th className="px-3 py-2">Email</th>
-                <th className="px-3 py-2">IP</th>
-                <th className="px-3 py-2">Result</th>
-                <th className="px-3 py-2">Reason</th>
+                <th className="px-3 py-2">{t('admin.col.when')}</th>
+                <th className="px-3 py-2">{t('admin.col.email')}</th>
+                <th className="px-3 py-2">{t('admin.col.ip')}</th>
+                <th className="px-3 py-2">{t('admin.col.result')}</th>
+                <th className="px-3 py-2">{t('admin.col.reason')}</th>
               </tr>
             </thead>
             <tbody>
@@ -50,6 +52,7 @@ function LoginsPage() {
 }
 
 function AttemptRow({ row }: { row: AdminLoginAttemptRow }) {
+  const t = useT()
   const when = new Date(row.createdAt)
   return (
     <tr className="border-b border-neutral-100 dark:border-neutral-800 last:border-0">
@@ -65,11 +68,11 @@ function AttemptRow({ row }: { row: AdminLoginAttemptRow }) {
       <td className="px-3 py-2">
         {row.success ? (
           <span className="rounded-full bg-green-50 dark:bg-green-950/40 px-2 py-0.5 text-xs font-medium text-green-700 dark:text-green-300">
-            Success
+            {t('admin.success')}
           </span>
         ) : (
           <span className="rounded-full bg-red-50 dark:bg-red-950/40 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-300">
-            Failed
+            {t('admin.failed')}
           </span>
         )}
       </td>
