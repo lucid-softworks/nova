@@ -592,6 +592,7 @@ export type AdminLoginAttemptRow = {
   userAgent: string | null
   success: boolean
   reason: string | null
+  kind: 'sign_in' | 'sign_up'
   createdAt: string
 }
 
@@ -610,6 +611,7 @@ export async function listLoginAttemptsImpl(limit = 200): Promise<AdminLoginAtte
     // A still-"pending" row means the after-hook never fired → failure.
     success: r.success,
     reason: r.reason === 'pending' ? 'incomplete' : r.reason,
+    kind: r.kind === 'sign_up' ? 'sign_up' : 'sign_in',
     createdAt: r.createdAt.toISOString(),
   }))
 }

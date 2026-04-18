@@ -11,13 +11,30 @@ export const Route = createFileRoute('/bio/$handle')({
   head: ({ loaderData }) => {
     const page = loaderData as PublicBioPage | null
     if (!page) return { meta: [{ title: 'Not found' }] }
+    const title = page.displayName ?? `@${page.handle}`
+    const description =
+      page.bio?.trim() || `Links and recent posts from ${page.displayName ?? page.handle}.`
+    const url = `https://skeduleit.org/bio/${page.handle}`
+    // Avatar if set; otherwise fall back to the site OG image. Most socials
+    // want raster but SVG works on Slack/Discord/Twitter — good enough until
+    // we swap to a proper avatar-backed PNG card.
+    const image = page.avatarUrl ?? 'https://skeduleit.org/og-image.svg'
     return {
       meta: [
-        { title: page.displayName ?? page.handle },
-        { name: 'description', content: page.bio ?? '' },
-        { property: 'og:title', content: page.displayName ?? page.handle },
-        { property: 'og:description', content: page.bio ?? '' },
+        { title },
+        { name: 'description', content: description },
+        { property: 'og:type', content: 'profile' },
+        { property: 'og:title', content: title },
+        { property: 'og:description', content: description },
+        { property: 'og:url', content: url },
+        { property: 'og:image', content: image },
+        { property: 'profile:username', content: page.handle },
+        { name: 'twitter:card', content: page.avatarUrl ? 'summary' : 'summary_large_image' },
+        { name: 'twitter:title', content: title },
+        { name: 'twitter:description', content: description },
+        { name: 'twitter:image', content: image },
       ],
+      links: [{ rel: 'canonical', href: url }],
     }
   },
   component: BioPageRoute,

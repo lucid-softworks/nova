@@ -15,18 +15,19 @@ function LoginsPage() {
     <div className="space-y-3">
       <div>
         <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-          Sign-in attempts
+          Auth activity
         </h2>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          Every sign-in attempt, successful or failed. Last 200 entries.
+          Every sign-in and sign-up attempt, successful or failed. Last 200 entries.
         </p>
       </div>
       <Card>
         <div className="overflow-x-auto rounded-md">
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 <th className="px-3 py-2">{t('admin.col.when')}</th>
+                <th className="px-3 py-2">{t('admin.col.kind')}</th>
                 <th className="px-3 py-2">{t('admin.col.email')}</th>
                 <th className="px-3 py-2">{t('admin.col.ip')}</th>
                 <th className="px-3 py-2">{t('admin.col.result')}</th>
@@ -36,8 +37,8 @@ function LoginsPage() {
             <tbody>
               {attempts.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
-                    No sign-in attempts yet.
+                  <td colSpan={6} className="px-3 py-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
+                    No auth activity yet.
                   </td>
                 </tr>
               ) : (
@@ -54,10 +55,22 @@ function LoginsPage() {
 function AttemptRow({ row }: { row: AdminLoginAttemptRow }) {
   const t = useT()
   const when = new Date(row.createdAt)
+  const isSignUp = row.kind === 'sign_up'
   return (
     <tr className="border-b border-neutral-100 dark:border-neutral-800 last:border-0">
       <td className="px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400" title={when.toISOString()}>
         {when.toLocaleString()}
+      </td>
+      <td className="px-3 py-2">
+        <span
+          className={
+            isSignUp
+              ? 'rounded-full bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300'
+              : 'rounded-full bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-700 dark:text-neutral-300'
+          }
+        >
+          {isSignUp ? t('admin.kindSignUp') : t('admin.kindSignIn')}
+        </span>
       </td>
       <td className="px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100">
         {row.email ?? <span className="text-neutral-400">—</span>}

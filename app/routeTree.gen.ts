@@ -51,6 +51,7 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAiHashtagsRouteImport } from './routes/api/ai/hashtags'
 import { Route as ApiAiGenerateRouteImport } from './routes/api/ai/generate'
 import { Route as ApiActivityExportRouteImport } from './routes/api/activity/export'
+import { Route as ApiAccountExportRouteImport } from './routes/api/account/export'
 import { Route as AdminWorkspacesWorkspaceIdRouteImport } from './routes/admin/workspaces/$workspaceId'
 import { Route as DashboardWorkspaceSlugTemplatesRouteImport } from './routes/_dashboard/$workspaceSlug/templates'
 import { Route as DashboardWorkspaceSlugTeamRouteImport } from './routes/_dashboard/$workspaceSlug/team'
@@ -297,6 +298,11 @@ const ApiAiGenerateRoute = ApiAiGenerateRouteImport.update({
 const ApiActivityExportRoute = ApiActivityExportRouteImport.update({
   id: '/api/activity/export',
   path: '/api/activity/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAccountExportRoute = ApiAccountExportRouteImport.update({
+  id: '/api/account/export',
+  path: '/api/account/export',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminWorkspacesWorkspaceIdRoute =
@@ -553,6 +559,7 @@ export interface FileRoutesByFullPath {
   '/$workspaceSlug/team': typeof DashboardWorkspaceSlugTeamRoute
   '/$workspaceSlug/templates': typeof DashboardWorkspaceSlugTemplatesRouteWithChildren
   '/admin/workspaces/$workspaceId': typeof AdminWorkspacesWorkspaceIdRoute
+  '/api/account/export': typeof ApiAccountExportRoute
   '/api/activity/export': typeof ApiActivityExportRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/ai/hashtags': typeof ApiAiHashtagsRoute
@@ -630,6 +637,7 @@ export interface FileRoutesByTo {
   '/$workspaceSlug/team': typeof DashboardWorkspaceSlugTeamRoute
   '/$workspaceSlug/templates': typeof DashboardWorkspaceSlugTemplatesRouteWithChildren
   '/admin/workspaces/$workspaceId': typeof AdminWorkspacesWorkspaceIdRoute
+  '/api/account/export': typeof ApiAccountExportRoute
   '/api/activity/export': typeof ApiActivityExportRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/ai/hashtags': typeof ApiAiHashtagsRoute
@@ -712,6 +720,7 @@ export interface FileRoutesById {
   '/_dashboard/$workspaceSlug/team': typeof DashboardWorkspaceSlugTeamRoute
   '/_dashboard/$workspaceSlug/templates': typeof DashboardWorkspaceSlugTemplatesRouteWithChildren
   '/admin/workspaces/$workspaceId': typeof AdminWorkspacesWorkspaceIdRoute
+  '/api/account/export': typeof ApiAccountExportRoute
   '/api/activity/export': typeof ApiActivityExportRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/ai/hashtags': typeof ApiAiHashtagsRoute
@@ -793,6 +802,7 @@ export interface FileRouteTypes {
     | '/$workspaceSlug/team'
     | '/$workspaceSlug/templates'
     | '/admin/workspaces/$workspaceId'
+    | '/api/account/export'
     | '/api/activity/export'
     | '/api/ai/generate'
     | '/api/ai/hashtags'
@@ -870,6 +880,7 @@ export interface FileRouteTypes {
     | '/$workspaceSlug/team'
     | '/$workspaceSlug/templates'
     | '/admin/workspaces/$workspaceId'
+    | '/api/account/export'
     | '/api/activity/export'
     | '/api/ai/generate'
     | '/api/ai/hashtags'
@@ -951,6 +962,7 @@ export interface FileRouteTypes {
     | '/_dashboard/$workspaceSlug/team'
     | '/_dashboard/$workspaceSlug/templates'
     | '/admin/workspaces/$workspaceId'
+    | '/api/account/export'
     | '/api/activity/export'
     | '/api/ai/generate'
     | '/api/ai/hashtags'
@@ -1005,6 +1017,7 @@ export interface RootRouteChildren {
   DigestUnsubscribeRoute: typeof DigestUnsubscribeRoute
   LSlugRoute: typeof LSlugRoute
   ReviewTokenRoute: typeof ReviewTokenRoute
+  ApiAccountExportRoute: typeof ApiAccountExportRoute
   ApiActivityExportRoute: typeof ApiActivityExportRoute
   ApiAiGenerateRoute: typeof ApiAiGenerateRoute
   ApiAiHashtagsRoute: typeof ApiAiHashtagsRoute
@@ -1321,6 +1334,13 @@ declare module '@tanstack/react-router' {
       path: '/api/activity/export'
       fullPath: '/api/activity/export'
       preLoaderRoute: typeof ApiActivityExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/account/export': {
+      id: '/api/account/export'
+      path: '/api/account/export'
+      fullPath: '/api/account/export'
+      preLoaderRoute: typeof ApiAccountExportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/workspaces/$workspaceId': {
@@ -1788,6 +1808,7 @@ const rootRouteChildren: RootRouteChildren = {
   DigestUnsubscribeRoute: DigestUnsubscribeRoute,
   LSlugRoute: LSlugRoute,
   ReviewTokenRoute: ReviewTokenRoute,
+  ApiAccountExportRoute: ApiAccountExportRoute,
   ApiActivityExportRoute: ApiActivityExportRoute,
   ApiAiGenerateRoute: ApiAiGenerateRoute,
   ApiAiHashtagsRoute: ApiAiHashtagsRoute,

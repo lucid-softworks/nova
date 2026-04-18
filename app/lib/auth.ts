@@ -429,6 +429,21 @@ export const auth = betterAuth({
         // Only fire when the user was actually created in this request
         // (as opposed to magic-link / OTP verifying an existing account).
         if (Date.now() - createdAtMs < 30 * 1000) {
+          // Log the signup into auth_login_attempts so /admin/logins shows
+          // every new account, not only returning sign-ins.
+          try {
+            const headers = ctx.headers
+            await db.insert(schema.authLoginAttempts).values({
+              email: newUser.email ?? null,
+              ipAddress: headers?.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+              userAgent: headers?.get('user-agent') ?? null,
+              success: true,
+              reason: null,
+              kind: 'sign_up',
+            })
+          } catch {
+            // swallow
+          }
           try {
             const { notifyPlatformAdmins } = await import('~/server/notifications.server')
             await notifyPlatformAdmins({

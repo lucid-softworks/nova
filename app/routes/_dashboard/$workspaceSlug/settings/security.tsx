@@ -26,7 +26,39 @@ function SecurityPage() {
       <TwoFactorCard />
       <PasskeyCard />
       <SessionsCard />
+      <DataExportCard />
     </div>
+  )
+}
+
+function DataExportCard() {
+  const t = useT()
+  const onExport = () => {
+    // POST via a form submit so the browser downloads the response rather
+    // than leaving a JSON blob in memory.
+    const form = document.createElement('form')
+    form.method = 'POST'
+    form.action = '/api/account/export'
+    document.body.appendChild(form)
+    form.submit()
+    form.remove()
+  }
+  return (
+    <Card>
+      <div className="p-4 space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+            {t('security.exportDataTitle')}
+          </h3>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            {t('security.exportDataBody')}
+          </p>
+        </div>
+        <Button variant="outline" onClick={onExport}>
+          {t('security.exportDataButton')}
+        </Button>
+      </div>
+    </Card>
   )
 }
 

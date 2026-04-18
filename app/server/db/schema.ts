@@ -1018,6 +1018,8 @@ export const authLoginAttempts = pgTable(
     userAgent: text('user_agent'),
     success: boolean('success').default(false).notNull(),
     reason: text('reason'),
+    /** 'sign_in' | 'sign_up' — distinguishes new account creation from returning logins. */
+    kind: text('kind').default('sign_in').notNull(),
     createdAt: now(),
   },
   (t) => [index('auth_login_attempts_created_idx').on(t.createdAt)],
