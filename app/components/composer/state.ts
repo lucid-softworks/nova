@@ -127,6 +127,36 @@ export function composerReducer(state: ComposerState, action: Action): ComposerS
     case 'RESET':
       return action.state
     case 'SET_START_MODE': {
+      // Going from independent → shared can leave us without any default
+      // version (independent mode drops it entirely). Re-add an empty
+      // default and promote existing per-platform versions to overrides so
+      // the user doesn't lose their drafts when switching back.
+      if (action.mode === 'shared' && !state.versions.some((v) => v.isDefault)) {
+        const defaultId = makeId()
+        const restored: Version = {
+          id: defaultId,
+          label: 'Default',
+          platforms: [],
+          content: '',
+          firstCommentEnabled: false,
+          firstComment: '',
+          isThread: false,
+          threadParts: [{ id: makeId(), content: '', mediaIds: [] }],
+          mediaIds: [],
+          altTextByMediaId: {},
+          blueskyLabels: [],
+          isDefault: true,
+        }
+        return resync(
+          {
+            ...state,
+            startMode: 'shared',
+            versions: [restored, ...state.versions],
+            activeVersionId: defaultId,
+          },
+          action.accounts,
+        )
+      }
       const cleared: ComposerState = {
         ...state,
         startMode: action.mode,
