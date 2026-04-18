@@ -118,6 +118,8 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'member_joined',
   'campaign_on_hold',
   'post_note_mention',
+  'admin_user_signup',
+  'admin_workspace_upgraded',
 ])
 
 // -- Better Auth managed tables --------------------------------------------
@@ -877,9 +879,11 @@ export const notifications = pgTable(
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    workspaceId: uuid('workspace_id')
-      .notNull()
-      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    // Nullable for platform-wide admin notifications (signups, paid
+    // subscription upgrades) where there's no single workspace to tie to.
+    workspaceId: uuid('workspace_id').references(() => workspaces.id, {
+      onDelete: 'cascade',
+    }),
     type: notificationTypeEnum('type').notNull(),
     title: text('title').notNull(),
     body: text('body').notNull(),

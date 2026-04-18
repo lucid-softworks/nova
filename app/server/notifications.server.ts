@@ -14,6 +14,8 @@ export type NotificationType =
   | 'member_joined'
   | 'campaign_on_hold'
   | 'post_note_mention'
+  | 'admin_user_signup'
+  | 'admin_workspace_upgraded'
 
 export type ChannelPrefs = { inApp: boolean; email: boolean; push: boolean }
 export type NotificationPreferences = Partial<Record<NotificationType, ChannelPrefs>>
@@ -27,6 +29,8 @@ const DEFAULT_PREFS: Record<NotificationType, ChannelPrefs> = {
   member_joined: { inApp: true, email: false, push: false },
   campaign_on_hold: { inApp: true, email: true, push: true },
   post_note_mention: { inApp: true, email: true, push: true },
+  admin_user_signup: { inApp: true, email: false, push: false },
+  admin_workspace_upgraded: { inApp: true, email: false, push: false },
 }
 
 function resolvePrefs(raw: unknown, type: NotificationType): ChannelPrefs {
@@ -127,7 +131,8 @@ export async function markAllReadImpl() {
 
 export async function notifyUser(params: {
   userId: string
-  workspaceId: string
+  /** Optional — omit for platform-wide admin notifications. */
+  workspaceId?: string
   type: NotificationType
   title: string
   body: string
@@ -137,16 +142,21 @@ export async function notifyUser(params: {
   const u = await db.query.user.findFirst({ where: eq(schema.user.id, params.userId) })
   if (!u) return
   const prefs = resolvePrefs(u.notificationPreferences, params.type)
-  const wsRow = await db
-    .select({
-      appName: schema.workspaces.appName,
-      orgSlug: schema.organization.slug,
-      orgLogo: schema.organization.logo,
-    })
-    .from(schema.workspaces)
-    .innerJoin(schema.organization, eq(schema.organization.id, schema.workspaces.organizationId))
-    .where(eq(schema.workspaces.id, params.workspaceId))
-    .limit(1)
+  const wsRow = params.workspaceId
+    ? await db
+        .select({
+          appName: schema.workspaces.appName,
+          orgSlug: schema.organization.slug,
+          orgLogo: schema.organization.logo,
+        })
+        .from(schema.workspaces)
+        .innerJoin(
+          schema.organization,
+          eq(schema.organization.id, schema.workspaces.organizationId),
+        )
+        .where(eq(schema.workspaces.id, params.workspaceId))
+        .limit(1)
+    : []
   const ws = wsRow[0] ?? null
   const appName = ws?.appName ?? 'Nova'
   const deepUrl = buildDeepLink(ws?.orgSlug ?? null, params.type, params.data ?? {})
@@ -309,5 +319,25 @@ export async function notifyWorkspaceApprovers(params: {
     .where(eq(schema.workspaceApprovers.workspaceId, params.workspaceId))
   for (const a of approvers) {
     await notifyUser({ ...params, userId: a.userId })
+  }
+}
+
+/**
+ * Broadcast a notification to every user with role === 'admin' on the
+ * Better Auth user table. Used for platform-operator signals like new
+ * signups and paid-subscription activations.
+ */
+export async function notifyPlatformAdmins(params: {
+  type: NotificationType
+  title: string
+  body: string
+  data?: NotificationData
+}) {
+  const admins = await db
+    .select({ id: schema.user.id })
+    .from(schema.user)
+    .where(eq(schema.user.role, 'admin'))
+  for (const a of admins) {
+    await notifyUser({ ...params, userId: a.id })
   }
 }

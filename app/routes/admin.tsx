@@ -23,6 +23,7 @@ import {
 import { db, schema } from '~/server/db'
 import { loadSessionContext } from '~/server/session.server'
 import { RouteErrorBoundary } from '~/components/RouteErrorBoundary'
+import { AdminEventToasts } from '~/components/layout/AdminEventToasts'
 import { cn } from '~/lib/utils'
 import { useT } from '~/lib/i18n'
 
@@ -102,6 +103,7 @@ function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   return (
     <div className="flex h-screen bg-[#f8f9fb] dark:bg-[#0b0d12]">
+      <AdminEventToasts />
       <aside className="hidden md:flex h-full w-64 flex-col bg-[#0f1117] text-white">
         <AdminSidebarContent pathname={pathname} onNavigate={() => {}} />
       </aside>

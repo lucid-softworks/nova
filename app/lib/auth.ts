@@ -415,6 +415,33 @@ export const auth = betterAuth({
           // swallow
         }
       }
+
+      // Broadcast a toast to every platform admin when a new user signs
+      // up. Runs on the successful completion of the signup endpoints so
+      // we don't fire for rejected / rate-limited attempts.
+      const isSignupComplete =
+        ctx.path === '/sign-up/email' ||
+        ctx.path === '/magic-link/verify' ||
+        ctx.path === '/email-otp/verify-email'
+      const newUser = ctx.context.newSession?.user ?? null
+      if (isSignupComplete && newUser && newUser.createdAt) {
+        const createdAtMs = new Date(newUser.createdAt as unknown as string).getTime()
+        // Only fire when the user was actually created in this request
+        // (as opposed to magic-link / OTP verifying an existing account).
+        if (Date.now() - createdAtMs < 30 * 1000) {
+          try {
+            const { notifyPlatformAdmins } = await import('~/server/notifications.server')
+            await notifyPlatformAdmins({
+              type: 'admin_user_signup',
+              title: 'New user signup',
+              body: `${newUser.name || newUser.email} just signed up`,
+              data: { userId: newUser.id, email: newUser.email ?? '' },
+            })
+          } catch {
+            // best-effort — don't break signup if notification fails
+          }
+        }
+      }
     }),
   },
 })
