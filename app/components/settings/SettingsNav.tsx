@@ -7,6 +7,7 @@ const TABS = [
   { key: 'schedule', i18nKey: 'settings.postingSchedule', to: '/$workspaceSlug/settings/schedule' as const },
   { key: 'notifications', i18nKey: 'settings.notifications', to: '/$workspaceSlug/settings/notifications' as const },
   { key: 'api', i18nKey: 'settings.apiWebhooks', to: '/$workspaceSlug/settings/api' as const },
+  { key: 'ai', i18nKey: 'settings.aiKeys', to: '/$workspaceSlug/settings/ai' as const },
   { key: 'security', i18nKey: 'settings.security', to: '/$workspaceSlug/settings/security' as const },
   { key: 'white-label', i18nKey: 'settings.whiteLabel', to: '/$workspaceSlug/settings/white-label' as const },
   { key: 'rss', i18nKey: 'settings.rssFeeds', to: '/$workspaceSlug/settings/rss' as const },

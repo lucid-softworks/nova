@@ -13,13 +13,16 @@ import {
   createWebhookImpl,
   updateWebhookImpl,
   deleteWebhookImpl,
+  getWorkspaceAiKeysImpl,
+  setWorkspaceAnthropicKeyImpl,
   type ApiKeyRow,
   type PostingSchedule,
   type WebhookRow,
+  type WorkspaceAiKeys,
   type WorkspaceSettings,
 } from './settings.server'
 
-export type { ApiKeyRow, PostingSchedule, WebhookRow, WorkspaceSettings }
+export type { ApiKeyRow, PostingSchedule, WebhookRow, WorkspaceAiKeys, WorkspaceSettings }
 
 const wsOnly = z.object({ workspaceSlug: z.string().min(1) })
 
@@ -138,3 +141,16 @@ const deleteWebhookSchema = z.object({
 export const deleteWebhook = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => deleteWebhookSchema.parse(d))
   .handler(async ({ data }) => deleteWebhookImpl(data.workspaceSlug, data.webhookId))
+
+export const getWorkspaceAiKeys = createServerFn({ method: 'GET' })
+  .inputValidator((d: unknown) => wsOnly.parse(d))
+  .handler(async ({ data }) => getWorkspaceAiKeysImpl(data.workspaceSlug))
+
+const setAnthropicSchema = z.object({
+  workspaceSlug: z.string().min(1),
+  key: z.string().nullable(),
+})
+
+export const setWorkspaceAnthropicKey = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => setAnthropicSchema.parse(d))
+  .handler(async ({ data }) => setWorkspaceAnthropicKeyImpl(data.workspaceSlug, data.key))

@@ -339,6 +339,9 @@ export const workspaces = pgTable(
     // and published posts. Distinct from calendarFeedToken which is the
     // iCal feed (ICS) read by Google Calendar / Apple Calendar.
     shareCalendarToken: text('share_calendar_token').unique(),
+    // Workspace-level BYO AI key (encrypted via lib/encryption). Falls
+    // back to ANTHROPIC_API_KEY from the platform env when null.
+    aiAnthropicKey: text('ai_anthropic_key'),
     createdAt: now(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

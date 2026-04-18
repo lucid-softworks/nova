@@ -48,6 +48,7 @@ export const Route = createFileRoute('/api/ai/hashtags')({
         const hashtags = await suggestHashtagsImpl(
           parsed.data.content,
           parsed.data.platforms as never,
+          access.workspace.id,
         )
         return Response.json({ hashtags })
       },

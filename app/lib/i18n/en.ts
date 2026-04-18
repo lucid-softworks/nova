@@ -302,6 +302,7 @@ export const en = {
   "settings.general": "General",
   "settings.postingSchedule": "Posting schedule",
   "settings.notifications": "Notifications",
+  "settings.aiKeys": "AI keys",
   "settings.apiWebhooks": "API & Webhooks",
   "settings.security": "Security",
   "settings.whiteLabel": "White label",
@@ -954,6 +955,19 @@ export const en = {
   "reshare.searchPlaceholder": "Keyword or #hashtag",
   "api.keyNamePlaceholder": "e.g. Production CLI",
   "billing.billingDisabledMessage": "Billing is disabled. Set BILLING_PROVIDER in your environment to enable Stripe, Polar, Dodo, Autumn, Creem, or Chargebee.",
+  "aiKeys.title": "AI keys",
+  "aiKeys.description": "Bring your own Anthropic API key for AI-assisted post generation. Your key is encrypted at rest and used only for this workspace.",
+  "aiKeys.anthropicLabel": "Anthropic API key",
+  "aiKeys.anthropicPlaceholder": "sk-ant-...",
+  "aiKeys.anthropicHint": "Create a key at console.anthropic.com. When set, it replaces the platform-wide key for this workspace.",
+  "aiKeys.currentKey": "Current key",
+  "aiKeys.notSet": "Not set — platform default is used",
+  "aiKeys.save": "Save key",
+  "aiKeys.remove": "Remove key",
+  "aiKeys.confirmRemove": "Remove the saved Anthropic API key for this workspace?",
+  "aiKeys.saved": "API key saved",
+  "aiKeys.removed": "API key removed",
+  "aiKeys.saveFailed": "Failed to save key",
 } as const
 
 export type TranslationKey = keyof typeof en

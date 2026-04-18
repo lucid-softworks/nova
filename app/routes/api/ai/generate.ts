@@ -71,7 +71,7 @@ export const Route = createFileRoute('/api/ai/generate')({
         }
 
         try {
-          const result = startGeneration(req)
+          const result = await startGeneration(req, access.workspace.id)
           return result.toTextStreamResponse()
         } catch (e) {
           const message = e instanceof Error ? e.message : 'AI request failed'

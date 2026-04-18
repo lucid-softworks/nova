@@ -1,5 +1,9 @@
-import { anthropic } from '@ai-sdk/anthropic'
+import { anthropic, createAnthropic } from '@ai-sdk/anthropic'
 import { streamText } from 'ai'
+import { eq } from 'drizzle-orm'
+import { db, schema } from './db'
+import { decrypt } from '~/lib/encryption'
+import { logger } from '~/lib/logger'
 import { PLATFORMS, type PlatformKey } from '~/lib/platforms'
 
 export type Tone = 'professional' | 'casual' | 'funny' | 'persuasive' | 'inspirational'
@@ -32,6 +36,31 @@ export type GenerateRequest = {
 }
 
 const MODEL = 'claude-sonnet-4-5'
+
+/**
+ * Resolve the Anthropic client for a workspace. If the workspace has a
+ * BYO key stored (encrypted), use that; otherwise fall back to the
+ * platform-wide ANTHROPIC_API_KEY. Returns null when no key is
+ * available anywhere — caller should surface that to the user.
+ */
+async function anthropicFor(workspaceId: string | null): Promise<ReturnType<typeof createAnthropic> | null> {
+  if (workspaceId) {
+    const ws = await db.query.workspaces.findFirst({
+      where: eq(schema.workspaces.id, workspaceId),
+      columns: { aiAnthropicKey: true },
+    })
+    if (ws?.aiAnthropicKey) {
+      try {
+        const apiKey = decrypt(ws.aiAnthropicKey)
+        if (apiKey) return createAnthropic({ apiKey })
+      } catch (err) {
+        logger.warn({ err, workspaceId }, 'failed to decrypt workspace Anthropic key')
+      }
+    }
+  }
+  if (process.env.ANTHROPIC_API_KEY) return anthropic
+  return null
+}
 
 function buildSystemPrompt(req: GenerateRequest): string {
   const lines: string[] = []
@@ -101,14 +130,17 @@ function buildUserPrompt(req: GenerateRequest): string {
   return req.prompt ?? 'Write a compelling social media post.'
 }
 
-export function startGeneration(req: GenerateRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    throw new Error('ANTHROPIC_API_KEY is not set')
+export async function startGeneration(req: GenerateRequest, workspaceId: string | null) {
+  const provider = await anthropicFor(workspaceId)
+  if (!provider) {
+    throw new Error(
+      'No Anthropic API key configured. Add one in workspace settings or set ANTHROPIC_API_KEY on the server.',
+    )
   }
   const system = buildSystemPrompt(req)
   const userPrompt = buildUserPrompt(req)
   const result = streamText({
-    model: anthropic(MODEL),
+    model: provider(MODEL),
     system,
     prompt: userPrompt,
     maxTokens: 800,
@@ -120,12 +152,19 @@ export function startGeneration(req: GenerateRequest) {
 export async function suggestHashtagsImpl(
   content: string,
   platforms: PlatformKey[],
+  workspaceId: string | null,
 ): Promise<string[]> {
+  const provider = await anthropicFor(workspaceId)
+  if (!provider) {
+    throw new Error(
+      'No Anthropic API key configured. Add one in workspace settings or set ANTHROPIC_API_KEY on the server.',
+    )
+  }
   const platformNote = platforms.length
     ? `Target platforms: ${platforms.join(', ')}. Note: Bluesky doesn't use hashtags.`
     : ''
   const result = await streamText({
-    model: anthropic('claude-haiku-4-5-20251001'),
+    model: provider('claude-haiku-4-5-20251001'),
     prompt: `Suggest 5-8 relevant hashtags for this social media post. Return ONLY the hashtags separated by spaces, no explanation. ${platformNote}\n\nPost: ${content.slice(0, 500)}`,
     maxTokens: 200,
     temperature: 0.6,

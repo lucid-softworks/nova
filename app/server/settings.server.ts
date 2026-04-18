@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto'
 import { and, desc, eq } from 'drizzle-orm'
 import { getRequest } from '@tanstack/react-start/server'
 import { auth } from '~/lib/auth'
+import { decrypt, encrypt } from '~/lib/encryption'
 import { db, schema } from './db'
 import { requireWorkspaceAccess, requireWorkspaceDetail } from './session.server'
 import type { WorkspaceRole } from './types'
@@ -314,5 +315,51 @@ export async function deleteWebhookImpl(slug: string, webhookId: string) {
   await db
     .delete(schema.webhooks)
     .where(and(eq(schema.webhooks.id, webhookId), eq(schema.webhooks.workspaceId, workspace.id)))
+  return { ok: true }
+}
+
+// ---------- Workspace BYO AI keys ----------------------------------------
+
+export type WorkspaceAiKeys = {
+  anthropicSet: boolean
+  /** Last 4 chars of the key for display; never the full value. */
+  anthropicHint: string | null
+}
+
+export async function getWorkspaceAiKeysImpl(slug: string): Promise<WorkspaceAiKeys> {
+  const r = await requireWorkspaceAccess(slug)
+  if (!r.ok) throw new Error(r.reason)
+  const ws = await db.query.workspaces.findFirst({
+    where: eq(schema.workspaces.id, r.workspace.id),
+    columns: { aiAnthropicKey: true },
+  })
+  const anthropicSet = !!ws?.aiAnthropicKey
+  let anthropicHint: string | null = null
+  if (anthropicSet && ws?.aiAnthropicKey) {
+    try {
+      const plain = decrypt(ws.aiAnthropicKey)
+      anthropicHint = plain ? `••••${plain.slice(-4)}` : null
+    } catch {
+      anthropicHint = null
+    }
+  }
+  return { anthropicSet, anthropicHint }
+}
+
+export async function setWorkspaceAnthropicKeyImpl(
+  slug: string,
+  key: string | null,
+): Promise<{ ok: true }> {
+  const r = await requireWorkspaceAccess(slug)
+  if (!r.ok) throw new Error(r.reason)
+  if (r.workspace.role !== 'admin' && r.workspace.role !== 'manager') {
+    throw new Error('Only admins or managers can manage AI keys')
+  }
+  const trimmed = key?.trim() ?? ''
+  const value = trimmed === '' ? null : encrypt(trimmed)
+  await db
+    .update(schema.workspaces)
+    .set({ aiAnthropicKey: value, updatedAt: new Date() })
+    .where(eq(schema.workspaces.id, r.workspace.id))
   return { ok: true }
 }
