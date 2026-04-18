@@ -27,7 +27,7 @@ import handler from './dist/server/server.js'
 const port = process.env.PORT ? Number(process.env.PORT) : 3000
 const app = new Hono()
 
-function withSecurityHeaders(response) {
+function withSecurityHeaders(response, pathname) {
   // Transfer the body stream to a new Response with merged headers.
   // Passing a ReadableStream straight to the Response constructor works
   // because we don't touch the original afterwards — earlier attempts
@@ -40,14 +40,23 @@ function withSecurityHeaders(response) {
   headers.set('X-Frame-Options', 'DENY')
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  // Bull-board's bundled UI loads its fonts from Google Fonts; relax the
+  // CSP only for that path so the rest of the app keeps the tighter policy.
+  const isBullBoard = pathname.startsWith('/api/admin/queues')
+  const styleSrc = isBullBoard
+    ? "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com"
+    : "style-src 'self' 'unsafe-inline'"
+  const fontSrc = isBullBoard
+    ? "font-src 'self' https://fonts.gstatic.com"
+    : "font-src 'self'"
   headers.set(
     'Content-Security-Policy',
     [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
-      "style-src 'self' 'unsafe-inline'",
+      styleSrc,
       "img-src 'self' data: blob: https:",
-      "font-src 'self'",
+      fontSrc,
       "connect-src 'self' https:",
       "frame-src https://challenges.cloudflare.com",
       "frame-ancestors 'none'",
@@ -73,7 +82,7 @@ app.use('/favicon.ico', serveStatic({ path: './dist/client/favicon.ico' }))
 // headers applied on the way out.
 app.all('*', async (c) => {
   const response = await handler.fetch(c.req.raw)
-  return withSecurityHeaders(response)
+  return withSecurityHeaders(response, new URL(c.req.url).pathname)
 })
 
 serve({ fetch: app.fetch, port, hostname: '0.0.0.0' }, (info) => {
