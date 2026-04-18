@@ -141,14 +141,14 @@ app.get('/.well-known/api-catalog', () => {
 // stream between them, which is how /healthz + /mcp ended up sending
 // 0-byte responses even though the handler returned a populated body.
 app.all('*', async (c) => {
+  const pathname = new URL(c.req.url).pathname
   const response = await handler.fetch(c.req.raw)
   const buffer = await response.arrayBuffer()
-  return withSecurityHeaders(
-    buffer,
-    response.headers,
-    response.status,
-    new URL(c.req.url).pathname,
+  // Temp unconditional log to chase the 0-byte JSON response bug.
+  console.log(
+    `[wrap] ${c.req.method} ${pathname} -> ${response.status} ct=${response.headers.get('content-type')} bytes=${buffer.byteLength}`,
   )
+  return withSecurityHeaders(buffer, response.headers, response.status, pathname)
 })
 
 serve({ fetch: app.fetch, port, hostname: '0.0.0.0' }, (info) => {
