@@ -139,12 +139,17 @@ app.get('/.well-known/api-catalog', () => {
 })
 
 // Everything else falls through to the TanStack Start fetch handler.
-// Security + Link headers get layered here because this is the terminal
-// handler — Hono hasn't started serializing the response yet, so
-// rebuilding via new Response(body, ...) doesn't drain the stream.
+// Buffer the body to ArrayBuffer before rebuilding the response — some
+// TanStack-produced responses (/healthz, /mcp, /api/v1/openapi/json)
+// lose their body if we re-wrap a still-streaming Response; buffering
+// materialises it once so the rebuild can hand a fresh stream back.
 app.all('*', async (c) => {
   const response = await handler.fetch(c.req.raw)
-  return withSecurityHeaders(response, new URL(c.req.url).pathname)
+  const buffer = await response.arrayBuffer()
+  return withSecurityHeaders(
+    new Response(buffer, { status: response.status, headers: response.headers }),
+    new URL(c.req.url).pathname,
+  )
 })
 
 serve({ fetch: app.fetch, port, hostname: '0.0.0.0' }, (info) => {
