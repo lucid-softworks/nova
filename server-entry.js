@@ -27,18 +27,15 @@ import handler from './dist/server/server.js'
 const port = process.env.PORT ? Number(process.env.PORT) : 3000
 const app = new Hono()
 
-function applySecurityHeaders(c) {
-  // Append / set headers on the existing response via Hono's header API.
-  // This avoids rebuilding the Response (which consumed the body stream
-  // for some TanStack Start routes), keeping passthrough of whatever the
-  // downstream handler produced.
-  const pathname = new URL(c.req.url).pathname
-  c.header('X-Content-Type-Options', 'nosniff')
-  c.header('X-Frame-Options', 'DENY')
-  c.header('Referrer-Policy', 'strict-origin-when-cross-origin')
-  c.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  // Bull-board's bundled UI loads its fonts from Google Fonts; relax the
-  // CSP only for that path so the rest of the app keeps the tighter policy.
+function withSecurityHeaders(response, pathname) {
+  // Merge our headers onto the downstream response. Keeps Content-Type,
+  // Content-Length, and any other headers the handler set; then layers
+  // security + Link headers on top.
+  const headers = new Headers(response.headers)
+  headers.set('X-Content-Type-Options', 'nosniff')
+  headers.set('X-Frame-Options', 'DENY')
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
   const isBullBoard = pathname.startsWith('/api/admin/queues')
   const styleSrc = isBullBoard
     ? "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com"
@@ -46,7 +43,7 @@ function applySecurityHeaders(c) {
   const fontSrc = isBullBoard
     ? "font-src 'self' https://fonts.gstatic.com"
     : "font-src 'self'"
-  c.header(
+  headers.set(
     'Content-Security-Policy',
     [
       "default-src 'self'",
@@ -62,12 +59,9 @@ function applySecurityHeaders(c) {
     ].join('; '),
   )
   if (process.env.NODE_ENV === 'production') {
-    c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+    headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
   }
-  // RFC 8288 Link headers — advertise discoverable resources so crawling
-  // agents + API clients can jump to the catalog, OpenAPI spec, and
-  // sitemap without scraping the HTML. Multiple relations comma-joined.
-  c.header(
+  headers.set(
     'Link',
     [
       '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"',
@@ -76,6 +70,11 @@ function applySecurityHeaders(c) {
       '</sitemap.xml>; rel="sitemap"; type="application/xml"',
     ].join(', '),
   )
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  })
 }
 
 // RFC 9727 API Catalog — served ahead of the TanStack handler because
@@ -110,45 +109,57 @@ const API_CATALOG = JSON.stringify({
   ],
 })
 
-// Post-processing middleware: after whatever handler produced a
-// response, tag it with security + Link headers so static files, the
-// api-catalog, and TanStack Start routes all ship the same header set.
-// Uses c.header() so we don't rebuild the Response — rebuilding drained
-// downstream-produced body streams on some routes (/mcp, /healthz).
-app.use('*', async (c, next) => {
-  await next()
-  applySecurityHeaders(c)
+// Post-middleware that wraps every response with security + Link
+// headers. Static files, the api-catalog, and TanStack Start routes all
+// go through the same withSecurityHeaders() so the header set is
+// uniform. Rebuilding the Response in-place — new Response(body, ...)
+// — preserves the body stream; the earlier attempt to do this via
+// c.res = new Response(...) inside a middleware *did* drain it, but
+// doing it in the TERMINAL handler works because Hono hasn't started
+// serializing yet.
+async function wrap(c, get) {
+  const response = await get()
+  return withSecurityHeaders(response, new URL(c.req.url).pathname)
+}
+
+function staticRoute(path, options) {
+  app.use(path, async (c, next) => {
+    // serveStatic writes into c.res when it finds a file; otherwise calls
+    // next(). We rebuild c.res afterwards so our headers land on the
+    // static file response too.
+    await serveStatic(options)(c, next)
+    if (c.res) c.res = withSecurityHeaders(c.res, new URL(c.req.url).pathname)
+  })
+}
+
+staticRoute('/assets/*', { root: './dist/client' })
+staticRoute('/favicon.ico', { path: './dist/client/favicon.ico' })
+staticRoute('/robots.txt', { path: './dist/client/robots.txt' })
+staticRoute('/manifest.webmanifest', { path: './dist/client/manifest.webmanifest' })
+staticRoute('/og-image.svg', { path: './dist/client/og-image.svg' })
+staticRoute('/sw.js', { path: './dist/client/sw.js' })
+staticRoute('/offline.html', { path: './dist/client/offline.html' })
+staticRoute('/icons/*', { root: './dist/client' })
+staticRoute('/.well-known/mcp/server-card.json', {
+  path: './dist/client/.well-known/mcp/server-card.json',
 })
 
-// Serve the Vite client bundle and every file under public/ (copied into
-// dist/client at build time). serveStatic falls through to the next
-// middleware on 404, so TanStack Start gets every dynamic route.
-app.use('/assets/*', serveStatic({ root: './dist/client' }))
-app.use('/favicon.ico', serveStatic({ path: './dist/client/favicon.ico' }))
-app.use('/robots.txt', serveStatic({ path: './dist/client/robots.txt' }))
-app.use('/manifest.webmanifest', serveStatic({ path: './dist/client/manifest.webmanifest' }))
-app.use('/og-image.svg', serveStatic({ path: './dist/client/og-image.svg' }))
-app.use('/sw.js', serveStatic({ path: './dist/client/sw.js' }))
-app.use('/offline.html', serveStatic({ path: './dist/client/offline.html' }))
-app.use('/icons/*', serveStatic({ root: './dist/client' }))
-app.use(
-  '/.well-known/mcp/server-card.json',
-  serveStatic({ path: './dist/client/.well-known/mcp/server-card.json' }),
+// RFC 9727 API catalog.
+app.get('/.well-known/api-catalog', (c) =>
+  wrap(
+    c,
+    async () =>
+      new Response(API_CATALOG, {
+        headers: {
+          'Content-Type': 'application/linkset+json; charset=utf-8',
+          'Cache-Control': 'public, max-age=3600',
+        },
+      }),
+  ),
 )
 
-// RFC 9727 API catalog. Kept as a short JSON constant because the
-// content is purely configuration — it can't reach the app's DB.
-app.get('/.well-known/api-catalog', () => {
-  return new Response(API_CATALOG, {
-    headers: {
-      'Content-Type': 'application/linkset+json; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600',
-    },
-  })
-})
-
-// Everything else goes to the TanStack Start fetch handler.
-app.all('*', async (c) => handler.fetch(c.req.raw))
+// Everything else falls through to the TanStack Start fetch handler.
+app.all('*', (c) => wrap(c, () => handler.fetch(c.req.raw)))
 
 serve({ fetch: app.fetch, port, hostname: '0.0.0.0' }, (info) => {
   console.log(`[start] listening on http://localhost:${info.port}`)
