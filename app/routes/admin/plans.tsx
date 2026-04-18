@@ -8,6 +8,7 @@ import { Field } from '~/components/ui/field'
 import { Spinner } from '~/components/ui/spinner'
 import { toast } from '~/components/ui/toast'
 import { useConfirm } from '~/components/ui/confirm'
+import { useT } from '~/lib/i18n'
 import {
   listAdminPlans,
   upsertAdminPlan,
@@ -23,6 +24,7 @@ export const Route = createFileRoute('/admin/plans')({
 })
 
 function PlansPage() {
+  const t = useT()
   const { plans } = Route.useLoaderData()
   const router = useRouter()
   const confirm = useConfirm()
@@ -35,15 +37,14 @@ function PlansPage() {
 
   const onDelete = async (key: string) => {
     const ok = await confirm({
-      title: `Delete plan "${key}"?`,
-      message:
-        'Workspaces currently on this plan will fall back to the free defaults until remapped.',
+      title: t('adminPlans.deleteTitle', { key }),
+      message: t('adminPlans.deleteMessage'),
       destructive: true,
-      confirmLabel: 'Delete plan',
+      confirmLabel: t('adminPlans.deleteConfirm'),
     })
     if (!ok) return
     await deleteAdminPlan({ data: { key } })
-    toast.success(`Plan "${key}" deleted.`)
+    toast.success(t('adminPlans.deleted', { key }))
     await reload()
   }
 
@@ -52,15 +53,14 @@ function PlansPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-            Plans
+            {t('adminPlans.title')}
           </h2>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            Internal plan keys + quotas. Provider IDs map a Stripe price / Polar product / etc.
-            to a plan so incoming subscriptions land on the right row.
+            {t('adminPlans.description')}
           </p>
         </div>
         <Button onClick={() => setCreating(true)}>
-          <Plus className="h-4 w-4" /> New plan
+          <Plus className="h-4 w-4" /> {t('adminPlans.newPlan')}
         </Button>
       </div>
 
@@ -110,6 +110,7 @@ function PlanCard({
   onEdit: () => void
   onDelete: () => void
 }) {
+  const t = useT()
   const providerCount = Object.values(plan.providerIds).reduce(
     (n, arr) => n + arr.length,
     0,
@@ -126,7 +127,7 @@ function PlanCard({
           </div>
           <div className="flex gap-1">
             <Button size="sm" variant="outline" onClick={onEdit}>
-              Edit
+              {t('adminPlans.edit')}
             </Button>
             <Button
               size="sm"
@@ -139,15 +140,23 @@ function PlanCard({
           </div>
         </div>
         <dl className="grid grid-cols-2 gap-2 text-xs">
-          <DLRow label="Members" value={plan.maxMembers} />
-          <DLRow label="Connected accounts" value={plan.maxConnectedAccounts} />
-          <DLRow label="Scheduled posts / mo" value={plan.maxScheduledPostsPerMonth} />
-          <DLRow label="AI assist" value={plan.aiAssistEnabled ? 'Yes' : 'No'} />
+          <DLRow label={t('adminPlans.statMembers')} value={plan.maxMembers} />
+          <DLRow label={t('adminPlans.statAccounts')} value={plan.maxConnectedAccounts} />
+          <DLRow label={t('adminPlans.statPosts')} value={plan.maxScheduledPostsPerMonth} />
+          <DLRow
+            label={t('adminPlans.statAiAssist')}
+            value={plan.aiAssistEnabled ? t('adminPlans.yes') : t('adminPlans.no')}
+          />
         </dl>
         <div className="text-xs text-neutral-500 dark:text-neutral-400">
           {providerCount === 0
-            ? 'No provider IDs set — webhooks will fall back to substring matching.'
-            : `${providerCount} provider ID${providerCount === 1 ? '' : 's'} configured`}
+            ? t('adminPlans.noProviders')
+            : t(
+                providerCount === 1
+                  ? 'adminPlans.providerCount'
+                  : 'adminPlans.providerCountPlural',
+                { count: providerCount },
+              )}
         </div>
       </div>
     </Card>
@@ -174,6 +183,7 @@ function PlanEditor({
   onClose: () => void
   onSaved: () => Promise<void>
 }) {
+  const t = useT()
   const [key, setKey] = useState(plan?.key ?? '')
   const [label, setLabel] = useState(plan?.label ?? '')
   const [maxMembers, setMaxMembers] = useState(plan?.maxMembers ?? 1)
@@ -199,11 +209,11 @@ function PlanEditor({
 
   const save = async () => {
     if (!key.trim() || !label.trim()) {
-      toast.error('Key and label are required')
+      toast.error(t('adminPlans.keyLabelRequired'))
       return
     }
     if (keyConflict) {
-      toast.error(`A plan with key "${key}" already exists`)
+      toast.error(t('adminPlans.keyConflict', { key }))
       return
     }
     setSaving(true)
@@ -228,10 +238,10 @@ function PlanEditor({
           sortOrder,
         },
       })
-      toast.success(`Plan "${key}" saved.`)
+      toast.success(t('adminPlans.saved', { key }))
       await onSaved()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Save failed')
+      toast.error(e instanceof Error ? e.message : t('adminPlans.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -243,18 +253,18 @@ function PlanEditor({
         <div className="space-y-4 p-5">
           <div className="flex items-start justify-between">
             <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-              {isNew ? 'New plan' : `Edit plan: ${plan.label}`}
+              {isNew ? t('adminPlans.newPlan') : t('adminPlans.editPlan', { label: plan.label })}
             </h3>
             <Button size="sm" variant="ghost" onClick={onClose}>
-              Cancel
+              {t('adminPlans.cancel')}
             </Button>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
             <Field
-              label="Key"
+              label={t('adminPlans.fieldKey')}
               htmlFor="plan-key"
-              hint="lowercase letters, digits, dash, underscore. This is what normalise() matches to."
+              hint={t('adminPlans.fieldKeyHint')}
             >
               <Input
                 id="plan-key"
@@ -264,7 +274,7 @@ function PlanEditor({
                 placeholder="pro"
               />
             </Field>
-            <Field label="Display label" htmlFor="plan-label">
+            <Field label={t('adminPlans.fieldLabel')} htmlFor="plan-label">
               <Input
                 id="plan-label"
                 value={label}
@@ -276,33 +286,33 @@ function PlanEditor({
 
           <div className="grid gap-3 md:grid-cols-2">
             <NumberField
-              label="Max members"
+              label={t('adminPlans.fieldMaxMembers')}
               value={maxMembers}
               onChange={setMaxMembers}
               min={1}
               max={100000}
             />
             <NumberField
-              label="Max connected accounts"
+              label={t('adminPlans.fieldMaxAccounts')}
               value={maxConnectedAccounts}
               onChange={setMaxConnectedAccounts}
               min={1}
               max={100000}
             />
             <NumberField
-              label="Scheduled posts / month"
+              label={t('adminPlans.fieldMaxPosts')}
               value={maxScheduledPostsPerMonth}
               onChange={setMaxScheduledPostsPerMonth}
               min={0}
               max={10000000}
             />
             <NumberField
-              label="Sort order"
+              label={t('adminPlans.fieldSortOrder')}
               value={sortOrder}
               onChange={setSortOrder}
               min={0}
               max={1000}
-              hint="Lower values sort first in the cards."
+              hint={t('adminPlans.fieldSortOrderHint')}
             />
           </div>
 
@@ -313,14 +323,13 @@ function PlanEditor({
               onChange={(e) => setAiAssistEnabled(e.target.checked)}
               className="h-4 w-4"
             />
-            <span className="text-sm">AI assist enabled on this plan</span>
+            <span className="text-sm">{t('adminPlans.aiAssistToggle')}</span>
           </label>
 
           <div className="space-y-2 rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3">
-            <div className="text-sm font-semibold">Provider IDs</div>
+            <div className="text-sm font-semibold">{t('adminPlans.providerIds')}</div>
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              Comma-separate multiple IDs per provider. Webhooks look up the plan here first
-              before falling back to substring matching.
+              {t('adminPlans.providerIdsHint')}
             </p>
             {PROVIDERS.map((p) => (
               <Field key={p} label={p[0]!.toUpperCase() + p.slice(1)} htmlFor={`pid-${p}`}>
@@ -338,10 +347,10 @@ function PlanEditor({
 
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={onClose}>
-              Cancel
+              {t('adminPlans.cancel')}
             </Button>
             <Button onClick={save} disabled={saving || keyConflict}>
-              {saving ? <Spinner /> : null} Save
+              {saving ? <Spinner /> : null} {t('adminPlans.save')}
             </Button>
           </div>
         </div>

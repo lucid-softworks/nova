@@ -3,6 +3,7 @@ import { and, desc, eq } from 'drizzle-orm'
 import { getRequest } from '@tanstack/react-start/server'
 import { auth } from '~/lib/auth'
 import { decrypt, encrypt } from '~/lib/encryption'
+import { isProviderId, PROVIDERS, type ProviderId } from '~/lib/ai/providers'
 import { db, schema } from './db'
 import { requireWorkspaceAccess, requireWorkspaceDetail } from './session.server'
 import type { WorkspaceRole } from './types'
@@ -320,10 +321,24 @@ export async function deleteWebhookImpl(slug: string, webhookId: string) {
 
 // ---------- Workspace BYO AI keys ----------------------------------------
 
+export type WorkspaceAiProviderConfig = {
+  id: ProviderId
+  label: string
+  keySet: boolean
+  /** Last 4 chars of the key — never the full value. */
+  keyHint: string | null
+  model: string | null
+  defaultModel: string
+  baseURL: string | null
+  defaultBaseURL: string | null
+  requiresUserModel: boolean
+  requiresUserBaseURL: boolean
+  signupUrl: string | null
+}
+
 export type WorkspaceAiKeys = {
-  anthropicSet: boolean
-  /** Last 4 chars of the key for display; never the full value. */
-  anthropicHint: string | null
+  active: ProviderId
+  providers: WorkspaceAiProviderConfig[]
 }
 
 export async function getWorkspaceAiKeysImpl(slug: string): Promise<WorkspaceAiKeys> {
@@ -331,35 +346,110 @@ export async function getWorkspaceAiKeysImpl(slug: string): Promise<WorkspaceAiK
   if (!r.ok) throw new Error(r.reason)
   const ws = await db.query.workspaces.findFirst({
     where: eq(schema.workspaces.id, r.workspace.id),
-    columns: { aiAnthropicKey: true },
+    columns: { aiProvider: true, aiConfig: true, aiAnthropicKey: true },
   })
-  const anthropicSet = !!ws?.aiAnthropicKey
-  let anthropicHint: string | null = null
-  if (anthropicSet && ws?.aiAnthropicKey) {
-    try {
-      const plain = decrypt(ws.aiAnthropicKey)
-      anthropicHint = plain ? `••••${plain.slice(-4)}` : null
-    } catch {
-      anthropicHint = null
+  const activeRaw = ws?.aiProvider ?? 'anthropic'
+  const active: ProviderId = isProviderId(activeRaw) ? activeRaw : 'anthropic'
+  const cfgMap = ws?.aiConfig ?? {}
+  const providers: WorkspaceAiProviderConfig[] = Object.values(PROVIDERS).map((p) => {
+    const cfg = cfgMap[p.id]
+    let encrypted = cfg?.key ?? null
+    // Legacy: old single-column anthropic key lives on ws.aiAnthropicKey.
+    if (!encrypted && p.id === 'anthropic' && ws?.aiAnthropicKey) {
+      encrypted = ws.aiAnthropicKey
     }
-  }
-  return { anthropicSet, anthropicHint }
+    let keyHint: string | null = null
+    if (encrypted) {
+      try {
+        const plain = decrypt(encrypted)
+        keyHint = plain ? `••••${plain.slice(-4)}` : null
+      } catch {
+        keyHint = null
+      }
+    }
+    return {
+      id: p.id,
+      label: p.label,
+      keySet: !!encrypted,
+      keyHint,
+      model: cfg?.model ?? null,
+      defaultModel: p.defaultModel,
+      baseURL: cfg?.baseURL ?? null,
+      defaultBaseURL: p.baseURL ?? null,
+      requiresUserModel: !!p.requiresUserModel,
+      requiresUserBaseURL: !!p.requiresUserBaseURL,
+      signupUrl: p.signupUrl ?? null,
+    }
+  })
+  return { active, providers }
 }
 
-export async function setWorkspaceAnthropicKeyImpl(
+export async function setWorkspaceAiProviderImpl(
   slug: string,
-  key: string | null,
+  providerId: string,
 ): Promise<{ ok: true }> {
   const r = await requireWorkspaceAccess(slug)
   if (!r.ok) throw new Error(r.reason)
   if (r.workspace.role !== 'admin' && r.workspace.role !== 'manager') {
     throw new Error('Only admins or managers can manage AI keys')
   }
-  const trimmed = key?.trim() ?? ''
-  const value = trimmed === '' ? null : encrypt(trimmed)
+  if (!isProviderId(providerId)) throw new Error('Unknown provider')
   await db
     .update(schema.workspaces)
-    .set({ aiAnthropicKey: value, updatedAt: new Date() })
+    .set({ aiProvider: providerId, updatedAt: new Date() })
+    .where(eq(schema.workspaces.id, r.workspace.id))
+  return { ok: true }
+}
+
+export type WorkspaceAiProviderPatch = {
+  /** When null, clears the key. When undefined, leaves it unchanged. */
+  key?: string | null
+  model?: string | null
+  baseURL?: string | null
+}
+
+export async function updateWorkspaceAiProviderImpl(
+  slug: string,
+  providerId: string,
+  patch: WorkspaceAiProviderPatch,
+): Promise<{ ok: true }> {
+  const r = await requireWorkspaceAccess(slug)
+  if (!r.ok) throw new Error(r.reason)
+  if (r.workspace.role !== 'admin' && r.workspace.role !== 'manager') {
+    throw new Error('Only admins or managers can manage AI keys')
+  }
+  if (!isProviderId(providerId)) throw new Error('Unknown provider')
+
+  const ws = await db.query.workspaces.findFirst({
+    where: eq(schema.workspaces.id, r.workspace.id),
+    columns: { aiConfig: true },
+  })
+  const next: Record<string, { key?: string; model?: string | null; baseURL?: string | null }> = {
+    ...(ws?.aiConfig ?? {}),
+  }
+  const prev = next[providerId] ?? {}
+  const merged: { key?: string; model?: string | null; baseURL?: string | null } = { ...prev }
+  if (patch.key !== undefined) {
+    const trimmed = patch.key?.trim() ?? ''
+    if (trimmed === '') delete merged.key
+    else merged.key = encrypt(trimmed)
+  }
+  if (patch.model !== undefined) {
+    const m = patch.model?.trim() ?? ''
+    merged.model = m === '' ? null : m
+  }
+  if (patch.baseURL !== undefined) {
+    const b = patch.baseURL?.trim() ?? ''
+    merged.baseURL = b === '' ? null : b
+  }
+  if (!merged.key && !merged.model && !merged.baseURL) {
+    delete next[providerId]
+  } else {
+    next[providerId] = merged
+  }
+  await db
+    .update(schema.workspaces)
+    .set({ aiConfig: next, updatedAt: new Date() })
     .where(eq(schema.workspaces.id, r.workspace.id))
   return { ok: true }
 }

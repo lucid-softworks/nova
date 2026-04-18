@@ -14,15 +14,24 @@ import {
   updateWebhookImpl,
   deleteWebhookImpl,
   getWorkspaceAiKeysImpl,
-  setWorkspaceAnthropicKeyImpl,
+  setWorkspaceAiProviderImpl,
+  updateWorkspaceAiProviderImpl,
   type ApiKeyRow,
   type PostingSchedule,
   type WebhookRow,
   type WorkspaceAiKeys,
+  type WorkspaceAiProviderConfig,
   type WorkspaceSettings,
 } from './settings.server'
 
-export type { ApiKeyRow, PostingSchedule, WebhookRow, WorkspaceAiKeys, WorkspaceSettings }
+export type {
+  ApiKeyRow,
+  PostingSchedule,
+  WebhookRow,
+  WorkspaceAiKeys,
+  WorkspaceAiProviderConfig,
+  WorkspaceSettings,
+}
 
 const wsOnly = z.object({ workspaceSlug: z.string().min(1) })
 
@@ -146,11 +155,29 @@ export const getWorkspaceAiKeys = createServerFn({ method: 'GET' })
   .inputValidator((d: unknown) => wsOnly.parse(d))
   .handler(async ({ data }) => getWorkspaceAiKeysImpl(data.workspaceSlug))
 
-const setAnthropicSchema = z.object({
+const setProviderSchema = z.object({
   workspaceSlug: z.string().min(1),
-  key: z.string().nullable(),
+  providerId: z.string().min(1),
 })
 
-export const setWorkspaceAnthropicKey = createServerFn({ method: 'POST' })
-  .inputValidator((d: unknown) => setAnthropicSchema.parse(d))
-  .handler(async ({ data }) => setWorkspaceAnthropicKeyImpl(data.workspaceSlug, data.key))
+export const setWorkspaceAiProvider = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => setProviderSchema.parse(d))
+  .handler(async ({ data }) => setWorkspaceAiProviderImpl(data.workspaceSlug, data.providerId))
+
+const updateProviderSchema = z.object({
+  workspaceSlug: z.string().min(1),
+  providerId: z.string().min(1),
+  key: z.string().nullable().optional(),
+  model: z.string().nullable().optional(),
+  baseURL: z.string().nullable().optional(),
+})
+
+export const updateWorkspaceAiProvider = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => updateProviderSchema.parse(d))
+  .handler(async ({ data }) =>
+    updateWorkspaceAiProviderImpl(data.workspaceSlug, data.providerId, {
+      key: data.key,
+      model: data.model,
+      baseURL: data.baseURL,
+    }),
+  )

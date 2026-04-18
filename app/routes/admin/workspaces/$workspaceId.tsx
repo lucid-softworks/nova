@@ -4,20 +4,13 @@ import { ArrowLeft, Trash2 } from 'lucide-react'
 import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
 import { Field } from '~/components/ui/field'
+import { useConfirm } from '~/components/ui/confirm'
+import { useT } from '~/lib/i18n'
 import {
   getAdminWorkspaceDetail,
   deleteAdminWorkspace,
   setAdminWorkspacePlanOverride,
 } from '~/server/admin'
-import { useT } from '~/lib/i18n'
-
-const PLAN_CHOICES = [
-  { value: '', label: 'No override (use billing subscription)' },
-  { value: 'free', label: 'Free' },
-  { value: 'starter', label: 'Starter' },
-  { value: 'pro', label: 'Pro' },
-  { value: 'business', label: 'Business' },
-] as const
 
 export const Route = createFileRoute('/admin/workspaces/$workspaceId')({
   loader: async ({ params }) =>
@@ -30,11 +23,26 @@ function WorkspaceDetailPage() {
   const ws = Route.useLoaderData()
   const navigate = useNavigate()
   const router = useRouter()
+  const confirm = useConfirm()
   const [planOverride, setPlanOverride] = useState<string>(ws.planOverride ?? '')
   const [savingPlan, setSavingPlan] = useState(false)
 
+  const planChoices = [
+    { value: '', label: t('adminWorkspace.planNoOverride') },
+    { value: 'free', label: t('adminWorkspace.planFree') },
+    { value: 'starter', label: t('adminWorkspace.planStarter') },
+    { value: 'pro', label: t('adminWorkspace.planPro') },
+    { value: 'business', label: t('adminWorkspace.planBusiness') },
+  ] as const
+
   const onDelete = async () => {
-    if (!confirm(`Delete workspace "${ws.name}"? This cascades to every post, media asset, and connected account.`)) return
+    const ok = await confirm({
+      title: t('adminWorkspace.deleteWorkspace'),
+      message: t('adminWorkspace.deleteConfirm', { name: ws.name }),
+      destructive: true,
+      confirmLabel: t('adminWorkspace.deleteWorkspace'),
+    })
+    if (!ok) return
     await deleteAdminWorkspace({ data: { workspaceId: ws.id } })
     navigate({ to: '/admin/workspaces' })
   }
@@ -45,9 +53,10 @@ function WorkspaceDetailPage() {
       await setAdminWorkspacePlanOverride({
         data: {
           workspaceId: ws.id,
-          planOverride: planOverride === ''
-            ? null
-            : (planOverride as 'free' | 'starter' | 'pro' | 'business'),
+          planOverride:
+            planOverride === ''
+              ? null
+              : (planOverride as 'free' | 'starter' | 'pro' | 'business'),
         },
       })
       await router.invalidate()
@@ -63,7 +72,7 @@ function WorkspaceDetailPage() {
           to="/admin/workspaces"
           className="flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
         >
-          <ArrowLeft className="h-4 w-4" /> All workspaces
+          <ArrowLeft className="h-4 w-4" /> {t('adminWorkspace.allWorkspaces')}
         </Link>
       </div>
 
@@ -79,42 +88,48 @@ function WorkspaceDetailPage() {
           <div>
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{ws.name}</h2>
             <div className="text-sm text-neutral-500 dark:text-neutral-400">
-              /{ws.slug} · Created {new Date(ws.createdAt).toLocaleDateString()}
+              {t('adminWorkspace.createdOn', {
+                slug: ws.slug,
+                date: new Date(ws.createdAt).toLocaleDateString(),
+              })}
             </div>
           </div>
         </div>
         <Button variant="outline" className="text-red-600" onClick={onDelete}>
-          <Trash2 className="h-3.5 w-3.5" /> Delete workspace
+          <Trash2 className="h-3.5 w-3.5" /> {t('adminWorkspace.deleteWorkspace')}
         </Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="Posts" value={ws.counts.posts} />
-        <Stat label="Media" value={ws.counts.media} />
-        <Stat label="Accounts" value={ws.counts.socialAccounts} />
-        <Stat label="Campaigns" value={ws.counts.campaigns} />
+        <Stat label={t('adminWorkspace.statPosts')} value={ws.counts.posts} />
+        <Stat label={t('adminWorkspace.statMedia')} value={ws.counts.media} />
+        <Stat label={t('adminWorkspace.statAccounts')} value={ws.counts.socialAccounts} />
+        <Stat label={t('adminWorkspace.statCampaigns')} value={ws.counts.campaigns} />
       </div>
 
       <Card>
         <div className="p-4 space-y-3">
           <div>
             <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              Plan override
+              {t('adminWorkspace.planOverrideTitle')}
             </h3>
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              Force this workspace onto a specific plan regardless of their billing
-              subscription. Useful for comp accounts, internal testing, and temporary upgrades.
+              {t('adminWorkspace.planOverrideDescription')}
             </p>
           </div>
           <div className="flex items-end gap-2">
-            <Field label="Plan" htmlFor="plan-override" className="flex-1 max-w-md">
+            <Field
+              label={t('adminWorkspace.planLabel')}
+              htmlFor="plan-override"
+              className="flex-1 max-w-md"
+            >
               <select
                 id="plan-override"
                 value={planOverride}
                 onChange={(e) => setPlanOverride(e.target.value)}
                 className="h-10 w-full rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 text-sm"
               >
-                {PLAN_CHOICES.map((c) => (
+                {planChoices.map((c) => (
                   <option key={c.value} value={c.value}>
                     {c.label}
                   </option>
@@ -122,7 +137,7 @@ function WorkspaceDetailPage() {
               </select>
             </Field>
             <Button onClick={onSavePlan} disabled={savingPlan}>
-              Save
+              {t('adminWorkspace.save')}
             </Button>
           </div>
         </div>
@@ -130,7 +145,7 @@ function WorkspaceDetailPage() {
 
       <div>
         <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-          Members ({ws.members.length})
+          {t('adminWorkspace.membersCount', { count: ws.members.length })}
         </h3>
         <Card>
           <div className="overflow-hidden rounded-md">
@@ -158,7 +173,7 @@ function WorkspaceDetailPage() {
                 {ws.members.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="px-3 py-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
-                      No members.
+                      {t('adminWorkspace.noMembers')}
                     </td>
                   </tr>
                 ) : null}

@@ -339,8 +339,17 @@ export const workspaces = pgTable(
     // and published posts. Distinct from calendarFeedToken which is the
     // iCal feed (ICS) read by Google Calendar / Apple Calendar.
     shareCalendarToken: text('share_calendar_token').unique(),
-    // Workspace-level BYO AI key (encrypted via lib/encryption). Falls
-    // back to ANTHROPIC_API_KEY from the platform env when null.
+    // BYO AI config — see lib/ai/providers.ts for the provider registry.
+    // `aiProvider` is the selected provider id; `aiConfig` holds per-provider
+    // { key (encrypted), model?, baseURL? } entries. Falls back to the
+    // matching platform env key when the workspace entry is absent.
+    aiProvider: text('ai_provider').default('anthropic').notNull(),
+    aiConfig: jsonb('ai_config')
+      .$type<Record<string, { key?: string; model?: string | null; baseURL?: string | null }>>()
+      .default({})
+      .notNull(),
+    // Legacy — kept briefly so existing rows aren't lost. Migrated into
+    // aiConfig.anthropic.key via SQL then eventually dropped.
     aiAnthropicKey: text('ai_anthropic_key'),
     createdAt: now(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

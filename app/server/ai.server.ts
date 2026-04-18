@@ -1,10 +1,14 @@
-import { anthropic, createAnthropic } from '@ai-sdk/anthropic'
-import { streamText } from 'ai'
+import { createAnthropic } from '@ai-sdk/anthropic'
+import { createOpenAI } from '@ai-sdk/openai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
+import { streamText, type LanguageModel } from 'ai'
 import { eq } from 'drizzle-orm'
 import { db, schema } from './db'
 import { decrypt } from '~/lib/encryption'
 import { logger } from '~/lib/logger'
 import { PLATFORMS, type PlatformKey } from '~/lib/platforms'
+import { getProvider, type ProviderEntry } from '~/lib/ai/providers'
 
 export type Tone = 'professional' | 'casual' | 'funny' | 'persuasive' | 'inspirational'
 export type Length = 'short' | 'medium' | 'long'
@@ -35,31 +39,86 @@ export type GenerateRequest = {
   } | null
 }
 
-const MODEL = 'claude-sonnet-4-5'
+type ResolvedModel = { model: LanguageModel; providerLabel: string }
+
+function buildModel(
+  entry: ProviderEntry,
+  apiKey: string,
+  overrideModel: string | null,
+  overrideBaseURL: string | null,
+): LanguageModel {
+  const modelId = (overrideModel?.trim() || entry.defaultModel || '').trim()
+  if (!modelId) {
+    throw new Error(`Provider "${entry.label}" requires a model to be set in workspace settings.`)
+  }
+  switch (entry.kind) {
+    case 'anthropic':
+      return createAnthropic({ apiKey })(modelId)
+    case 'openai':
+      return createOpenAI({ apiKey })(modelId)
+    case 'google':
+      return createGoogleGenerativeAI({ apiKey })(modelId)
+    case 'openai-compatible': {
+      const baseURL = overrideBaseURL?.trim() || entry.baseURL
+      if (!baseURL) {
+        throw new Error(`Provider "${entry.label}" requires a base URL.`)
+      }
+      return createOpenAICompatible({ name: entry.id, apiKey, baseURL })(modelId)
+    }
+  }
+}
 
 /**
- * Resolve the Anthropic client for a workspace. If the workspace has a
- * BYO key stored (encrypted), use that; otherwise fall back to the
- * platform-wide ANTHROPIC_API_KEY. Returns null when no key is
- * available anywhere — caller should surface that to the user.
+ * Resolve a language model for the workspace.
+ *  1. Load the workspace's selected provider + encrypted key/model/baseURL.
+ *  2. If no workspace key, fall back to the provider's platform-wide env var.
+ *  3. Build the model via the matching AI SDK package.
+ * Returns null when no key is available anywhere.
  */
-async function anthropicFor(workspaceId: string | null): Promise<ReturnType<typeof createAnthropic> | null> {
+async function resolveModel(workspaceId: string | null): Promise<ResolvedModel | null> {
+  let providerId = 'anthropic'
+  let workspaceKey: string | null = null
+  let modelOverride: string | null = null
+  let baseURLOverride: string | null = null
+
   if (workspaceId) {
     const ws = await db.query.workspaces.findFirst({
       where: eq(schema.workspaces.id, workspaceId),
-      columns: { aiAnthropicKey: true },
+      columns: { aiProvider: true, aiConfig: true, aiAnthropicKey: true },
     })
-    if (ws?.aiAnthropicKey) {
-      try {
-        const apiKey = decrypt(ws.aiAnthropicKey)
-        if (apiKey) return createAnthropic({ apiKey })
-      } catch (err) {
-        logger.warn({ err, workspaceId }, 'failed to decrypt workspace Anthropic key')
+    if (ws) {
+      providerId = ws.aiProvider || 'anthropic'
+      const cfg = (ws.aiConfig ?? {})[providerId]
+      if (cfg) {
+        modelOverride = cfg.model ?? null
+        baseURLOverride = cfg.baseURL ?? null
+        if (cfg.key) {
+          try {
+            workspaceKey = decrypt(cfg.key)
+          } catch (err) {
+            logger.warn({ err, workspaceId, providerId }, 'failed to decrypt workspace AI key')
+          }
+        }
+      }
+      // Legacy fallback: read old single-column anthropic key if present.
+      if (!workspaceKey && providerId === 'anthropic' && ws.aiAnthropicKey) {
+        try {
+          workspaceKey = decrypt(ws.aiAnthropicKey)
+        } catch (err) {
+          logger.warn({ err, workspaceId }, 'failed to decrypt legacy anthropic key')
+        }
       }
     }
   }
-  if (process.env.ANTHROPIC_API_KEY) return anthropic
-  return null
+
+  const entry = getProvider(providerId)
+  if (!entry) return null
+  const apiKey = workspaceKey ?? (entry.envKey ? (process.env[entry.envKey] ?? null) : null)
+  if (!apiKey) return null
+  return {
+    model: buildModel(entry, apiKey, modelOverride, baseURLOverride),
+    providerLabel: entry.label,
+  }
 }
 
 function buildSystemPrompt(req: GenerateRequest): string {
@@ -131,16 +190,16 @@ function buildUserPrompt(req: GenerateRequest): string {
 }
 
 export async function startGeneration(req: GenerateRequest, workspaceId: string | null) {
-  const provider = await anthropicFor(workspaceId)
-  if (!provider) {
+  const resolved = await resolveModel(workspaceId)
+  if (!resolved) {
     throw new Error(
-      'No Anthropic API key configured. Add one in workspace settings or set ANTHROPIC_API_KEY on the server.',
+      'No AI provider configured. Add a key in workspace Settings → AI keys, or set the matching env var on the server.',
     )
   }
   const system = buildSystemPrompt(req)
   const userPrompt = buildUserPrompt(req)
   const result = streamText({
-    model: provider(MODEL),
+    model: resolved.model,
     system,
     prompt: userPrompt,
     maxTokens: 800,
@@ -154,17 +213,17 @@ export async function suggestHashtagsImpl(
   platforms: PlatformKey[],
   workspaceId: string | null,
 ): Promise<string[]> {
-  const provider = await anthropicFor(workspaceId)
-  if (!provider) {
+  const resolved = await resolveModel(workspaceId)
+  if (!resolved) {
     throw new Error(
-      'No Anthropic API key configured. Add one in workspace settings or set ANTHROPIC_API_KEY on the server.',
+      'No AI provider configured. Add a key in workspace Settings → AI keys, or set the matching env var on the server.',
     )
   }
   const platformNote = platforms.length
     ? `Target platforms: ${platforms.join(', ')}. Note: Bluesky doesn't use hashtags.`
     : ''
   const result = await streamText({
-    model: provider('claude-haiku-4-5-20251001'),
+    model: resolved.model,
     prompt: `Suggest 5-8 relevant hashtags for this social media post. Return ONLY the hashtags separated by spaces, no explanation. ${platformNote}\n\nPost: ${content.slice(0, 500)}`,
     maxTokens: 200,
     temperature: 0.6,
