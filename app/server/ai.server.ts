@@ -84,7 +84,7 @@ async function resolveModel(workspaceId: string | null): Promise<ResolvedModel |
   if (workspaceId) {
     const ws = await db.query.workspaces.findFirst({
       where: eq(schema.workspaces.id, workspaceId),
-      columns: { aiProvider: true, aiConfig: true, aiAnthropicKey: true },
+      columns: { aiProvider: true, aiConfig: true },
     })
     if (ws) {
       providerId = ws.aiProvider || 'anthropic'
@@ -98,14 +98,6 @@ async function resolveModel(workspaceId: string | null): Promise<ResolvedModel |
           } catch (err) {
             logger.warn({ err, workspaceId, providerId }, 'failed to decrypt workspace AI key')
           }
-        }
-      }
-      // Legacy fallback: read old single-column anthropic key if present.
-      if (!workspaceKey && providerId === 'anthropic' && ws.aiAnthropicKey) {
-        try {
-          workspaceKey = decrypt(ws.aiAnthropicKey)
-        } catch (err) {
-          logger.warn({ err, workspaceId }, 'failed to decrypt legacy anthropic key')
         }
       }
     }

@@ -348,9 +348,6 @@ export const workspaces = pgTable(
       .$type<Record<string, { key?: string; model?: string | null; baseURL?: string | null }>>()
       .default({})
       .notNull(),
-    // Legacy — kept briefly so existing rows aren't lost. Migrated into
-    // aiConfig.anthropic.key via SQL then eventually dropped.
-    aiAnthropicKey: text('ai_anthropic_key'),
     createdAt: now(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

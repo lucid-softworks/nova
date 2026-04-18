@@ -346,18 +346,14 @@ export async function getWorkspaceAiKeysImpl(slug: string): Promise<WorkspaceAiK
   if (!r.ok) throw new Error(r.reason)
   const ws = await db.query.workspaces.findFirst({
     where: eq(schema.workspaces.id, r.workspace.id),
-    columns: { aiProvider: true, aiConfig: true, aiAnthropicKey: true },
+    columns: { aiProvider: true, aiConfig: true },
   })
   const activeRaw = ws?.aiProvider ?? 'anthropic'
   const active: ProviderId = isProviderId(activeRaw) ? activeRaw : 'anthropic'
   const cfgMap = ws?.aiConfig ?? {}
   const providers: WorkspaceAiProviderConfig[] = Object.values(PROVIDERS).map((p) => {
     const cfg = cfgMap[p.id]
-    let encrypted = cfg?.key ?? null
-    // Legacy: old single-column anthropic key lives on ws.aiAnthropicKey.
-    if (!encrypted && p.id === 'anthropic' && ws?.aiAnthropicKey) {
-      encrypted = ws.aiAnthropicKey
-    }
+    const encrypted = cfg?.key ?? null
     let keyHint: string | null = null
     if (encrypted) {
       try {
