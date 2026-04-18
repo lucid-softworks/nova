@@ -754,3 +754,64 @@ export async function getWorkspaceDetailImpl(workspaceId: string): Promise<Admin
     })),
   }
 }
+
+// ---------- Platform plans -----------------------------------------------
+
+export type AdminPlanRow = {
+  key: string
+  label: string
+  maxMembers: number
+  maxConnectedAccounts: number
+  maxScheduledPostsPerMonth: number
+  aiAssistEnabled: boolean
+  providerIds: Record<string, string[]>
+  sortOrder: number
+  updatedAt: string
+}
+
+export async function listAdminPlansImpl(): Promise<AdminPlanRow[]> {
+  await requireAdmin()
+  const rows = await db.select().from(schema.platformPlans).orderBy(schema.platformPlans.sortOrder)
+  return rows.map((r) => ({
+    key: r.key,
+    label: r.label,
+    maxMembers: r.maxMembers,
+    maxConnectedAccounts: r.maxConnectedAccounts,
+    maxScheduledPostsPerMonth: r.maxScheduledPostsPerMonth,
+    aiAssistEnabled: r.aiAssistEnabled,
+    providerIds: (r.providerIds ?? {}) as Record<string, string[]>,
+    sortOrder: r.sortOrder,
+    updatedAt: r.updatedAt.toISOString(),
+  }))
+}
+
+export type AdminPlanInput = {
+  key: string
+  label: string
+  maxMembers: number
+  maxConnectedAccounts: number
+  maxScheduledPostsPerMonth: number
+  aiAssistEnabled: boolean
+  providerIds: Record<string, string[]>
+  sortOrder: number
+}
+
+export async function upsertAdminPlanImpl(input: AdminPlanInput): Promise<{ ok: true }> {
+  await requireAdmin()
+  await db
+    .insert(schema.platformPlans)
+    .values({ ...input, updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: schema.platformPlans.key,
+      set: { ...input, updatedAt: new Date() },
+    })
+  await writeAudit('plan.upsert', 'plan', input.key, input as unknown as Record<string, unknown>)
+  return { ok: true }
+}
+
+export async function deleteAdminPlanImpl(key: string): Promise<{ ok: true }> {
+  await requireAdmin()
+  await db.delete(schema.platformPlans).where(eq(schema.platformPlans.key, key))
+  await writeAudit('plan.delete', 'plan', key)
+  return { ok: true }
+}

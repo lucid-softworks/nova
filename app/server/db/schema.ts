@@ -891,6 +891,11 @@ export const platformPlans = pgTable('platform_plans', {
   maxConnectedAccounts: integer('max_connected_accounts').notNull(),
   maxScheduledPostsPerMonth: integer('max_scheduled_posts_per_month').notNull(),
   aiAssistEnabled: boolean('ai_assist_enabled').default(false).notNull(),
+  // Per-provider plan/price IDs. Multiple values per provider are allowed
+  // so a single internal plan can accept several checkout SKUs (e.g. a
+  // monthly + yearly Stripe price both mapping to "pro").
+  providerIds: jsonb('provider_ids').$type<Record<string, string[]>>().default({}).notNull(),
+  sortOrder: integer('sort_order').default(0).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
 

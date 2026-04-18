@@ -20,6 +20,9 @@ import {
   listApiKeysImpl,
   revokeApiKeyImpl,
   listLoginAttemptsImpl,
+  listAdminPlansImpl,
+  upsertAdminPlanImpl,
+  deleteAdminPlanImpl,
   type AdminUserRow,
   type AdminWorkspaceRow,
   type AdminWebhookDelivery,
@@ -30,9 +33,11 @@ import {
   type AdminWorkspaceDetail,
   type AdminApiKeyRow,
   type AdminLoginAttemptRow,
+  type AdminPlanRow,
+  type AdminPlanInput,
 } from './admin.server'
 
-export type { AdminUserRow, AdminWorkspaceRow, AdminWebhookDelivery, AdminJobStats, PlatformSettings, InviteUserResult, AdminAuditRow, AdminWorkspaceDetail, AdminApiKeyRow, AdminLoginAttemptRow }
+export type { AdminUserRow, AdminWorkspaceRow, AdminWebhookDelivery, AdminJobStats, PlatformSettings, InviteUserResult, AdminAuditRow, AdminWorkspaceDetail, AdminApiKeyRow, AdminLoginAttemptRow, AdminPlanRow, AdminPlanInput }
 
 export const listAdminUsers = createServerFn({ method: 'GET' }).handler(async () =>
   listUsersImpl(),
@@ -144,3 +149,28 @@ const planOverrideSchema = z.object({
 export const setAdminWorkspacePlanOverride = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => planOverrideSchema.parse(d))
   .handler(async ({ data }) => setWorkspacePlanOverrideImpl(data.workspaceId, data.planOverride))
+
+export const listAdminPlans = createServerFn({ method: 'GET' }).handler(async () =>
+  listAdminPlansImpl(),
+)
+
+const planSchema = z.object({
+  key: z.string().min(1).max(64).regex(/^[a-z0-9_-]+$/, 'lowercase letters, digits, dash, underscore'),
+  label: z.string().min(1).max(100),
+  maxMembers: z.number().int().min(1).max(100000),
+  maxConnectedAccounts: z.number().int().min(1).max(100000),
+  maxScheduledPostsPerMonth: z.number().int().min(0).max(10_000_000),
+  aiAssistEnabled: z.boolean(),
+  providerIds: z.record(z.string(), z.array(z.string().max(200)).max(20)),
+  sortOrder: z.number().int().min(0).max(1000),
+})
+
+export const upsertAdminPlan = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => planSchema.parse(d))
+  .handler(async ({ data }) => upsertAdminPlanImpl(data))
+
+const planKeySchema = z.object({ key: z.string().min(1) })
+
+export const deleteAdminPlan = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => planKeySchema.parse(d))
+  .handler(async ({ data }) => deleteAdminPlanImpl(data.key))
