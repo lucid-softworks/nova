@@ -27,14 +27,15 @@ import handler from './dist/server/server.js'
 const port = process.env.PORT ? Number(process.env.PORT) : 3000
 const app = new Hono()
 
-// Security headers — rebuild the response because TanStack Start returns
-// a Response with frozen headers that cannot be mutated in place. The
-// body is buffered via arrayBuffer() so the new Response owns the data;
-// passing a streaming body directly locks it to the original response.
-app.use('*', async (c, next) => {
-  await next()
-  const body = c.res.body ? await c.res.arrayBuffer() : null
-  const headers = new Headers(c.res.headers)
+function withSecurityHeaders(response) {
+  // Transfer the body stream to a new Response with merged headers.
+  // Passing a ReadableStream straight to the Response constructor works
+  // because we don't touch the original afterwards — earlier attempts
+  // to buffer via arrayBuffer() + rebuild inside a Hono middleware
+  // ended up with the rebuilt response losing its content-type/body
+  // for reasons we never pinned down; returning a freshly-wrapped
+  // Response directly from the route handler sidesteps that entirely.
+  const headers = new Headers(response.headers)
   headers.set('X-Content-Type-Options', 'nosniff')
   headers.set('X-Frame-Options', 'DENY')
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
@@ -57,19 +58,23 @@ app.use('*', async (c, next) => {
   if (process.env.NODE_ENV === 'production') {
     headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
   }
-  c.res = new Response(body, {
-    status: c.res.status,
-    statusText: c.res.statusText,
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
     headers,
   })
-})
+}
 
 // Serve the Vite client bundle first (static assets like /assets/*.js + css).
 app.use('/assets/*', serveStatic({ root: './dist/client' }))
 app.use('/favicon.ico', serveStatic({ path: './dist/client/favicon.ico' }))
 
-// Everything else goes to the TanStack Start fetch handler.
-app.all('*', (c) => handler.fetch(c.req.raw))
+// Everything else goes to the TanStack Start fetch handler, with security
+// headers applied on the way out.
+app.all('*', async (c) => {
+  const response = await handler.fetch(c.req.raw)
+  return withSecurityHeaders(response)
+})
 
 serve({ fetch: app.fetch, port, hostname: '0.0.0.0' }, (info) => {
   console.log(`[start] listening on http://localhost:${info.port}`)
