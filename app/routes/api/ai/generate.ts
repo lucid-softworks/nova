@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { limitsFor } from '~/lib/billing/limits'
+import { logger } from '~/lib/logger'
 import { PLATFORM_KEYS } from '~/lib/platforms'
 import { startGeneration, type GenerateRequest } from '~/server/ai.server'
 import { assertFeatureEnabled, requireWorkspaceAccess } from '~/server/session.server'
@@ -78,36 +79,52 @@ export const Route = createFileRoute('/api/ai/generate')({
           return Response.json({ error: message }, { status: 500 })
         }
 
-        // Use fullStream so provider errors (401, 429 quota, etc.) come
-        // through as explicit error events instead of silently closing
-        // the stream. toTextStreamResponse()/textStream alone swallow
-        // some of those paths.
+        logger.info({ provider: result.providerLabel }, 'ai generate: streaming start')
+
         const stream = new ReadableStream<Uint8Array>({
           async start(controller) {
             const encoder = new TextEncoder()
-            const emitError = (err: unknown) => {
+            const emitError = (err: unknown, source: string) => {
               const msg =
                 err instanceof Error
                   ? err.message
                   : typeof err === 'object' && err !== null && 'message' in err
                     ? String((err as { message: unknown }).message)
                     : String(err)
+              logger.error({ err, source, provider: result.providerLabel }, 'ai generate: error')
               controller.enqueue(
                 encoder.encode(`\n\n[${result.providerLabel} error: ${msg}]`),
               )
             }
+            let partCount = 0
+            let textCount = 0
             try {
               for await (const part of result.result.fullStream) {
+                partCount++
                 if (part.type === 'text-delta') {
+                  textCount++
                   controller.enqueue(encoder.encode(part.textDelta))
                 } else if (part.type === 'error') {
-                  emitError(part.error)
+                  emitError(part.error, 'fullStream.error')
                 }
               }
             } catch (err) {
-              emitError(err)
+              emitError(err, 'fullStream.throw')
             }
-            if (result.errorBox.current) emitError(result.errorBox.current)
+            if (result.errorBox.current) emitError(result.errorBox.current, 'onError')
+            logger.info(
+              { provider: result.providerLabel, partCount, textCount, hadError: !!result.errorBox.current },
+              'ai generate: streaming done',
+            )
+            // Failsafe: if nothing came through and no error was captured,
+            // tell the user so they don't see an empty box.
+            if (partCount === 0 && !result.errorBox.current) {
+              controller.enqueue(
+                encoder.encode(
+                  `[${result.providerLabel} returned no content and no error — check your API key and that the provider/model is reachable.]`,
+                ),
+              )
+            }
             controller.close()
           },
         })
