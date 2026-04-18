@@ -26,8 +26,35 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'Nova' },
+      { title: 'Nova — social media management' },
+      {
+        name: 'description',
+        content:
+          'Plan, publish, and measure every post across X, Bluesky, Mastodon, LinkedIn, Instagram, Threads, YouTube Shorts, Facebook, Pinterest and more — from one place.',
+      },
       { name: 'theme-color', content: '#6366f1' },
+      // Open Graph — individual routes override title/description as needed.
+      { property: 'og:site_name', content: 'Nova' },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:title', content: 'Nova — social media management' },
+      {
+        property: 'og:description',
+        content:
+          'Plan, publish, and measure every post across every platform from one place. BYOK AI, real calendar, team approvals, analytics.',
+      },
+      { property: 'og:image', content: 'https://skeduleit.org/og-image.svg' },
+      { property: 'og:image:width', content: '1200' },
+      { property: 'og:image:height', content: '630' },
+      { property: 'og:url', content: 'https://skeduleit.org/' },
+      // Twitter — falls back to OG tags when absent, but explicit wins.
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:title', content: 'Nova — social media management' },
+      {
+        name: 'twitter:description',
+        content:
+          'Plan, publish, and measure every post across every platform from one place. BYOK AI, real calendar, team approvals, analytics.',
+      },
+      { name: 'twitter:image', content: 'https://skeduleit.org/og-image.svg' },
     ],
     links: [
       { rel: 'stylesheet', href: globalsCss },

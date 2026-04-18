@@ -11,5 +11,4 @@ build
 .DS_Store
 *.log
 /storage
-app/routeTree.gen.ts
 drizzle/
