@@ -106,6 +106,7 @@ export const postActivityEnum = pgEnum('post_activity_action', [
   'published',
   'failed',
   'reshared',
+  'note',
 ])
 
 export const notificationTypeEnum = pgEnum('notification_type', [
@@ -116,6 +117,7 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'post_rejected',
   'member_joined',
   'campaign_on_hold',
+  'post_note_mention',
 ])
 
 // -- Better Auth managed tables --------------------------------------------
@@ -545,6 +547,9 @@ export const postActivity = pgTable('post_activity', {
   userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
   action: postActivityEnum('action').notNull(),
   note: text('note'),
+  // For action='note' rows: workspace members @mentioned in the note.
+  // Every listed user gets a post_note notification when the row is created.
+  mentionedUserIds: jsonb('mentioned_user_ids').$type<string[]>().default([]).notNull(),
   createdAt: now(),
 })
 

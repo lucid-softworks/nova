@@ -1054,3 +1054,102 @@ function groupBy<T, K extends string | number>(list: T[], key: (t: T) => K): Map
   }
   return out
 }
+
+// ---------- Post notes (@mentions) ---------------------------------------
+
+export async function addPostNoteImpl(
+  slug: string,
+  postId: string,
+  note: string,
+  mentionedUserIds: string[],
+): Promise<{ id: string }> {
+  const { workspace, user } = await ensureWs(slug)
+  const post = await db.query.posts.findFirst({
+    where: and(eq(schema.posts.id, postId), eq(schema.posts.workspaceId, workspace.id)),
+    columns: { id: true, workspaceId: true },
+  })
+  if (!post) throw new Error('Post not found')
+  const content = note.trim()
+  if (!content) throw new Error('Note is empty')
+
+  // Drop mentions that aren't workspace members.
+  let validMentions: string[] = []
+  if (mentionedUserIds.length > 0) {
+    const org = await db.query.workspaces.findFirst({
+      where: eq(schema.workspaces.id, workspace.id),
+      columns: { organizationId: true },
+    })
+    if (org) {
+      const members = await db
+        .select({ userId: schema.member.userId })
+        .from(schema.member)
+        .where(eq(schema.member.organizationId, org.organizationId))
+      const memberSet = new Set(members.map((m) => m.userId))
+      validMentions = Array.from(new Set(mentionedUserIds)).filter((id) => memberSet.has(id))
+    }
+  }
+
+  const [row] = await db
+    .insert(schema.postActivity)
+    .values({
+      postId,
+      userId: user.id,
+      action: 'note',
+      note: content,
+      mentionedUserIds: validMentions,
+    })
+    .returning({ id: schema.postActivity.id })
+  if (!row) throw new Error('Failed to insert note')
+
+  if (validMentions.length > 0) {
+    const { notifyUser } = await import('./notifications.server')
+    await Promise.all(
+      validMentions
+        .filter((uid) => uid !== user.id)
+        .map((uid) =>
+          notifyUser({
+            userId: uid,
+            workspaceId: workspace.id,
+            type: 'post_note_mention',
+            title: `${user.name} mentioned you in a post note`,
+            body: content.length > 120 ? `${content.slice(0, 117)}…` : content,
+            data: { postId, noteId: row.id },
+          }),
+        ),
+    )
+  }
+
+  return { id: row.id }
+}
+
+export type WorkspaceMemberRef = {
+  userId: string
+  name: string
+  email: string
+  avatarUrl: string | null
+}
+
+export async function listWorkspaceMembersImpl(slug: string): Promise<WorkspaceMemberRef[]> {
+  const { workspace } = await ensureWs(slug)
+  const org = await db.query.workspaces.findFirst({
+    where: eq(schema.workspaces.id, workspace.id),
+    columns: { organizationId: true },
+  })
+  if (!org) return []
+  const rows = await db
+    .select({
+      userId: schema.member.userId,
+      name: schema.user.name,
+      email: schema.user.email,
+      avatarUrl: schema.user.image,
+    })
+    .from(schema.member)
+    .innerJoin(schema.user, eq(schema.user.id, schema.member.userId))
+    .where(eq(schema.member.organizationId, org.organizationId))
+  return rows.map((r) => ({
+    userId: r.userId,
+    name: r.name,
+    email: r.email,
+    avatarUrl: r.avatarUrl ?? null,
+  }))
+}

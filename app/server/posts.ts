@@ -19,10 +19,15 @@ import {
   listPostActivityImpl,
   listWorkspaceActivityImpl,
   getCampaignAnalyticsImpl,
+  addPostNoteImpl,
+  listWorkspaceMembersImpl,
   type PostActivityRow,
   type WorkspaceActivityRow,
   type CampaignAnalytics,
+  type WorkspaceMemberRef,
 } from './posts.server'
+
+export type { WorkspaceMemberRef }
 
 export type { PostActivityRow, WorkspaceActivityRow, CampaignAnalytics }
 
@@ -167,3 +172,22 @@ export const listWorkspaceActivity = createServerFn({ method: 'GET' })
 export const getCampaignAnalytics = createServerFn({ method: 'GET' })
   .inputValidator((d: unknown) => campaignActionSchema.parse(d))
   .handler(async ({ data }) => getCampaignAnalyticsImpl(data.workspaceSlug, data.campaignId))
+
+const addNoteSchema = z.object({
+  workspaceSlug: z.string().min(1),
+  postId: z.string().uuid(),
+  note: z.string().min(1).max(5000),
+  mentionedUserIds: z.array(z.string()).default([]),
+})
+
+export const addPostNote = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => addNoteSchema.parse(d))
+  .handler(async ({ data }) =>
+    addPostNoteImpl(data.workspaceSlug, data.postId, data.note, data.mentionedUserIds),
+  )
+
+const wsSchema = z.object({ workspaceSlug: z.string().min(1) })
+
+export const listWorkspaceMembers = createServerFn({ method: 'GET' })
+  .inputValidator((d: unknown) => wsSchema.parse(d))
+  .handler(async ({ data }) => listWorkspaceMembersImpl(data.workspaceSlug))

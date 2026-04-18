@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Check, Copy, ExternalLink, History, MoreHorizontal, Pencil, RotateCw, Target, Trash2, CalendarClock, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { Button } from '~/components/ui/button'
@@ -16,8 +16,11 @@ import {
   retryPost,
   deletePosts,
   listPostActivity,
+  addPostNote,
+  listWorkspaceMembers,
   type PostActivityRow,
   type PostRow as Row,
+  type WorkspaceMemberRef,
 } from '~/server/posts'
 import type { WorkspaceRole } from '~/server/types'
 import type { AccountSummary } from '~/server/accounts'
@@ -372,14 +375,26 @@ function PostActivityTimeline({
   const [open, setOpen] = useState(false)
   const [rows, setRows] = useState<PostActivityRow[] | null>(null)
   const [loading, setLoading] = useState(false)
+  const [members, setMembers] = useState<WorkspaceMemberRef[]>([])
 
   useEffect(() => {
     if (!open || rows !== null) return
     setLoading(true)
-    listPostActivity({ data: { workspaceSlug, postId } })
-      .then(setRows)
+    Promise.all([
+      listPostActivity({ data: { workspaceSlug, postId } }),
+      listWorkspaceMembers({ data: { workspaceSlug } }),
+    ])
+      .then(([activity, mem]) => {
+        setRows(activity)
+        setMembers(mem)
+      })
       .finally(() => setLoading(false))
   }, [open, rows, workspaceSlug, postId])
+
+  const reload = async () => {
+    const next = await listPostActivity({ data: { workspaceSlug, postId } })
+    setRows(next)
+  }
 
   return (
     <div className={cn('border-t border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50/60 px-3 py-2 text-xs', indent && 'pl-12')}>
@@ -389,30 +404,174 @@ function PostActivityTimeline({
         className="inline-flex items-center gap-1 text-neutral-500 dark:text-neutral-400 hover:text-neutral-800"
       >
         <History className="h-3 w-3" />
-        {open ? 'Hide' : 'Show'} approval timeline
+        {open ? 'Hide' : 'Show'} activity & notes
       </button>
       {open ? (
-        <div className="mt-2 space-y-1">
+        <div className="mt-2 space-y-2">
           {loading ? (
             <div className="text-neutral-500 dark:text-neutral-400">Loading…</div>
           ) : rows && rows.length > 0 ? (
-            rows.map((r) => (
-              <div key={r.id} className="flex items-start gap-2">
-                <span className="font-semibold text-neutral-700 dark:text-neutral-200 capitalize">{r.action.replace('_', ' ')}</span>
-                <span className="text-neutral-500 dark:text-neutral-400">
-                  {r.userName ? `by ${r.userName} ` : ''}
-                  · {new Date(r.createdAt).toLocaleString()}
-                </span>
-                {r.note ? <span className="text-neutral-700 dark:text-neutral-200">— {r.note}</span> : null}
-              </div>
-            ))
+            <div className="space-y-1">
+              {rows.map((r) => (
+                <div key={r.id} className="flex items-start gap-2">
+                  <span className="font-semibold text-neutral-700 dark:text-neutral-200 capitalize">{r.action.replace('_', ' ')}</span>
+                  <span className="text-neutral-500 dark:text-neutral-400">
+                    {r.userName ? `by ${r.userName} ` : ''}
+                    · {new Date(r.createdAt).toLocaleString()}
+                  </span>
+                  {r.note ? <span className="text-neutral-700 dark:text-neutral-200">— {r.note}</span> : null}
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="text-neutral-500 dark:text-neutral-400">No activity yet.</div>
           )}
+          <NoteInput
+            workspaceSlug={workspaceSlug}
+            postId={postId}
+            members={members}
+            onAdded={reload}
+          />
         </div>
       ) : null}
     </div>
   )
+}
+
+function NoteInput({
+  workspaceSlug,
+  postId,
+  members,
+  onAdded,
+}: {
+  workspaceSlug: string
+  postId: string
+  members: WorkspaceMemberRef[]
+  onAdded: () => Promise<void>
+}) {
+  const [note, setNote] = useState('')
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerFilter, setPickerFilter] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Parse @[Name](userId) tokens out of the note; the display text strips
+  // the parenthesized id. We insert these when the user picks from the
+  // mention popover so we don't have to guess ambiguous names later.
+  const { display, mentionedUserIds } = parseMentionTokens(note)
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value
+    setNote(value)
+    const caret = e.target.selectionStart ?? value.length
+    // Find the last @ before the caret with no whitespace after it until caret.
+    const slice = value.slice(0, caret)
+    const at = slice.lastIndexOf('@')
+    if (at >= 0 && !/\s/.test(slice.slice(at + 1))) {
+      setPickerFilter(slice.slice(at + 1).toLowerCase())
+      setPickerOpen(true)
+    } else {
+      setPickerOpen(false)
+    }
+  }
+
+  const pickMember = (m: WorkspaceMemberRef) => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    const caret = textarea.selectionStart ?? note.length
+    const before = note.slice(0, caret)
+    const after = note.slice(caret)
+    const at = before.lastIndexOf('@')
+    if (at < 0) return
+    const token = `@[${m.name}](${m.userId}) `
+    const next = before.slice(0, at) + token + after
+    setNote(next)
+    setPickerOpen(false)
+    // Restore cursor after the inserted token.
+    requestAnimationFrame(() => {
+      textarea.focus()
+      const pos = at + token.length
+      textarea.setSelectionRange(pos, pos)
+    })
+  }
+
+  const submit = async () => {
+    if (!display.trim()) return
+    setSubmitting(true)
+    try {
+      await addPostNote({
+        data: { workspaceSlug, postId, note: display, mentionedUserIds },
+      })
+      setNote('')
+      await onAdded()
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const filtered = members.filter((m) => {
+    if (!pickerFilter) return true
+    const q = pickerFilter.toLowerCase()
+    return m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)
+  })
+
+  return (
+    <div className="relative mt-2 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-2">
+      <textarea
+        ref={textareaRef}
+        value={note}
+        onChange={handleChange}
+        onBlur={() => setTimeout(() => setPickerOpen(false), 150)}
+        placeholder="Add a note. Type @ to mention a teammate…"
+        rows={2}
+        maxLength={5000}
+        className="w-full resize-none bg-transparent text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none"
+      />
+      {pickerOpen && filtered.length > 0 ? (
+        <div className="absolute left-2 right-2 top-full z-10 mt-1 max-h-40 overflow-y-auto rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-lg">
+          {filtered.slice(0, 8).map((m) => (
+            <button
+              key={m.userId}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault()
+                pickMember(m)
+              }}
+              className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            >
+              {m.avatarUrl ? (
+                <img src={m.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
+              ) : (
+                <div className="h-5 w-5 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+              )}
+              <span className="text-neutral-900 dark:text-neutral-100">{m.name}</span>
+              <span className="text-neutral-500 dark:text-neutral-400">{m.email}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <div className="mt-1 flex items-center justify-between">
+        <span className="text-[10px] text-neutral-400 dark:text-neutral-500">
+          {mentionedUserIds.length > 0
+            ? `Will notify ${mentionedUserIds.length} ${mentionedUserIds.length === 1 ? 'person' : 'people'}`
+            : 'Type @ to mention workspace members'}
+        </span>
+        <Button size="sm" variant="outline" onClick={submit} disabled={submitting || !display.trim()}>
+          {submitting ? <Spinner /> : null} Add note
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function parseMentionTokens(raw: string): { display: string; mentionedUserIds: string[] } {
+  const re = /@\[([^\]]+)\]\(([^)]+)\)/g
+  const ids = new Set<string>()
+  const display = raw.replace(re, (_m, name, id) => {
+    ids.add(id)
+    return `@${name}`
+  })
+  return { display, mentionedUserIds: [...ids] }
 }
 
 function fmtDate(iso: string): string {

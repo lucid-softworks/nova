@@ -13,6 +13,7 @@ export type NotificationType =
   | 'post_rejected'
   | 'member_joined'
   | 'campaign_on_hold'
+  | 'post_note_mention'
 
 export type ChannelPrefs = { inApp: boolean; email: boolean; push: boolean }
 export type NotificationPreferences = Partial<Record<NotificationType, ChannelPrefs>>
@@ -25,6 +26,7 @@ const DEFAULT_PREFS: Record<NotificationType, ChannelPrefs> = {
   post_rejected: { inApp: true, email: true, push: false },
   member_joined: { inApp: true, email: false, push: false },
   campaign_on_hold: { inApp: true, email: true, push: true },
+  post_note_mention: { inApp: true, email: true, push: true },
 }
 
 function resolvePrefs(raw: unknown, type: NotificationType): ChannelPrefs {
