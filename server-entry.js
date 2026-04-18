@@ -27,19 +27,16 @@ import handler from './dist/server/server.js'
 const port = process.env.PORT ? Number(process.env.PORT) : 3000
 const app = new Hono()
 
-function withSecurityHeaders(response, pathname) {
-  // Transfer the body stream to a new Response with merged headers.
-  // Passing a ReadableStream straight to the Response constructor works
-  // because we don't touch the original afterwards — earlier attempts
-  // to buffer via arrayBuffer() + rebuild inside a Hono middleware
-  // ended up with the rebuilt response losing its content-type/body
-  // for reasons we never pinned down; returning a freshly-wrapped
-  // Response directly from the route handler sidesteps that entirely.
-  const headers = new Headers(response.headers)
-  headers.set('X-Content-Type-Options', 'nosniff')
-  headers.set('X-Frame-Options', 'DENY')
-  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+function applySecurityHeaders(c) {
+  // Append / set headers on the existing response via Hono's header API.
+  // This avoids rebuilding the Response (which consumed the body stream
+  // for some TanStack Start routes), keeping passthrough of whatever the
+  // downstream handler produced.
+  const pathname = new URL(c.req.url).pathname
+  c.header('X-Content-Type-Options', 'nosniff')
+  c.header('X-Frame-Options', 'DENY')
+  c.header('Referrer-Policy', 'strict-origin-when-cross-origin')
+  c.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
   // Bull-board's bundled UI loads its fonts from Google Fonts; relax the
   // CSP only for that path so the rest of the app keeps the tighter policy.
   const isBullBoard = pathname.startsWith('/api/admin/queues')
@@ -49,7 +46,7 @@ function withSecurityHeaders(response, pathname) {
   const fontSrc = isBullBoard
     ? "font-src 'self' https://fonts.gstatic.com"
     : "font-src 'self'"
-  headers.set(
+  c.header(
     'Content-Security-Policy',
     [
       "default-src 'self'",
@@ -65,12 +62,12 @@ function withSecurityHeaders(response, pathname) {
     ].join('; '),
   )
   if (process.env.NODE_ENV === 'production') {
-    headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+    c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
   }
   // RFC 8288 Link headers — advertise discoverable resources so crawling
   // agents + API clients can jump to the catalog, OpenAPI spec, and
   // sitemap without scraping the HTML. Multiple relations comma-joined.
-  headers.set(
+  c.header(
     'Link',
     [
       '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"',
@@ -79,11 +76,6 @@ function withSecurityHeaders(response, pathname) {
       '</sitemap.xml>; rel="sitemap"; type="application/xml"',
     ].join(', '),
   )
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  })
 }
 
 // RFC 9727 API Catalog — served ahead of the TanStack handler because
@@ -119,13 +111,13 @@ const API_CATALOG = JSON.stringify({
 })
 
 // Post-processing middleware: after whatever handler produced a
-// response, wrap it with security + Link headers so static files, the
-// api-catalog, and TanStack Start routes all ship the same set.
+// response, tag it with security + Link headers so static files, the
+// api-catalog, and TanStack Start routes all ship the same header set.
+// Uses c.header() so we don't rebuild the Response — rebuilding drained
+// downstream-produced body streams on some routes (/mcp, /healthz).
 app.use('*', async (c, next) => {
   await next()
-  if (c.res) {
-    c.res = withSecurityHeaders(c.res, new URL(c.req.url).pathname)
-  }
+  applySecurityHeaders(c)
 })
 
 // Serve the Vite client bundle and every file under public/ (copied into
