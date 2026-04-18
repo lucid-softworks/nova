@@ -299,6 +299,22 @@ function InviteReviewerDialog({
   onCreated: () => void
 }) {
   const t = useT()
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {/* Body renders only while open, so local state is fresh every time. */}
+      {open ? <InviteReviewerBody workspaceSlug={workspaceSlug} onCreated={onCreated} /> : null}
+    </Dialog>
+  )
+}
+
+function InviteReviewerBody({
+  workspaceSlug,
+  onCreated,
+}: {
+  workspaceSlug: string
+  onCreated: () => void
+}) {
+  const t = useT()
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [days, setDays] = useState(7)
@@ -306,17 +322,6 @@ function InviteReviewerDialog({
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!open) {
-      setEmail('')
-      setName('')
-      setDays(7)
-      setGeneratedUrl(null)
-      setCopied(false)
-      setError(null)
-    }
-  }, [open])
 
   const handleCreate = async () => {
     setCreating(true)
@@ -347,66 +352,64 @@ function InviteReviewerDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('approvals.inviteReviewer')}</DialogTitle>
-          <DialogDescription>{t('approvals.description')}</DialogDescription>
-        </DialogHeader>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>{t('approvals.inviteReviewer')}</DialogTitle>
+        <DialogDescription>{t('approvals.description')}</DialogDescription>
+      </DialogHeader>
 
-        {generatedUrl ? (
-          <div className="space-y-3">
-            <Label>{t('approvals.copyLink')}</Label>
-            <div className="flex gap-2">
-              <Input readOnly value={generatedUrl} className="flex-1 text-xs" />
-              <Button size="sm" variant="outline" onClick={copyUrl}>
-                <Copy className="h-3.5 w-3.5" /> {copied ? 'Copied!' : 'Copy'}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="rev-email">{t('approvals.reviewerEmail')}</Label>
-              <Input
-                id="rev-email"
-                type="email"
-                placeholder="client@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="rev-name">{t('approvals.reviewerName')}</Label>
-              <Input
-                id="rev-name"
-                placeholder={t('approvals.namePlaceholder')}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t('approvals.expiresIn')}</Label>
-              <div className="flex gap-2">
-                {[7, 14, 30].map((d) => (
-                  <Button
-                    key={d}
-                    size="sm"
-                    variant={days === d ? 'default' : 'outline'}
-                    onClick={() => setDays(d)}
-                  >
-                    {d} {t('approvals.days')}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <Button onClick={handleCreate} disabled={!email || creating} className="w-full">
-              {creating ? <Spinner /> : <LinkIcon className="h-3.5 w-3.5" />} {t('approvals.createLink')}
+      {generatedUrl ? (
+        <div className="space-y-3">
+          <Label>{t('approvals.copyLink')}</Label>
+          <div className="flex gap-2">
+            <Input readOnly value={generatedUrl} className="flex-1 text-xs" />
+            <Button size="sm" variant="outline" onClick={copyUrl}>
+              <Copy className="h-3.5 w-3.5" /> {copied ? 'Copied!' : 'Copy'}
             </Button>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="rev-email">{t('approvals.reviewerEmail')}</Label>
+            <Input
+              id="rev-email"
+              type="email"
+              placeholder="client@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="rev-name">{t('approvals.reviewerName')}</Label>
+            <Input
+              id="rev-name"
+              placeholder={t('approvals.namePlaceholder')}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('approvals.expiresIn')}</Label>
+            <div className="flex gap-2">
+              {[7, 14, 30].map((d) => (
+                <Button
+                  key={d}
+                  size="sm"
+                  variant={days === d ? 'default' : 'outline'}
+                  onClick={() => setDays(d)}
+                >
+                  {d} {t('approvals.days')}
+                </Button>
+              ))}
+            </div>
+          </div>
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <Button onClick={handleCreate} disabled={!email || creating} className="w-full">
+            {creating ? <Spinner /> : <LinkIcon className="h-3.5 w-3.5" />} {t('approvals.createLink')}
+          </Button>
+        </div>
+      )}
+    </DialogContent>
   )
 }

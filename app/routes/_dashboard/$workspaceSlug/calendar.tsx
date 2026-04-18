@@ -253,6 +253,7 @@ function CalendarPage() {
       </DndContext>
 
       <QuickViewPopover
+        key={preview?.id ?? 'none'}
         post={preview}
         workspaceSlug={workspaceSlug}
         onClose={() => setPreview(null)}
@@ -573,20 +574,32 @@ function QuickViewPopover({
   onChanged: () => Promise<void>
 }) {
   const t = useT()
-  const [rescheduleAt, setRescheduleAt] = useState<string>('')
-  const [busy, setBusy] = useState(false)
+  // Early-exit before useState so unmount on null post is predictable.
+  // The parent keys this component on post.id, so when the user switches
+  // to a different post, the whole subtree remounts and state resets.
+  if (!post) return null
+  return <QuickViewBody post={post} workspaceSlug={workspaceSlug} onClose={onClose} onChanged={onChanged} />
+}
 
-  useEffect(() => {
-    if (!post) return
+function QuickViewBody({
+  post,
+  workspaceSlug,
+  onClose,
+  onChanged,
+}: {
+  post: PostRow
+  workspaceSlug: string
+  onClose: () => void
+  onChanged: () => Promise<void>
+}) {
+  const t = useT()
+  const [rescheduleAt, setRescheduleAt] = useState<string>(() => {
     const iso = post.scheduledAt ?? post.publishedAt ?? new Date().toISOString()
     const d = new Date(iso)
     const pad = (n: number) => String(n).padStart(2, '0')
-    setRescheduleAt(
-      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`,
-    )
-  }, [post])
-
-  if (!post) return null
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  })
+  const [busy, setBusy] = useState(false)
 
   const liveUrl = post.platforms.find((p) => p.publishedUrl)?.publishedUrl ?? null
 
