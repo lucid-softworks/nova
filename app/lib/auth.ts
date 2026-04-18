@@ -276,7 +276,28 @@ export const auth = betterAuth({
         }
       }
 
-      if (ctx.path !== '/sign-up/email') return
+      // Any endpoint that could silently create a user: explicit sign-up
+      // plus magic-link / email-OTP sign-in which auto-register unknown
+      // emails. For the sign-in variants we only enforce the gate when
+      // the email doesn't already belong to an existing user, so returning
+      // users can still log in while signups are disabled.
+      const isSignUpPath = ctx.path === '/sign-up/email'
+      const isAutoCreatePath =
+        ctx.path === '/sign-in/magic-link' ||
+        ctx.path === '/email-otp/send-verification-otp'
+      if (!isSignUpPath && !isAutoCreatePath) return
+
+      const bodyEmail = (ctx.body as { email?: unknown } | undefined)?.email
+      const email = typeof bodyEmail === 'string' ? bodyEmail : null
+
+      if (isAutoCreatePath && email) {
+        const existing = await db.query.user.findFirst({
+          where: eq(schema.user.email, email),
+          columns: { id: true },
+        })
+        if (existing) return
+      }
+
       const row = await db.query.platformSettings.findFirst({
         where: eq(schema.platformSettings.id, 'singleton'),
       })
@@ -285,7 +306,6 @@ export const auth = betterAuth({
         throw new APIError('FORBIDDEN', { message: 'Sign-ups are disabled.' })
       }
 
-      const email = (ctx.body as { email?: unknown } | undefined)?.email
       const domain =
         typeof email === 'string' ? email.split('@')[1]?.toLowerCase() ?? '' : ''
       const blocklist = (row?.signupEmailBlocklist ?? []).map((d) => d.toLowerCase())
