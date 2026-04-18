@@ -52,16 +52,35 @@ function normalise(plan: string | null, status: string): keyof typeof LIMITS {
   return 'free'
 }
 
+async function resolvePlanLimits(key: string): Promise<PlanLimits> {
+  // DB-backed override if an admin has edited this plan's quotas via
+  // /admin/plans. Falls back to the hardcoded defaults for any plan
+  // that hasn't been persisted yet.
+  const row = await db.query.platformPlans.findFirst({
+    where: eq(schema.platformPlans.key, key),
+  })
+  if (row) {
+    return {
+      maxMembers: row.maxMembers,
+      maxConnectedAccounts: row.maxConnectedAccounts,
+      maxScheduledPostsPerMonth: row.maxScheduledPostsPerMonth,
+      aiAssistEnabled: row.aiAssistEnabled,
+    }
+  }
+  return LIMITS[key as keyof typeof LIMITS] ?? LIMITS.free!
+}
+
 export async function limitsFor(workspaceId: string): Promise<PlanLimits> {
   const ws = await db.query.workspaces.findFirst({
     where: eq(schema.workspaces.id, workspaceId),
     columns: { planOverride: true },
   })
-  if (ws?.planOverride && ws.planOverride in LIMITS) {
-    return LIMITS[ws.planOverride as keyof typeof LIMITS]!
+  if (ws?.planOverride) {
+    return resolvePlanLimits(ws.planOverride)
   }
   const sub = await getSubscription(workspaceId)
-  return LIMITS[normalise(sub?.plan ?? null, sub?.status ?? 'none')] ?? LIMITS.free!
+  const key = normalise(sub?.plan ?? null, sub?.status ?? 'none')
+  return resolvePlanLimits(key)
 }
 
 export type WorkspaceUsage = {

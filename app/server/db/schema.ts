@@ -881,6 +881,19 @@ export const notifications = pgTable(
   (t) => [index('notifications_user_unread_idx').on(t.userId, t.readAt)],
 )
 
+// Admin-editable plan quotas. Row per plan key (free/starter/pro/business
+// today, but admins can add more). Overrides the hardcoded defaults in
+// lib/billing/limits.ts when a row exists for the plan key.
+export const platformPlans = pgTable('platform_plans', {
+  key: text('key').primaryKey(),
+  label: text('label').notNull(),
+  maxMembers: integer('max_members').notNull(),
+  maxConnectedAccounts: integer('max_connected_accounts').notNull(),
+  maxScheduledPostsPerMonth: integer('max_scheduled_posts_per_month').notNull(),
+  aiAssistEnabled: boolean('ai_assist_enabled').default(false).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
 // Singleton row (id = 'singleton') holding platform-wide admin toggles.
 // Array/record fields default to [] / {} so reads never need null checks.
 export const platformSettings = pgTable('platform_settings', {
