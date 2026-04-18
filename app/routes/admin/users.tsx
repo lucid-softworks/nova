@@ -4,6 +4,7 @@ import { Download, MoreHorizontal, UserPlus } from 'lucide-react'
 import { toast } from '~/components/ui/toast'
 import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
+import { useConfirm, usePrompt } from '~/components/ui/confirm'
 import { Input } from '~/components/ui/input'
 import { Field } from '~/components/ui/field'
 import { Spinner } from '~/components/ui/spinner'
@@ -41,6 +42,8 @@ export const Route = createFileRoute('/admin/users')({
 
 function UsersPage() {
   const t = useT()
+  const confirm = useConfirm()
+  const prompt = usePrompt()
   const initial = Route.useLoaderData()
   const [rows, setRows] = useState<AdminUserRow[]>(initial.users)
   const [filter, setFilter] = useState('')
@@ -49,7 +52,10 @@ function UsersPage() {
   const reload = async () => setRows(await listAdminUsers())
 
   const onBan = async (u: AdminUserRow) => {
-    const reason = prompt(`Ban ${u.email}?\n\nOptional reason:`)
+    const reason = await prompt({
+      title: 'Ban user',
+      message: `Why are you banning ${u.email}? (optional)`,
+    })
     if (reason === null) return
     setBusy(u.id)
     try {
@@ -78,7 +84,12 @@ function UsersPage() {
     }
   }
   const onRevokeSessions = async (u: AdminUserRow) => {
-    if (!confirm(`Revoke all sessions for ${u.email}? They'll be signed out everywhere.`)) return
+    const ok = await confirm({
+      message: `Revoke all sessions for ${u.email}? They'll be signed out everywhere.`,
+      destructive: true,
+      confirmLabel: 'Sign out everywhere',
+    })
+    if (!ok) return
     setBusy(u.id)
     try {
       const res = await revokeAdminUserSessions({ data: { userId: u.id } })
@@ -88,7 +99,12 @@ function UsersPage() {
     }
   }
   const onResetTwoFactor = async (u: AdminUserRow) => {
-    if (!confirm(`Reset 2FA for ${u.email}? They'll be able to sign in with just their password.`)) return
+    const ok = await confirm({
+      message: `Reset 2FA for ${u.email}? They'll be able to sign in with just their password.`,
+      destructive: true,
+      confirmLabel: 'Reset 2FA',
+    })
+    if (!ok) return
     setBusy(u.id)
     try {
       await resetAdminUserTwoFactor({ data: { userId: u.id } })

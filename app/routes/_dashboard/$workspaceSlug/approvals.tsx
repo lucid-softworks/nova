@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Check, X, LinkIcon, Copy, Trash2, UserPlus } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
+import { useConfirm, usePrompt } from '~/components/ui/confirm'
 import { Spinner } from '~/components/ui/spinner'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
@@ -51,6 +52,8 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/approvals')({
 
 function ApprovalsPage() {
   const t = useT()
+  const confirm = useConfirm()
+  const prompt = usePrompt()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData() as { rows: PostRow[]; tokens: Array<{ id: string; email: string; name: string | null; token: string; expiresAt: Date | string; createdAt: Date | string }> }
   const [rows, setRows] = useState<PostRow[]>(initial.rows)
@@ -113,7 +116,10 @@ function ApprovalsPage() {
 
   const rejectSelected = async () => {
     if (selected.size === 0) return
-    const note = prompt(t('approvals.whatNeedsToChange2'))
+    const note = await prompt({
+      message: t('approvals.whatNeedsToChange2'),
+      multiline: true,
+    })
     if (!note) return
     setBusy('reject')
     setError(null)
@@ -130,7 +136,11 @@ function ApprovalsPage() {
   }
 
   const handleRevoke = async (tokenId: string) => {
-    if (!confirm(t('approvals.revokeConfirm'))) return
+    const ok = await confirm({
+      message: t('approvals.revokeConfirm'),
+      destructive: true,
+    })
+    if (!ok) return
     await revokeApprovalToken({ data: { workspaceSlug, tokenId } })
     await reloadTokens()
   }

@@ -7,6 +7,7 @@ import { backfillBluesky, type BackfillResult } from '~/server/backfill'
 import { PLATFORM_KEYS, PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { Card, CardContent } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
+import { useConfirm } from '~/components/ui/confirm'
 import { Spinner } from '~/components/ui/spinner'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { StatusBadge } from '~/components/accounts/StatusBadge'
@@ -155,13 +156,19 @@ function AccountRow({
   workspaceSlug: string
 }) {
   const t = useT()
+  const confirm = useConfirm()
   const [busy, setBusy] = useState(false)
   const expiring = account.tokenExpiresAt
     ? new Date(account.tokenExpiresAt).getTime() - Date.now() < 7 * 24 * 60 * 60 * 1000
     : false
 
   const handleDisconnect = async () => {
-    if (!confirm(t('accounts.disconnectConfirm'))) return
+    const ok = await confirm({
+      message: t('accounts.disconnectConfirm'),
+      destructive: true,
+      confirmLabel: t('accounts.disconnect'),
+    })
+    if (!ok) return
     setBusy(true)
     try {
       await disconnectAccount({ data: { workspaceSlug, accountId: account.id } })
@@ -218,11 +225,15 @@ function BackfillButton({
   accountId: string
 }) {
   const t = useT()
+  const confirm = useConfirm()
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<BackfillResult | null>(null)
 
   const run = async () => {
-    if (!confirm(t('accounts.backfillConfirm'))) return
+    const ok = await confirm({
+      message: t('accounts.backfillConfirm'),
+    })
+    if (!ok) return
     setBusy(true)
     try {
       const res = await backfillBluesky({

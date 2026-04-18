@@ -3,6 +3,7 @@ import { toast } from '~/components/ui/toast'
 import { useMemo, useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '~/components/ui/button'
+import { useConfirm } from '~/components/ui/confirm'
 import { Input } from '~/components/ui/input'
 import { Field } from '~/components/ui/field'
 import { Card } from '~/components/ui/card'
@@ -62,6 +63,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/team')({
 
 function TeamPage() {
   const t = useT()
+  const confirm = useConfirm()
   const { workspaceSlug } = Route.useParams()
   const { session, workspace } = Route.useRouteContext()
   const initial = Route.useLoaderData()
@@ -93,7 +95,11 @@ function TeamPage() {
   }
 
   const handleCancelInvitation = async (inv: InvitationRow) => {
-    if (!confirm(t('team.cancelInvitationConfirm'))) return
+    const ok = await confirm({
+      message: t('team.cancelInvitationConfirm'),
+      destructive: true,
+    })
+    if (!ok) return
     try {
       await cancelInvitation({ data: { workspaceSlug, invitationId: inv.id } })
       await reload()
@@ -112,7 +118,11 @@ function TeamPage() {
   }
 
   const handleRemove = async (member: MemberRow) => {
-    if (!confirm(t('team.removeMemberConfirm'))) return
+    const ok = await confirm({
+      message: t('team.removeMemberConfirm'),
+      destructive: true,
+    })
+    if (!ok) return
     try {
       await removeMember({ data: { workspaceSlug, memberId: member.id } })
       await reload()

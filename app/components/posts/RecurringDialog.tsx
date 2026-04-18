@@ -8,6 +8,7 @@ import {
   DialogDescription,
 } from '~/components/ui/dialog'
 import { Button } from '~/components/ui/button'
+import { useConfirm } from '~/components/ui/confirm'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
@@ -58,6 +59,7 @@ export function RecurringDialog({
   accounts: AccountSummary[]
 }) {
   const t = useT()
+  const confirm = useConfirm()
   const [cronExpr, setCronExpr] = useState('0 9 * * *')
   const [customMode, setCustomMode] = useState(false)
   const [timezone, setTimezone] = useState('UTC')
@@ -130,7 +132,11 @@ export function RecurringDialog({
   }
 
   const handleDelete = async (rule: RecurringRow) => {
-    if (!confirm(t('recurring.deleteConfirm'))) return
+    const ok = await confirm({
+      message: t('recurring.deleteConfirm'),
+      destructive: true,
+    })
+    if (!ok) return
     setBusy(true)
     try {
       await deleteRecurring({ data: { workspaceSlug, id: rule.id } })

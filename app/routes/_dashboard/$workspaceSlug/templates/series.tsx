@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { CalendarDays, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
+import { useConfirm } from '~/components/ui/confirm'
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/templates/serie
 
 function SeriesPage() {
   const t = useT()
+  const confirm = useConfirm()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData()
   const [series, setSeries] = useState<ContentSeriesRow[]>(initial.series)
@@ -75,7 +77,11 @@ function SeriesPage() {
               series={s}
               onUse={() => setUseTarget(s)}
               onDelete={async () => {
-                if (!confirm(`Delete "${s.name}"?`)) return
+                const ok = await confirm({
+                  message: `Delete "${s.name}"?`,
+                  destructive: true,
+                })
+                if (!ok) return
                 await deleteContentSeries({ data: { workspaceSlug, seriesId: s.id } })
                 await reload()
               }}

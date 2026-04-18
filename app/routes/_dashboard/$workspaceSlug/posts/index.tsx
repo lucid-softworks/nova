@@ -3,6 +3,7 @@ import { toast } from '~/components/ui/toast'
 import { useEffect, useState } from 'react'
 import { AlertTriangle, ChevronDown, ChevronRight, Copy, Download, MoreHorizontal, Pause, Search, Target, Trash2, Upload, X } from 'lucide-react'
 import { Button } from '~/components/ui/button'
+import { useConfirm } from '~/components/ui/confirm'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
@@ -68,6 +69,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/posts/')({
 
 function PostsPage() {
   const t = useT()
+  const confirm = useConfirm()
   const { workspaceSlug } = Route.useParams()
   const { workspace } = Route.useRouteContext()
   const userRole = workspace.role
@@ -136,7 +138,11 @@ function PostsPage() {
     })
 
   const bulkDelete = async () => {
-    if (!confirm(t('posts.deletePosts', { count: selectedIds.size }))) return
+    const ok = await confirm({
+      message: t('posts.deletePosts', { count: selectedIds.size }),
+      destructive: true,
+    })
+    if (!ok) return
     await deletePosts({ data: { workspaceSlug, postIds: [...selectedIds] } })
     setSelectedIds(new Set())
     await reload()
@@ -511,6 +517,7 @@ function CampaignActionsMenu({
   onChanged: () => Promise<void>
 }) {
   const t = useT()
+  const confirm = useConfirm()
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const terminal = campaign.status === 'published' || campaign.status === 'cancelled'
@@ -555,8 +562,12 @@ function CampaignActionsMenu({
           <button
             type="button"
             className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-red-600 hover:bg-red-50 disabled:opacity-50"
-            onClick={() => {
-              if (!confirm(t('posts.cancelCampaignConfirm', { name: campaign.name }))) return
+            onClick={async () => {
+              const ok = await confirm({
+                message: t('posts.cancelCampaignConfirm', { name: campaign.name }),
+                destructive: true,
+              })
+              if (!ok) return
               void run(() =>
                 cancelCampaign({ data: { workspaceSlug, campaignId: campaign.id } }),
               )

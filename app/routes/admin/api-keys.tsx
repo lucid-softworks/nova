@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
+import { useConfirm } from '~/components/ui/confirm'
 import { Input } from '~/components/ui/input'
 import { listAdminApiKeys, revokeAdminApiKey, type AdminApiKeyRow } from '~/server/admin'
 import { useT } from '~/lib/i18n'
@@ -13,13 +14,19 @@ export const Route = createFileRoute('/admin/api-keys')({
 
 function ApiKeysPage() {
   const t = useT()
+  const confirm = useConfirm()
   const initial = Route.useLoaderData()
   const [rows, setRows] = useState<AdminApiKeyRow[]>(initial.keys)
   const [filter, setFilter] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
 
   const onRevoke = async (k: AdminApiKeyRow) => {
-    if (!confirm(`Revoke key ${k.display}? This cannot be undone.`)) return
+    const ok = await confirm({
+      message: `Revoke key ${k.display}? This cannot be undone.`,
+      destructive: true,
+      confirmLabel: 'Revoke',
+    })
+    if (!ok) return
     setBusy(k.id)
     try {
       await revokeAdminApiKey({ data: { keyId: k.id } })

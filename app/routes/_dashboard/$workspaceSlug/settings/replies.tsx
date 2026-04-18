@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Pencil, Trash2 } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
+import { useConfirm } from '~/components/ui/confirm'
 import { Input } from '~/components/ui/input'
 import { Field } from '~/components/ui/field'
 import { Spinner } from '~/components/ui/spinner'
@@ -25,6 +26,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/replie
 
 function SavedRepliesPage() {
   const t = useT()
+  const confirm = useConfirm()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData() as { replies: SavedReplyRow[] }
   const [replies, setReplies] = useState<SavedReplyRow[]>(initial.replies)
@@ -75,7 +77,11 @@ function SavedRepliesPage() {
   }
 
   const del = async (id: string) => {
-    if (!confirm('Delete this saved reply?')) return
+    const ok = await confirm({
+      message: 'Delete this saved reply?',
+      destructive: true,
+    })
+    if (!ok) return
     setBusy(true)
     try {
       await deleteSavedReply({ data: { workspaceSlug, id } })

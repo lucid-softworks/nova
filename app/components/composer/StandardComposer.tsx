@@ -16,6 +16,7 @@ import {
 import { useNavigate } from '@tanstack/react-router'
 import { PLATFORMS, type PlatformKey } from '~/lib/platforms'
 import { Button } from '~/components/ui/button'
+import { useConfirm } from '~/components/ui/confirm'
 import { Input } from '~/components/ui/input'
 import { Field } from '~/components/ui/field'
 import { Card } from '~/components/ui/card'
@@ -63,6 +64,7 @@ export function StandardComposer({
   readOnly?: boolean
 }) {
   const t = useT()
+  const confirm = useConfirm()
   const needsApproval = requireApproval && userRole === 'editor'
   const [state, dispatch] = useReducer(
     composerReducer,
@@ -273,11 +275,18 @@ export function StandardComposer({
     }
   }
 
-  const onDiscard = () => {
+  const onDiscard = async () => {
     const hasContent =
       state.versions.some((v) => v.content || v.firstComment || v.mediaIds.length > 0) ||
       state.selectedAccountIds.length > 0
-    if (hasContent && !confirm(t('compose.discardConfirm'))) return
+    if (hasContent) {
+      const ok = await confirm({
+        message: t('compose.discardConfirm'),
+        destructive: true,
+        confirmLabel: t('compose.discard'),
+      })
+      if (!ok) return
+    }
     dispatch({ type: 'RESET', state: initialState() })
   }
 

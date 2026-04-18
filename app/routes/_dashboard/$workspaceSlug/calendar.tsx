@@ -11,6 +11,7 @@ import {
 } from '@dnd-kit/core'
 import { ChevronLeft, ChevronRight, ExternalLink, Trash2, CalendarClock } from 'lucide-react'
 import { Button } from '~/components/ui/button'
+import { useConfirm } from '~/components/ui/confirm'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import { listPostsForCalendar, deletePosts, type PostRow } from '~/server/posts'
@@ -639,6 +640,7 @@ function QuickViewBody({
   onChanged: () => Promise<void>
 }) {
   const t = useT()
+  const confirm = useConfirm()
   const [rescheduleAt, setRescheduleAt] = useState<string>(() => {
     const iso = post.scheduledAt ?? post.publishedAt ?? new Date().toISOString()
     const d = new Date(iso)
@@ -664,7 +666,11 @@ function QuickViewBody({
   }
 
   const onDelete = async () => {
-    if (!confirm(t('calendar.deletePost'))) return
+    const ok = await confirm({
+      message: t('calendar.deletePost'),
+      destructive: true,
+    })
+    if (!ok) return
     setBusy(true)
     try {
       await deletePosts({ data: { workspaceSlug, postIds: [post.id] } })

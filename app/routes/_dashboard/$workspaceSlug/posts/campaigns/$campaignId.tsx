@@ -13,6 +13,7 @@ import {
 import { PLATFORMS } from '~/lib/platforms'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
+import { useConfirm } from '~/components/ui/confirm'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { CampaignStatusBadge, PostStatusBadge } from '~/components/posts/badges'
 import { cn } from '~/lib/utils'
@@ -224,6 +225,7 @@ function StepCard({
   onTriggerNow: () => Promise<void>
 }) {
   const t = useT()
+  const confirm = useConfirm()
   const [busy, setBusy] = useState(false)
   const canTrigger =
     step.status === 'waiting' || step.status === 'ready' || step.status === 'on_hold'
@@ -285,8 +287,13 @@ function StepCard({
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => {
-                  if (!confirm(t('campaign.skipConfirm'))) return
+                onClick={async () => {
+                  const ok = await confirm({
+                    message: t('campaign.skipConfirm'),
+                    destructive: true,
+                    confirmLabel: 'Skip',
+                  })
+                  if (!ok) return
                   void guarded(onSkip)
                 }}
                 disabled={busy}

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { ChevronDown, ChevronRight, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
+import { useConfirm } from '~/components/ui/confirm'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { TemplateModal } from '~/components/templates/TemplateModal'
 import { HashtagGroupModal } from '~/components/templates/HashtagGroupModal'
@@ -119,6 +120,7 @@ function TemplatesTab({
   onUse: (t: TemplateRow) => void
 }) {
   const t = useT()
+  const confirm = useConfirm()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<TemplateRow | null>(null)
 
@@ -152,7 +154,11 @@ function TemplatesTab({
               }}
               onUse={() => onUse(t)}
               onDelete={async () => {
-                if (!confirm(`Delete "${t.name}"?`)) return
+                const ok = await confirm({
+                  message: `Delete "${t.name}"?`,
+                  destructive: true,
+                })
+                if (!ok) return
                 await deleteTemplate({ data: { workspaceSlug, templateId: t.id } })
                 await onReload()
               }}
@@ -257,6 +263,7 @@ function HashtagsTab({
   onReload: () => Promise<void>
 }) {
   const t = useT()
+  const confirm = useConfirm()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<HashtagGroupRow | null>(null)
 
@@ -289,7 +296,11 @@ function HashtagsTab({
                 setModalOpen(true)
               }}
               onDelete={async () => {
-                if (!confirm(`Delete "${g.name}"?`)) return
+                const ok = await confirm({
+                  message: `Delete "${g.name}"?`,
+                  destructive: true,
+                })
+                if (!ok) return
                 await deleteHashtagGroup({ data: { workspaceSlug, groupId: g.id } })
                 await onReload()
               }}

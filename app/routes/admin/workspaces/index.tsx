@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
+import { useConfirm } from '~/components/ui/confirm'
 import {
   listAdminWorkspaces,
   deleteAdminWorkspace,
@@ -17,11 +18,17 @@ export const Route = createFileRoute('/admin/workspaces/')({
 
 function WorkspacesPage() {
   const t = useT()
+  const confirm = useConfirm()
   const initial = Route.useLoaderData()
   const [rows, setRows] = useState<AdminWorkspaceRow[]>(initial.workspaces)
 
   const onDelete = async (w: AdminWorkspaceRow) => {
-    if (!confirm(`Delete workspace "${w.name}"? Cascades to all posts, media, and accounts.`)) return
+    const ok = await confirm({
+      message: `Delete workspace "${w.name}"? Cascades to all posts, media, and accounts.`,
+      destructive: true,
+      confirmLabel: t('common.delete'),
+    })
+    if (!ok) return
     await deleteAdminWorkspace({ data: { workspaceId: w.id } })
     setRows(await listAdminWorkspaces())
   }

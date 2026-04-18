@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Copy, Plus, Trash2 } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
+import { useConfirm } from '~/components/ui/confirm'
 import { Input } from '~/components/ui/input'
 import { Field } from '~/components/ui/field'
 import { Spinner } from '~/components/ui/spinner'
@@ -43,6 +44,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/api')(
 
 function ApiSettings() {
   const t = useT()
+  const confirm = useConfirm()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData()
   const [keys, setKeys] = useState<ApiKeyRow[]>(initial.keys)
@@ -81,7 +83,12 @@ function ApiSettings() {
   }
 
   const onDeleteKey = async (key: ApiKeyRow) => {
-    if (!confirm(`Delete "${key.name}"? Apps using it will stop working immediately.`)) return
+    const ok = await confirm({
+      message: `Delete "${key.name}"? Apps using it will stop working immediately.`,
+      destructive: true,
+      confirmLabel: 'Delete',
+    })
+    if (!ok) return
     await deleteApiKey({ data: { workspaceSlug, keyId: key.id } })
     await reload()
   }
@@ -113,7 +120,11 @@ function ApiSettings() {
   }
 
   const onDeleteWebhook = async (w: WebhookRow) => {
-    if (!confirm('Delete this webhook?')) return
+    const ok = await confirm({
+      message: 'Delete this webhook?',
+      destructive: true,
+    })
+    if (!ok) return
     await deleteWebhook({ data: { workspaceSlug, webhookId: w.id } })
     await reload()
   }

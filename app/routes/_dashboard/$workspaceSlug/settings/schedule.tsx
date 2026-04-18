@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
+import { useConfirm } from '~/components/ui/confirm'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import { SettingsNav } from '~/components/settings/SettingsNav'
@@ -206,6 +207,7 @@ function previewNextSlots(schedule: PostingSchedule[], n: number): Date[] {
 
 function CalendarFeedCard({ workspaceSlug }: { workspaceSlug: string }) {
   const t = useT()
+  const confirm = useConfirm()
   const [url, setUrl] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -221,7 +223,11 @@ function CalendarFeedCard({ workspaceSlug }: { workspaceSlug: string }) {
   }
 
   const rotate = async () => {
-    if (!confirm(t('schedule.invalidateConfirm'))) return
+    const ok = await confirm({
+      message: t('schedule.invalidateConfirm'),
+      destructive: true,
+    })
+    if (!ok) return
     setBusy(true)
     try {
       const res = await regenerateCalendarFeedToken({ data: { workspaceSlug } })
@@ -280,6 +286,7 @@ function ShareCalendarCard({
   workspaceSlug: string
   initialUrl: string | null
 }) {
+  const confirm = useConfirm()
   const [url, setUrl] = useState<string | null>(initialUrl)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -295,7 +302,12 @@ function ShareCalendarCard({
   }
 
   const rotate = async () => {
-    if (!confirm('Rotating invalidates the existing shareable URL.')) return
+    const ok = await confirm({
+      message: 'Rotating invalidates the existing shareable URL.',
+      destructive: true,
+      confirmLabel: 'Rotate',
+    })
+    if (!ok) return
     setBusy(true)
     try {
       const res = await regenerateShareCalendarToken({ data: { workspaceSlug } })
@@ -306,7 +318,11 @@ function ShareCalendarCard({
   }
 
   const revoke = async () => {
-    if (!confirm('Revoke the shareable URL? Anyone using it will lose access.')) return
+    const ok = await confirm({
+      message: 'Revoke the shareable URL? Anyone using it will lose access.',
+      destructive: true,
+    })
+    if (!ok) return
     setBusy(true)
     try {
       await revokeShareCalendarToken({ data: { workspaceSlug } })

@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from '~/components/ui/dialog'
 import { Button } from '~/components/ui/button'
+import { useConfirm } from '~/components/ui/confirm'
 import { useT } from '~/lib/i18n'
 import type { AssetSummary } from '~/server/media'
 
@@ -23,6 +24,7 @@ export function MediaPreviewModal({
   onInsert?: (id: string) => void
 }) {
   const t = useT()
+  const confirm = useConfirm()
   return (
     <Dialog open={asset !== null} onOpenChange={(o) => { if (!o) onClose() }}>
       <DialogContent className="max-w-4xl">
@@ -71,9 +73,12 @@ export function MediaPreviewModal({
                     variant="outline"
                     className="text-red-600"
                     onClick={async () => {
-                      if (confirm(t('media.deleteConfirm', { name: asset.originalName }))) {
-                        await onDelete(asset.id)
-                      }
+                      const ok = await confirm({
+                        message: t('media.deleteConfirm', { name: asset.originalName }),
+                        destructive: true,
+                        confirmLabel: t('common.delete'),
+                      })
+                      if (ok) await onDelete(asset.id)
                     }}
                   >
                     <Trash2 className="h-4 w-4" /> {t('common.delete')}

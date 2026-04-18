@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Eye, Plus, Radar, Trash2 } from 'lucide-react'
 import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
+import { useConfirm } from '~/components/ui/confirm'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
@@ -31,6 +32,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/monitors')({
 })
 
 function MonitorsPage() {
+  const confirm = useConfirm()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData()
   const [watches, setWatches] = useState<KeywordWatchRow[]>(initial.watches)
@@ -84,7 +86,12 @@ function MonitorsPage() {
   }
 
   const onDelete = async (w: KeywordWatchRow) => {
-    if (!confirm(`Stop watching "${w.term}"? Existing matches will be deleted.`)) return
+    const ok = await confirm({
+      message: `Stop watching "${w.term}"? Existing matches will be deleted.`,
+      destructive: true,
+      confirmLabel: 'Stop watching',
+    })
+    if (!ok) return
     setBusy(w.id)
     try {
       await deleteMonitorWatch({ data: { workspaceSlug, watchId: w.id } })

@@ -3,6 +3,7 @@ import { ChevronRight, ChevronDown, Folder, FolderPlus, Pencil, Trash2, MoreHori
 import { cn } from '~/lib/utils'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
+import { useConfirm } from '~/components/ui/confirm'
 import { useT } from '~/lib/i18n'
 import type { FolderNode } from '~/server/media'
 
@@ -133,6 +134,7 @@ function TreeRow({
   onCreate: (name: string, parentId: string | null) => Promise<void>
 }) {
   const t = useT()
+  const confirm = useConfirm()
   const [open, setOpen] = useState(true)
   const [menu, setMenu] = useState(false)
   const [renaming, setRenaming] = useState(false)
@@ -222,9 +224,12 @@ function TreeRow({
                   className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-red-600 hover:bg-red-50"
                   onClick={async () => {
                     setMenu(false)
-                    if (confirm(t('media.deleteFolderConfirm', { name: node.name }))) {
-                      await onDelete(node.id)
-                    }
+                    const ok = await confirm({
+                      message: t('media.deleteFolderConfirm', { name: node.name }),
+                      destructive: true,
+                      confirmLabel: t('common.delete'),
+                    })
+                    if (ok) await onDelete(node.id)
                   }}
                 >
                   <Trash2 className="h-3 w-3" /> {t('common.delete')}

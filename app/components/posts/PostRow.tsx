@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Check, Copy, ExternalLink, History, MoreHorizontal, Pencil, RotateCw, Target, Trash2, CalendarClock, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
 import { Button } from '~/components/ui/button'
+import { useConfirm } from '~/components/ui/confirm'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/components/ui/dropdown'
@@ -47,6 +48,7 @@ export function PostRow({
   hasRecurringRule?: boolean
 }) {
   const t = useT()
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const [rescheduling, setRescheduling] = useState(false)
   const [recurringOpen, setRecurringOpen] = useState(false)
@@ -99,7 +101,12 @@ export function PostRow({
     }
   }
   const onDelete = async () => {
-    if (!confirm('Delete this post?')) return
+    const ok = await confirm({
+      message: 'Delete this post?',
+      destructive: true,
+      confirmLabel: 'Delete',
+    })
+    if (!ok) return
     setBusy(true)
     try {
       await deletePosts({ data: { workspaceSlug, postIds: [post.id] } })

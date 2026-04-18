@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Copy, KeyRound, Shield, ShieldCheck, Smartphone, Trash2, X } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
+import { useConfirm } from '~/components/ui/confirm'
 import { Input } from '~/components/ui/input'
 import { Field } from '~/components/ui/field'
 import { Spinner } from '~/components/ui/spinner'
@@ -33,6 +34,7 @@ function SecurityPage() {
 
 function TwoFactorCard() {
   const t = useT()
+  const confirm = useConfirm()
   const { data: session } = authClient.useSession()
   const enabled = (session?.user as unknown as { twoFactorEnabled?: boolean } | undefined)
     ?.twoFactorEnabled
@@ -74,7 +76,11 @@ function TwoFactorCard() {
   }
 
   const disable = async () => {
-    if (!confirm(t('security.disable2FAConfirm'))) return
+    const ok = await confirm({
+      message: t('security.disable2FAConfirm'),
+      destructive: true,
+    })
+    if (!ok) return
     setBusy(true)
     try {
       await authClient.twoFactor.disable({ password })
@@ -161,6 +167,7 @@ function TwoFactorCard() {
 
 function PasskeyCard() {
   const t = useT()
+  const confirm = useConfirm()
   const [keys, setKeys] = useState<Passkey[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -194,7 +201,11 @@ function PasskeyCard() {
   }
 
   const remove = async (id: string) => {
-    if (!confirm(t('security.deletePasskeyConfirm'))) return
+    const ok = await confirm({
+      message: t('security.deletePasskeyConfirm'),
+      destructive: true,
+    })
+    if (!ok) return
     await authClient.passkey.deletePasskey({ id })
     await reload()
   }
@@ -243,6 +254,7 @@ function PasskeyCard() {
 
 function SessionsCard() {
   const t = useT()
+  const confirm = useConfirm()
   const [sessions, setSessions] = useState<SessionRow[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -266,7 +278,11 @@ function SessionsCard() {
     await reload()
   }
   const revokeAll = async () => {
-    if (!confirm(t('security.logOutEverywhereConfirm'))) return
+    const ok = await confirm({
+      message: t('security.logOutEverywhereConfirm'),
+      destructive: true,
+    })
+    if (!ok) return
     await authClient.revokeSessions()
     window.location.href = '/login'
   }

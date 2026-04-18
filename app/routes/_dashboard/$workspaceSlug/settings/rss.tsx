@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { RefreshCw, Trash2 } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
+import { useConfirm } from '~/components/ui/confirm'
 import { Input } from '~/components/ui/input'
 import { Field } from '~/components/ui/field'
 import { Spinner } from '~/components/ui/spinner'
@@ -31,6 +32,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/settings/rss')(
 
 function RssSettings() {
   const t = useT()
+  const confirm = useConfirm()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData() as { feeds: RssFeedRow[]; accounts: AccountSummary[] }
   const [feeds, setFeeds] = useState<RssFeedRow[]>(initial.feeds)
@@ -70,7 +72,12 @@ function RssSettings() {
   }
 
   const remove = async (id: string) => {
-    if (!confirm('Remove this feed? Already-created posts stay.')) return
+    const ok = await confirm({
+      message: 'Remove this feed? Already-created posts stay.',
+      destructive: true,
+      confirmLabel: 'Remove',
+    })
+    if (!ok) return
     setBusy(id)
     try {
       await removeRssFeed({ data: { workspaceSlug, id } })

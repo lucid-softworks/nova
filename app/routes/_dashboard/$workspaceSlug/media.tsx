@@ -3,6 +3,7 @@ import { toast } from '~/components/ui/toast'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Search, Upload, Trash2, FolderInput, X } from 'lucide-react'
 import { Button } from '~/components/ui/button'
+import { useConfirm } from '~/components/ui/confirm'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import { cn } from '~/lib/utils'
@@ -47,6 +48,7 @@ export const Route = createFileRoute('/_dashboard/$workspaceSlug/media')({
 
 function MediaPage() {
   const t = useT()
+  const confirm = useConfirm()
   const { workspaceSlug } = Route.useParams()
   const initial = Route.useLoaderData()
   const [folders, setFolders] = useState<FolderNode[]>(initial.folders)
@@ -174,7 +176,11 @@ function MediaPage() {
   }
 
   const onDeleteSelected = async () => {
-    if (!confirm(t('media.deleteAssets', { count: selectedIds.size }))) return
+    const ok = await confirm({
+      message: t('media.deleteAssets', { count: selectedIds.size }),
+      destructive: true,
+    })
+    if (!ok) return
     await deleteAssets({ data: { workspaceSlug, assetIds: [...selectedIds] } })
     clearSelection()
     await reloadAssets()
