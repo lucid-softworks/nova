@@ -67,12 +67,60 @@ function withSecurityHeaders(response, pathname) {
   if (process.env.NODE_ENV === 'production') {
     headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
   }
+  // RFC 8288 Link headers — advertise discoverable resources so crawling
+  // agents + API clients can jump to the catalog, OpenAPI spec, and
+  // sitemap without scraping the HTML. Multiple relations comma-joined.
+  headers.set(
+    'Link',
+    [
+      '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"',
+      '</api/v1/openapi/json>; rel="service-desc"; type="application/json"',
+      '</api/v1/openapi/json>; rel="describedby"; type="application/json"',
+      '</sitemap.xml>; rel="sitemap"; type="application/xml"',
+    ].join(', '),
+  )
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
     headers,
   })
 }
+
+// RFC 9727 API Catalog — served ahead of the TanStack handler because
+// /.well-known/* paths aren't individual routes. Tiny JSON, hand-built.
+const API_CATALOG = JSON.stringify({
+  linkset: [
+    {
+      anchor: (process.env.APP_URL ?? 'https://skeduleit.org').replace(/\/+$/, '') + '/',
+      'service-desc': [
+        {
+          href:
+            (process.env.APP_URL ?? 'https://skeduleit.org').replace(/\/+$/, '') +
+            '/api/v1/openapi/json',
+          type: 'application/json',
+        },
+      ],
+      'service-doc': [
+        {
+          href:
+            (process.env.APP_URL ?? 'https://skeduleit.org').replace(/\/+$/, '') +
+            '/api/v1/openapi/json',
+          type: 'application/json',
+        },
+      ],
+    },
+  ],
+})
+
+// Post-processing middleware: after whatever handler produced a
+// response, wrap it with security + Link headers so static files, the
+// api-catalog, and TanStack Start routes all ship the same set.
+app.use('*', async (c, next) => {
+  await next()
+  if (c.res) {
+    c.res = withSecurityHeaders(c.res, new URL(c.req.url).pathname)
+  }
+})
 
 // Serve the Vite client bundle and every file under public/ (copied into
 // dist/client at build time). serveStatic falls through to the next
@@ -86,12 +134,19 @@ app.use('/sw.js', serveStatic({ path: './dist/client/sw.js' }))
 app.use('/offline.html', serveStatic({ path: './dist/client/offline.html' }))
 app.use('/icons/*', serveStatic({ root: './dist/client' }))
 
-// Everything else goes to the TanStack Start fetch handler, with security
-// headers applied on the way out.
-app.all('*', async (c) => {
-  const response = await handler.fetch(c.req.raw)
-  return withSecurityHeaders(response, new URL(c.req.url).pathname)
+// RFC 9727 API catalog. Kept as a short JSON constant because the
+// content is purely configuration — it can't reach the app's DB.
+app.get('/.well-known/api-catalog', () => {
+  return new Response(API_CATALOG, {
+    headers: {
+      'Content-Type': 'application/linkset+json; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+    },
+  })
 })
+
+// Everything else goes to the TanStack Start fetch handler.
+app.all('*', async (c) => handler.fetch(c.req.raw))
 
 serve({ fetch: app.fetch, port, hostname: '0.0.0.0' }, (info) => {
   console.log(`[start] listening on http://localhost:${info.port}`)
