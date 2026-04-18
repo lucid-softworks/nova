@@ -1,0 +1,16 @@
+# Nova — robots.txt
+# RFC 9309 compliant. Everything not listed is allowed by default.
+# Marketing (/) and public bio pages (/bio/...) are intentionally crawlable.
+
+User-agent: *
+Disallow: /admin/
+Disallow: /api/
+Disallow: /review/
+Disallow: /c/
+Disallow: /l/
+Disallow: /digest/
+Disallow: /onboarding
+Disallow: /login
+Disallow: /sign-up
+Disallow: /accept-invitation
+Disallow: /healthz
