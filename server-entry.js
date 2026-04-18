@@ -74,9 +74,17 @@ function withSecurityHeaders(response, pathname) {
   })
 }
 
-// Serve the Vite client bundle first (static assets like /assets/*.js + css).
+// Serve the Vite client bundle and every file under public/ (copied into
+// dist/client at build time). serveStatic falls through to the next
+// middleware on 404, so TanStack Start gets every dynamic route.
 app.use('/assets/*', serveStatic({ root: './dist/client' }))
 app.use('/favicon.ico', serveStatic({ path: './dist/client/favicon.ico' }))
+app.use('/robots.txt', serveStatic({ path: './dist/client/robots.txt' }))
+app.use('/manifest.webmanifest', serveStatic({ path: './dist/client/manifest.webmanifest' }))
+app.use('/og-image.svg', serveStatic({ path: './dist/client/og-image.svg' }))
+app.use('/sw.js', serveStatic({ path: './dist/client/sw.js' }))
+app.use('/offline.html', serveStatic({ path: './dist/client/offline.html' }))
+app.use('/icons/*', serveStatic({ root: './dist/client' }))
 
 // Everything else goes to the TanStack Start fetch handler, with security
 // headers applied on the way out.
