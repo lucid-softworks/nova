@@ -766,6 +766,9 @@ export type AdminPlanRow = {
   aiAssistEnabled: boolean
   providerIds: Record<string, string[]>
   sortOrder: number
+  priceDisplay: string | null
+  description: string | null
+  featured: boolean
   updatedAt: string
 }
 
@@ -781,6 +784,9 @@ export async function listAdminPlansImpl(): Promise<AdminPlanRow[]> {
     aiAssistEnabled: r.aiAssistEnabled,
     providerIds: (r.providerIds ?? {}) as Record<string, string[]>,
     sortOrder: r.sortOrder,
+    priceDisplay: r.priceDisplay,
+    description: r.description,
+    featured: r.featured,
     updatedAt: r.updatedAt.toISOString(),
   }))
 }
@@ -794,6 +800,9 @@ export type AdminPlanInput = {
   aiAssistEnabled: boolean
   providerIds: Record<string, string[]>
   sortOrder: number
+  priceDisplay: string | null
+  description: string | null
+  featured: boolean
 }
 
 export async function upsertAdminPlanImpl(input: AdminPlanInput): Promise<{ ok: true }> {

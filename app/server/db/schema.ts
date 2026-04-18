@@ -905,6 +905,12 @@ export const platformPlans = pgTable('platform_plans', {
   // monthly + yearly Stripe price both mapping to "pro").
   providerIds: jsonb('provider_ids').$type<Record<string, string[]>>().default({}).notNull(),
   sortOrder: integer('sort_order').default(0).notNull(),
+  // Marketing / landing page fields. Free-form so admins can write
+  // "$9/mo", "Free forever", "Contact sales" without us baking in a
+  // currency or period.
+  priceDisplay: text('price_display'),
+  description: text('description'),
+  featured: boolean('featured').default(false).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
 

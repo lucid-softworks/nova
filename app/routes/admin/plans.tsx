@@ -195,6 +195,9 @@ function PlanEditor({
   )
   const [aiAssistEnabled, setAiAssistEnabled] = useState(plan?.aiAssistEnabled ?? false)
   const [sortOrder, setSortOrder] = useState(plan?.sortOrder ?? 99)
+  const [priceDisplay, setPriceDisplay] = useState(plan?.priceDisplay ?? '')
+  const [description, setDescription] = useState(plan?.description ?? '')
+  const [featured, setFeatured] = useState(plan?.featured ?? false)
   const [providerIds, setProviderIds] = useState<Record<string, string>>(() => {
     const out: Record<string, string> = {}
     for (const p of PROVIDERS) {
@@ -236,6 +239,9 @@ function PlanEditor({
           aiAssistEnabled,
           providerIds: parsed,
           sortOrder,
+          priceDisplay: priceDisplay.trim() === '' ? null : priceDisplay.trim(),
+          description: description.trim() === '' ? null : description.trim(),
+          featured,
         },
       })
       toast.success(t('adminPlans.saved', { key }))
@@ -325,6 +331,42 @@ function PlanEditor({
             />
             <span className="text-sm">{t('adminPlans.aiAssistToggle')}</span>
           </label>
+
+          <div className="space-y-2 rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3">
+            <div className="text-sm font-semibold">{t('adminPlans.marketingSection')}</div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              {t('adminPlans.marketingSectionHint')}
+            </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              <Field label={t('adminPlans.fieldPriceDisplay')} htmlFor="plan-price">
+                <Input
+                  id="plan-price"
+                  value={priceDisplay}
+                  onChange={(e) => setPriceDisplay(e.target.value)}
+                  placeholder="$9/mo"
+                  maxLength={60}
+                />
+              </Field>
+              <Field label={t('adminPlans.fieldDescription')} htmlFor="plan-desc">
+                <Input
+                  id="plan-desc"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder={t('adminPlans.fieldDescriptionPlaceholder')}
+                  maxLength={400}
+                />
+              </Field>
+            </div>
+            <label className="inline-flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={featured}
+                onChange={(e) => setFeatured(e.target.checked)}
+                className="h-4 w-4"
+              />
+              <span className="text-sm">{t('adminPlans.featuredToggle')}</span>
+            </label>
+          </div>
 
           <div className="space-y-2 rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3">
             <div className="text-sm font-semibold">{t('adminPlans.providerIds')}</div>
