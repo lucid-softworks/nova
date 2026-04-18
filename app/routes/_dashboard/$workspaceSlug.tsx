@@ -6,6 +6,7 @@ import { useT } from '~/lib/i18n'
 import type { SessionContext } from '~/server/auth-context'
 import { Sidebar } from '~/components/layout/Sidebar'
 import { TopBar } from '~/components/layout/TopBar'
+import { ImpersonationBanner } from '~/components/layout/ImpersonationBanner'
 import { RouteErrorBoundary } from '~/components/RouteErrorBoundary'
 import { cn } from '~/lib/utils'
 
@@ -91,6 +92,7 @@ function WorkspaceLayout() {
       </div>
 
       <div className="flex flex-1 flex-col overflow-hidden">
+        {session.impersonatedBy ? <ImpersonationBanner userName={session.user.name} /> : null}
         <TopBar title={title} workspaceSlug={workspace.slug} onOpenSidebar={() => setMobileOpen(true)} />
         <PlatformBanners platform={session.platform} />
         <main className="flex-1 overflow-auto p-6">

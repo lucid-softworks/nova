@@ -29,4 +29,7 @@ export type SessionContext = {
   workspaces: WorkspaceSummary[]
   activeOrganizationId: string | null
   platform: PlatformSurface
+  /** Set to the original admin's user id when the Better Auth admin
+   * plugin is running in impersonation mode. `null` during normal use. */
+  impersonatedBy: string | null
 }

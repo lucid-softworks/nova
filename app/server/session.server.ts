@@ -61,7 +61,11 @@ export async function loadSessionContext(): Promise<SessionContext> {
   if (override) return override
   const session = await auth.api.getSession({ headers: getRequest().headers })
   const platform = await loadPlatformSurface()
-  if (!session?.user) return { user: null, workspaces: [], activeOrganizationId: null, platform }
+  if (!session?.user) {
+    return { user: null, workspaces: [], activeOrganizationId: null, platform, impersonatedBy: null }
+  }
+  const impersonatedBy =
+    (session.session as { impersonatedBy?: string | null } | undefined)?.impersonatedBy ?? null
 
   const rows = await db
     .select({
@@ -96,6 +100,7 @@ export async function loadSessionContext(): Promise<SessionContext> {
       (session.session as { activeOrganizationId?: string | null } | undefined)
         ?.activeOrganizationId ?? null,
     platform,
+    impersonatedBy,
   }
 }
 
