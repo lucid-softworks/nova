@@ -22,6 +22,8 @@ if (Buffer.from(process.env.ENCRYPTION_KEY, 'hex').length !== 32) {
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
+import { readFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import handler from './dist/server/server.js'
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000
@@ -124,6 +126,77 @@ app.use(
   '/.well-known/mcp/server-card.json',
   serveStatic({ path: './dist/client/.well-known/mcp/server-card.json' }),
 )
+app.use(
+  '/.well-known/agent-skills/rest-api/SKILL.md',
+  serveStatic({ path: './dist/client/.well-known/agent-skills/rest-api/SKILL.md' }),
+)
+app.use(
+  '/.well-known/agent-skills/mcp/SKILL.md',
+  serveStatic({ path: './dist/client/.well-known/agent-skills/mcp/SKILL.md' }),
+)
+
+// Agent Skills Discovery RFC v0.2.0 — the index lists every skill with
+// a SHA-256 digest of its artefact. We compute digests from the on-disk
+// SKILL.md files on each request and cache the result for an hour.
+const AGENT_SKILLS = [
+  {
+    name: 'nova-rest-api',
+    description: 'Read and schedule social media posts in Nova via the v1 REST API.',
+    path: './dist/client/.well-known/agent-skills/rest-api/SKILL.md',
+    url: '/.well-known/agent-skills/rest-api/SKILL.md',
+  },
+  {
+    name: 'nova-mcp',
+    description: "Connect to Nova's Model Context Protocol (MCP) server.",
+    path: './dist/client/.well-known/agent-skills/mcp/SKILL.md',
+    url: '/.well-known/agent-skills/mcp/SKILL.md',
+  },
+]
+
+let agentSkillsCache = { builtAt: 0, body: null }
+const AGENT_SKILLS_TTL_MS = 60 * 60 * 1000
+
+async function buildAgentSkillsIndex() {
+  if (agentSkillsCache.body && Date.now() - agentSkillsCache.builtAt < AGENT_SKILLS_TTL_MS) {
+    return agentSkillsCache.body
+  }
+  const skills = []
+  for (const s of AGENT_SKILLS) {
+    try {
+      const buf = await readFile(s.path)
+      const digest = 'sha256:' + createHash('sha256').update(buf).digest('hex')
+      skills.push({
+        name: s.name,
+        type: 'skill-md',
+        description: s.description,
+        url: s.url,
+        digest,
+      })
+    } catch {
+      // skip skills whose SKILL.md isn't present on disk
+    }
+  }
+  const body = JSON.stringify(
+    {
+      $schema: 'https://schemas.agentskills.io/discovery/0.2.0/schema.json',
+      skills,
+    },
+    null,
+    2,
+  )
+  agentSkillsCache = { builtAt: Date.now(), body }
+  return body
+}
+
+app.get('/.well-known/agent-skills/index.json', async () => {
+  const body = await buildAgentSkillsIndex()
+  return new Response(body, {
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+    },
+  })
+})
 
 // RFC 9727 API catalog — small enough to construct inline.
 app.get('/.well-known/api-catalog', () => {
