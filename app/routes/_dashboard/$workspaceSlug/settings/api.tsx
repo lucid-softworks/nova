@@ -145,8 +145,8 @@ function ApiSettings() {
               ))}
             </div>
           )}
-          <div className="flex items-end gap-2">
-            <Field label={t('api.newKeyName')} htmlFor="key-name" className="flex-1">
+          <div className="flex flex-wrap items-end gap-2">
+            <Field label={t('api.newKeyName')} htmlFor="key-name" className="min-w-[200px] flex-1">
               <Input
                 id="key-name"
                 value={newKeyName}

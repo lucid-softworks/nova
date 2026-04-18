@@ -156,12 +156,12 @@ function BioSettingsPage() {
               {t('bio.links')}
             </label>
             {links.map((link, i) => (
-              <div key={i} className="flex items-center gap-2">
+              <div key={i} className="flex flex-wrap items-center gap-2">
                 <Input
                   value={link.title}
                   onChange={(e) => updateLink(i, 'title', e.target.value)}
                   placeholder={t('bio.linkTitle')}
-                  className="flex-1"
+                  className="min-w-[160px] flex-1"
                 />
                 <Input
                   value={link.url}

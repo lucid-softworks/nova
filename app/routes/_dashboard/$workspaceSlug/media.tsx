@@ -284,7 +284,7 @@ function MediaPage() {
                 <FolderInput className="h-4 w-4" /> {t('media.moveToFolderBtn')}
               </Button>
               {moveOpen ? (
-                <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 text-sm shadow-lg">
+                <div className="absolute right-0 top-full z-20 mt-1 w-56 max-w-[calc(100vw-1rem)] rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 text-sm shadow-lg">
                   <button
                     type="button"
                     className="block w-full rounded px-2 py-1.5 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"

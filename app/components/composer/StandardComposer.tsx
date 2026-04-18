@@ -395,7 +395,7 @@ export function StandardComposer({
               </>
             )}
             {scheduleOpen ? (
-              <div className="absolute bottom-full right-0 z-20 mb-2 w-80 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-lg">
+              <div className="absolute bottom-full right-0 z-20 mb-2 w-80 max-w-[calc(100vw-1rem)] rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-lg">
                 <div className="space-y-3">
                   <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('compose.schedulePost')}</div>
                   <input
@@ -722,7 +722,7 @@ function VersionTabs({
               <ChevronDown className="h-3 w-3" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuContent align="start" className="w-56 max-w-[calc(100vw-1rem)]">
             {unassignedPlatforms.map((p) => (
               <DropdownMenuItem key={p} onSelect={() => onAdd([p])}>
                 <PlatformIcon platform={p} size={16} />

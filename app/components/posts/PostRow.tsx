@@ -279,7 +279,7 @@ export function PostRow({
           </DropdownMenuContent>
         </DropdownMenu>
         {rescheduling ? (
-          <div className="absolute right-0 top-full z-10 mt-1 w-80 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 shadow-lg">
+          <div className="absolute right-0 top-full z-10 mt-1 w-80 max-w-[calc(100vw-1rem)] rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 shadow-lg">
             <div className="mb-2 text-sm font-semibold">Reschedule</div>
             <Input
               type="datetime-local"

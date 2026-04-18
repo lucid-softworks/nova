@@ -493,7 +493,7 @@ function StepContent({
             <Code className="h-3 w-3" /> Insert URL variable
           </Button>
           {open ? (
-            <div className="absolute left-0 top-full z-10 mt-1 w-72 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg">
+            <div className="absolute left-0 top-full z-10 mt-1 w-72 max-w-[calc(100vw-1rem)] rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg">
               {urlVariables.map((v) => (
                 <button
                   key={v.key}

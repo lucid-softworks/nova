@@ -48,7 +48,7 @@ export function SavedReplyPicker({
         <MessageSquare className="h-4 w-4" />
       </button>
       {open ? (
-        <div className="absolute bottom-full left-0 z-30 mb-1 w-72 rounded-md border border-neutral-200 bg-white p-2 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="absolute bottom-full left-0 z-30 mb-1 w-72 max-w-[calc(100vw-1rem)] rounded-md border border-neutral-200 bg-white p-2 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
           <input
             type="text"
             value={query}

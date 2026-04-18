@@ -55,7 +55,7 @@ export function BestTimeChip({
         <Clock className="h-3 w-3" /> {t('compose.bestTime')}
       </button>
       {open && slots.length > 0 ? (
-        <div className="absolute left-0 top-full z-20 mt-1 w-56 rounded-md border border-neutral-200 bg-white p-1 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="absolute left-0 top-full z-20 mt-1 w-56 max-w-[calc(100vw-1rem)] rounded-md border border-neutral-200 bg-white p-1 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
           <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
             {t('compose.topSlots')}
           </div>

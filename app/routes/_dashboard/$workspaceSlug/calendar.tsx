@@ -376,7 +376,7 @@ function DayCell({
             </button>
             {showMore ? (
               <div
-                className="absolute left-0 top-full z-10 mt-1 w-64 space-y-0.5 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg"
+                className="absolute left-0 top-full z-10 mt-1 w-64 max-w-[calc(100vw-1rem)] space-y-0.5 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg"
                 onClick={(e) => e.stopPropagation()}
               >
                 {hidden.map((p) => (
@@ -537,7 +537,7 @@ function HourCell({
             </button>
             {showMore ? (
               <div
-                className="absolute left-0 top-full z-20 mt-1 w-56 space-y-0.5 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg"
+                className="absolute left-0 top-full z-20 mt-1 w-56 max-w-[calc(100vw-1rem)] space-y-0.5 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg"
                 onClick={(e) => e.stopPropagation()}
               >
                 {hidden.map((p) => (

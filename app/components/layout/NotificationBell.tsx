@@ -99,7 +99,7 @@ export function NotificationBell() {
         ) : null}
       </button>
       {open ? (
-        <div className="absolute right-0 top-full z-50 mt-1 w-[360px] overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-1 w-[360px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-lg">
           <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 px-3 py-2">
             <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('settings.notifications')}</div>
             <button

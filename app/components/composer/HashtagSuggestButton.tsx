@@ -49,7 +49,7 @@ export function HashtagSuggestButton({
         <Sparkles className="h-4 w-4" />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-10 mt-1 w-72 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-2 shadow-lg">
+        <div className="absolute left-0 top-full z-10 mt-1 w-72 max-w-[calc(100vw-1rem)] rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-2 shadow-lg">
           {loading ? (
             <div className="flex items-center gap-2 py-2 text-xs text-neutral-500 dark:text-neutral-400">
               <Spinner /> {t('common.loading')}

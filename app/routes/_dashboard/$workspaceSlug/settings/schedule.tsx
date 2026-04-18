@@ -103,7 +103,7 @@ function SchedulePage() {
             })
             .map((d) => (
               <div key={d.dayOfWeek} className="space-y-2 rounded-md border border-neutral-200 dark:border-neutral-800 p-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                     {DAY_LABELS[d.dayOfWeek]}
                   </div>

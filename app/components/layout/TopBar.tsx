@@ -76,7 +76,7 @@ export function TopBar({
             <ChevronDown className="h-4 w-4" />
           </button>
           {menuOpen ? (
-            <div className="absolute right-0 top-full z-30 mt-1 w-56 rounded-md border border-neutral-200 bg-white p-1 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="absolute right-0 top-full z-30 mt-1 w-56 max-w-[calc(100vw-1rem)] rounded-md border border-neutral-200 bg-white p-1 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
               <button
                 type="button"
                 onClick={() => {

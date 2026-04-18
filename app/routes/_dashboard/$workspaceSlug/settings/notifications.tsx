@@ -155,8 +155,8 @@ function NotificationsSettings() {
       <Card>
         <div className="space-y-3 p-4">
           <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('notifSettings.eventPreferences')}</h3>
-          <div className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-md border border-neutral-200 dark:border-neutral-800">
+            <table className="w-full min-w-[420px] text-sm">
               <thead>
                 <tr className="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                   <th className="px-3 py-2 text-left">{t('notifSettings.eventPreferences')}</th>

@@ -42,7 +42,7 @@ export function HashtagPickerButton({
         <Hash className="h-4 w-4" />
       </button>
       {open ? (
-        <div className="absolute left-0 top-full z-10 mt-1 w-72 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg">
+        <div className="absolute left-0 top-full z-10 mt-1 w-72 max-w-[calc(100vw-1rem)] rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1 shadow-lg">
           {loading ? (
             <div className="px-2 py-3 text-xs text-neutral-500 dark:text-neutral-400">{t('common.loading')}</div>
           ) : !groups || groups.length === 0 ? (
