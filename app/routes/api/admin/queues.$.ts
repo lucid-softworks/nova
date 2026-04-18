@@ -11,11 +11,16 @@ async function requireAdmin(): Promise<Response | null> {
   return null
 }
 
+const BASE = '/api/admin/queues'
+
 async function handle(request: Request): Promise<Response> {
   const guard = await requireAdmin()
   if (guard) return guard
   const { getBullBoardApp } = await import('~/server/bullBoard.server')
-  return getBullBoardApp().fetch(request)
+  const url = new URL(request.url)
+  const rest = url.pathname.slice(BASE.length) || '/'
+  url.pathname = rest
+  return getBullBoardApp().fetch(new Request(url, request))
 }
 
 export const Route = createFileRoute('/api/admin/queues/$')({
