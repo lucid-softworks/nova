@@ -70,13 +70,37 @@ export const Route = createFileRoute('/api/ai/generate')({
           improveAction: parsed.data.improveAction,
         }
 
+        let result: Awaited<ReturnType<typeof startGeneration>>
         try {
-          const result = await startGeneration(req, access.workspace.id)
-          return result.toTextStreamResponse()
+          result = await startGeneration(req, access.workspace.id)
         } catch (e) {
           const message = e instanceof Error ? e.message : 'AI request failed'
           return Response.json({ error: message }, { status: 500 })
         }
+
+        // Pipe textStream manually so provider errors (401, 429 quota, etc.)
+        // get appended to the stream instead of silently closing it, which is
+        // what toTextStreamResponse() does.
+        const stream = new ReadableStream<Uint8Array>({
+          async start(controller) {
+            const encoder = new TextEncoder()
+            try {
+              for await (const chunk of result.result.textStream) {
+                controller.enqueue(encoder.encode(chunk))
+              }
+              controller.close()
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : 'AI request failed'
+              controller.enqueue(
+                encoder.encode(`\n\n[${result.providerLabel} error: ${msg}]`),
+              )
+              controller.close()
+            }
+          },
+        })
+        return new Response(stream, {
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        })
       },
     },
   },

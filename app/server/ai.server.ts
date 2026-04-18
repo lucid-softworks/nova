@@ -196,8 +196,14 @@ export async function startGeneration(req: GenerateRequest, workspaceId: string 
     prompt: userPrompt,
     maxTokens: 800,
     temperature: 0.8,
+    onError: ({ error }) => {
+      logger.error(
+        { err: error, provider: resolved.providerLabel },
+        'AI stream error',
+      )
+    },
   })
-  return result
+  return { result, providerLabel: resolved.providerLabel }
 }
 
 export async function suggestHashtagsImpl(
@@ -214,13 +220,25 @@ export async function suggestHashtagsImpl(
   const platformNote = platforms.length
     ? `Target platforms: ${platforms.join(', ')}. Note: Bluesky doesn't use hashtags.`
     : ''
-  const result = await streamText({
+  const result = streamText({
     model: resolved.model,
     prompt: `Suggest 5-8 relevant hashtags for this social media post. Return ONLY the hashtags separated by spaces, no explanation. ${platformNote}\n\nPost: ${content.slice(0, 500)}`,
     maxTokens: 200,
     temperature: 0.6,
+    onError: ({ error }) => {
+      logger.error(
+        { err: error, provider: resolved.providerLabel },
+        'AI stream error (hashtags)',
+      )
+    },
   })
-  const text = await result.text
+  let text: string
+  try {
+    text = await result.text
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'AI request failed'
+    throw new Error(`${resolved.providerLabel} error: ${msg}`)
+  }
   return text
     .split(/\s+/)
     .map((t) => t.trim())
