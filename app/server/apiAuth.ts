@@ -171,41 +171,44 @@ export function authFailureToResponse(err: ApiAuthFailure): Response {
 // The API Key plugin itself also supports per-key limits at the Better
 // Auth layer; this is a second safety net shared across web replicas.
 const buckets = new Map<string, { count: number; resetAt: number }>()
-const RATE_LIMIT = 100
-const WINDOW_MS = 60_000
+const DEFAULT_RATE_LIMIT = 100
+const DEFAULT_WINDOW_MS = 60_000
 
 type RateResult = { ok: boolean; remaining: number; resetInMs: number }
+type RateOptions = { limit?: number; windowMs?: number }
 
-export async function rateLimit(key: string): Promise<RateResult> {
+export async function rateLimit(key: string, opts: RateOptions = {}): Promise<RateResult> {
+  const limit = opts.limit ?? DEFAULT_RATE_LIMIT
+  const windowMs = opts.windowMs ?? DEFAULT_WINDOW_MS
   if (process.env.REDIS_URL) {
     try {
       const { getRedis } = await import('./queues/connection')
       const redis = getRedis()
-      const windowKey = `ratelimit:${key}:${Math.floor(Date.now() / WINDOW_MS)}`
+      const windowKey = `ratelimit:${key}:${Math.floor(Date.now() / windowMs)}`
       // INCR + PEXPIRE on first bump — atomically sets TTL only once.
       const count = await redis.incr(windowKey)
-      if (count === 1) await redis.pexpire(windowKey, WINDOW_MS)
+      if (count === 1) await redis.pexpire(windowKey, windowMs)
       const ttl = await redis.pttl(windowKey)
-      const resetInMs = ttl > 0 ? ttl : WINDOW_MS
-      if (count > RATE_LIMIT) return { ok: false, remaining: 0, resetInMs }
-      return { ok: true, remaining: Math.max(0, RATE_LIMIT - count), resetInMs }
+      const resetInMs = ttl > 0 ? ttl : windowMs
+      if (count > limit) return { ok: false, remaining: 0, resetInMs }
+      return { ok: true, remaining: Math.max(0, limit - count), resetInMs }
     } catch (err) {
       logger.warn({ err, key }, 'Redis rate limiter failed — falling back to in-memory')
     }
   }
-  return rateLimitInMemory(key)
+  return rateLimitInMemory(key, limit, windowMs)
 }
 
-function rateLimitInMemory(key: string): RateResult {
+function rateLimitInMemory(key: string, limit: number, windowMs: number): RateResult {
   const now = Date.now()
   const b = buckets.get(key)
   if (!b || b.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + WINDOW_MS })
-    return { ok: true, remaining: RATE_LIMIT - 1, resetInMs: WINDOW_MS }
+    buckets.set(key, { count: 1, resetAt: now + windowMs })
+    return { ok: true, remaining: limit - 1, resetInMs: windowMs }
   }
-  if (b.count >= RATE_LIMIT) {
+  if (b.count >= limit) {
     return { ok: false, remaining: 0, resetInMs: b.resetAt - now }
   }
   b.count += 1
-  return { ok: true, remaining: RATE_LIMIT - b.count, resetInMs: b.resetAt - now }
+  return { ok: true, remaining: limit - b.count, resetInMs: b.resetAt - now }
 }

@@ -53,7 +53,26 @@ export async function uploadMediaImpl(slug: string, file: File, folderId: string
     if (!parent) throw new Error('Destination folder not found')
   }
 
-  const buf = Buffer.from(await file.arrayBuffer())
+  let buf: Buffer = Buffer.from(await file.arrayBuffer())
+  // Strip EXIF (GPS, camera serial, software) from still images before we
+  // hash + store. GIF can carry animation; skip it so we don't collapse
+  // frames. Videos and PDFs are left alone (format-specific tooling
+  // needed). Re-encoding happens in the original format via sharp's
+  // auto-rotate, which also drops orientation metadata.
+  if (
+    mime === 'image/jpeg' ||
+    mime === 'image/png' ||
+    mime === 'image/webp' ||
+    mime === 'image/avif' ||
+    mime === 'image/heic'
+  ) {
+    try {
+      const { default: sharp } = await import('sharp')
+      buf = await sharp(buf, { failOn: 'none' }).rotate().toBuffer()
+    } catch (e) {
+      logger.warn({ err: e }, 'EXIF strip failed — storing original bytes')
+    }
+  }
   const contentHash = createHash('sha256').update(buf).digest('hex')
 
   // Dedup: if the same bytes already exist in this workspace, reuse that row.
