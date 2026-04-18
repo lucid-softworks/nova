@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { Check, Copy, ExternalLink, History, MoreHorizontal, Pencil, RotateCw, Target, Trash2, CalendarClock, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { PlatformIcon } from '~/components/accounts/PlatformIcon'
@@ -47,6 +47,7 @@ export function PostRow({
   hasRecurringRule?: boolean
 }) {
   const t = useT()
+  const navigate = useNavigate()
   const [rescheduling, setRescheduling] = useState(false)
   const [recurringOpen, setRecurringOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -137,7 +138,28 @@ export function PostRow({
           </div>
         )}
       </div>
-      <div className="min-w-0 w-full sm:w-0 sm:flex-1">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() =>
+          navigate({
+            to: '/$workspaceSlug/compose',
+            params: { workspaceSlug },
+            search: { postId: post.id },
+          })
+        }
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            navigate({
+              to: '/$workspaceSlug/compose',
+              params: { workspaceSlug },
+              search: { postId: post.id },
+            })
+          }
+        }}
+        className="min-w-0 w-full cursor-pointer sm:w-0 sm:flex-1"
+      >
         <div className="flex flex-wrap items-center gap-1.5">
           <PostTypeBadge type={post.type} />
           {hasRecurringRule ? (
@@ -149,6 +171,7 @@ export function PostRow({
             <Link
               to="/$workspaceSlug/posts/campaigns/$campaignId"
               params={{ workspaceSlug, campaignId: post.campaignId! }}
+              onClick={(e) => e.stopPropagation()}
               className="inline-flex items-center gap-1 rounded bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100"
             >
               <Target className="h-2.5 w-2.5" /> {post.campaignName}
