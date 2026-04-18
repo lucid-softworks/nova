@@ -209,8 +209,32 @@ export function composerReducer(state: ComposerState, action: Action): ComposerS
       return updateVersion(state, action.versionId, { firstCommentEnabled: action.value })
     case 'UPDATE_FIRST_COMMENT':
       return updateVersion(state, action.versionId, { firstComment: action.value })
-    case 'TOGGLE_THREAD':
-      return updateVersion(state, action.versionId, { isThread: action.value })
+    case 'TOGGLE_THREAD': {
+      const version = state.versions.find((v) => v.id === action.versionId)
+      if (!version) return state
+      if (action.value) {
+        // Turning thread mode ON: migrate the main content field into the
+        // first thread part so we don't publish an empty leading tweet.
+        const parts = [...version.threadParts]
+        const first = parts[0]
+        if (first && !first.content.trim() && version.content) {
+          parts[0] = { ...first, content: version.content }
+        }
+        return updateVersion(state, action.versionId, {
+          isThread: true,
+          threadParts: parts,
+        })
+      }
+      // Turning thread mode OFF: if the main content is empty but the
+      // first part has text, fold it back so the draft still publishes.
+      if (!version.content.trim() && version.threadParts[0]?.content) {
+        return updateVersion(state, action.versionId, {
+          isThread: false,
+          content: version.threadParts[0].content,
+        })
+      }
+      return updateVersion(state, action.versionId, { isThread: false })
+    }
     case 'THREAD_ADD': {
       const version = state.versions.find((v) => v.id === action.versionId)
       if (!version) return state

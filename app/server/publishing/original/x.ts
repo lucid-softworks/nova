@@ -224,7 +224,10 @@ export async function publishPost(ctx: PublishContext): Promise<PublishResult> {
   const rootMediaIds = await withRefresh(() => uploadMedia(tokens, rootMedia))
 
   const rootText = ctx.version.isThread
-    ? (ctx.version.threadParts[0]?.content ?? ctx.version.content)
+    // Fall back to version.content on an empty first part so a thread
+    // never publishes a blank leading tweet — the composer's toggle
+    // should migrate content forward but this protects older drafts too.
+    ? (ctx.version.threadParts[0]?.content || ctx.version.content)
     : ctx.version.content
   const replyTarget = ctx.version.platformVariables.replyToPostId ?? null
   const rootId = await withRefresh(() => createTweet(tokens, rootText, rootMediaIds, replyTarget))
