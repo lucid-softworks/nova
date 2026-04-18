@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { asc, inArray } from 'drizzle-orm'
 import { db, schema } from './db'
+import { logger } from '~/lib/logger'
 
 export type PublicPlan = {
   key: string
@@ -13,6 +14,82 @@ export type PublicPlan = {
   maxConnectedAccounts: number
   maxScheduledPostsPerMonth: number
   aiAssistEnabled: boolean
+}
+
+// In-memory price cache for the billing provider lookup. The marketing
+// page is hit by every anonymous visitor, so hitting the provider API on
+// every request would eat rate limits and slow down first paint.
+let priceCache: { fetchedAt: number; prices: Map<string, string> } | null = null
+const PRICE_CACHE_TTL_MS = 5 * 60 * 1000
+
+function formatCurrency(cents: number, currency: string, interval: string | null): string {
+  const amount = (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)
+  const code = currency.toUpperCase()
+  const symbol = code === 'USD' ? '$' : code === 'EUR' ? '€' : code === 'GBP' ? '£' : `${code} `
+  const period = interval === 'year' ? '/yr' : interval === 'month' ? '/mo' : ''
+  return `${symbol}${amount}${period}`
+}
+
+/**
+ * Fetch product prices from the billing provider and return a
+ * productId → display string map. Only Polar is wired up today; other
+ * providers can be added here when needed.
+ */
+async function fetchProviderPrices(productIds: string[]): Promise<Map<string, string>> {
+  if (priceCache && Date.now() - priceCache.fetchedAt < PRICE_CACHE_TTL_MS) {
+    return priceCache.prices
+  }
+  const provider = process.env.BILLING_PROVIDER
+  const out = new Map<string, string>()
+  if (provider !== 'polar' || productIds.length === 0) {
+    priceCache = { fetchedAt: Date.now(), prices: out }
+    return out
+  }
+  const accessToken = process.env.POLAR_ACCESS_TOKEN
+  if (!accessToken) {
+    priceCache = { fetchedAt: Date.now(), prices: out }
+    return out
+  }
+  try {
+    const { Polar } = await import('@polar-sh/sdk')
+    const client = new Polar({ accessToken })
+    await Promise.all(
+      productIds.map(async (id) => {
+        try {
+          const product = await client.products.get({ id })
+          // Prefer the monthly recurring price; fall back to whatever's first.
+          type Price = {
+            amountType?: string
+            priceAmount?: number | null
+            priceCurrency?: string | null
+            recurringInterval?: string | null
+          }
+          const prices = (product.prices ?? []) as Price[]
+          const monthly = prices.find((p) => p.recurringInterval === 'month')
+          const chosen = monthly ?? prices[0]
+          if (!chosen) return
+          if (chosen.amountType === 'free' || !chosen.priceAmount) {
+            out.set(id, 'Free')
+            return
+          }
+          out.set(
+            id,
+            formatCurrency(
+              chosen.priceAmount,
+              chosen.priceCurrency ?? 'usd',
+              chosen.recurringInterval ?? null,
+            ),
+          )
+        } catch (err) {
+          logger.warn({ err, productId: id }, 'polar product fetch failed')
+        }
+      }),
+    )
+  } catch (err) {
+    logger.warn({ err }, 'polar price fetch failed')
+  }
+  priceCache = { fetchedAt: Date.now(), prices: out }
+  return out
 }
 
 /**
@@ -63,16 +140,42 @@ export const listPublicPlans = createServerFn({ method: 'GET' }).handler(
       }
     }
 
-    return planRows.map((r) => ({
-      key: r.key,
-      label: r.label,
-      description: r.description,
-      priceDisplay: r.priceDisplay,
-      isMostPopular: r.key === topKey && topCount > 0,
-      maxMembers: r.maxMembers,
-      maxConnectedAccounts: r.maxConnectedAccounts,
-      maxScheduledPostsPerMonth: r.maxScheduledPostsPerMonth,
-      aiAssistEnabled: r.aiAssistEnabled,
-    }))
+    // Pull live prices from the configured billing provider. The manual
+    // price_display column is a fallback for plans with no provider ID or
+    // when the provider API is unreachable.
+    const activeProvider = process.env.BILLING_PROVIDER ?? null
+    const productIds: string[] = []
+    if (activeProvider) {
+      for (const p of planRows) {
+        const ids = (p.providerIds ?? {})[activeProvider] ?? []
+        for (const id of ids) productIds.push(id)
+      }
+    }
+    const livePrices = await fetchProviderPrices(productIds)
+
+    return planRows.map((r) => {
+      let priceDisplay = r.priceDisplay
+      if (activeProvider) {
+        const ids = (r.providerIds ?? {})[activeProvider] ?? []
+        for (const id of ids) {
+          const live = livePrices.get(id)
+          if (live) {
+            priceDisplay = live
+            break
+          }
+        }
+      }
+      return {
+        key: r.key,
+        label: r.label,
+        description: r.description,
+        priceDisplay,
+        isMostPopular: r.key === topKey && topCount > 0,
+        maxMembers: r.maxMembers,
+        maxConnectedAccounts: r.maxConnectedAccounts,
+        maxScheduledPostsPerMonth: r.maxScheduledPostsPerMonth,
+        aiAssistEnabled: r.aiAssistEnabled,
+      }
+    })
   },
 )

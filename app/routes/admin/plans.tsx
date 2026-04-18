@@ -336,7 +336,11 @@ function PlanEditor({
               {t('adminPlans.marketingSectionHint')}
             </p>
             <div className="grid gap-3 md:grid-cols-2">
-              <Field label={t('adminPlans.fieldPriceDisplay')} htmlFor="plan-price">
+              <Field
+                label={t('adminPlans.fieldPriceDisplay')}
+                htmlFor="plan-price"
+                hint={t('adminPlans.fieldPriceDisplayHint')}
+              >
                 <Input
                   id="plan-price"
                   value={priceDisplay}
