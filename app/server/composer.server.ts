@@ -5,6 +5,7 @@ import { db, schema } from './db'
 import { requireWorkspaceAccess } from './session.server'
 import { getStorage } from './storage'
 import type { PlatformKey } from '~/lib/platforms'
+import { logger } from '~/lib/logger'
 
 async function ensureWs(slug: string) {
   const r = await requireWorkspaceAccess(slug)
@@ -92,7 +93,7 @@ export async function uploadMediaImpl(slug: string, file: File, folderId: string
       })
       thumbnailUrl = storage.publicUrl(thumbName)
     } catch (e) {
-      console.warn('[media] thumbnail generation failed', e)
+      logger.warn({ err: e }, 'media thumbnail generation failed')
     }
   }
 

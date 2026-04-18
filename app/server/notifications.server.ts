@@ -3,6 +3,7 @@ import { db, schema } from './db'
 import { loadSessionContext } from './session.server'
 import { sendEmail } from './mailer.server'
 import { decrypt } from '~/lib/encryption'
+import { logger } from '~/lib/logger'
 
 export type NotificationType =
   | 'post_published'
@@ -176,7 +177,7 @@ export async function notifyUser(params: {
           body: params.body,
           deepUrl,
         }),
-      }).catch((e) => console.error('[notify:email]', e)),
+      }).catch((err) => logger.error({ err }, 'notify:email send failed')),
     )
   }
 
@@ -187,7 +188,7 @@ export async function notifyUser(params: {
         title: params.title,
         message: params.body,
         openUrl: deepUrl,
-      }).catch((e) => console.error('[notify:push]', e)),
+      }).catch((err) => logger.error({ err }, 'notify:push send failed')),
     )
   }
 

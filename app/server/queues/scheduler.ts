@@ -1,6 +1,7 @@
 import { and, eq, isNull, lte } from 'drizzle-orm'
 import { db, schema } from '~/server/db'
 import { getPostQueue } from './postQueue'
+import { logger } from '~/lib/logger'
 
 let running = false
 
@@ -33,7 +34,7 @@ export async function tickScheduler() {
           .set({ status: 'publishing' })
           .where(eq(schema.posts.id, p.id))
       }
-      console.log(`[scheduler] enqueued ${due.length} post(s)`)
+      logger.info({ count: due.length }, 'scheduler enqueued posts')
     }
 
     // Campaign step readiness — enqueue any ready steps whose scheduled time has passed
@@ -76,7 +77,7 @@ let interval: ReturnType<typeof setInterval> | null = null
 export function startScheduler() {
   if (interval) return
   interval = setInterval(() => {
-    tickScheduler().catch((e) => console.error('[scheduler] tick error', e))
+    tickScheduler().catch((err) => logger.error({ err }, 'scheduler tick failed'))
   }, 60_000)
   // Run once immediately on boot so scheduled posts in the past get picked up quickly.
   setTimeout(() => tickScheduler().catch(() => {}), 2_000)

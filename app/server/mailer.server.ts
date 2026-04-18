@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { logger } from '~/lib/logger'
 
 export type SendEmailInput = {
   to: string | string[]
@@ -28,14 +29,14 @@ function defaultFrom(): string {
 export async function sendEmail(input: SendEmailInput): Promise<{ ok: true; id: string | null }> {
   const client = getResend()
   if (!client) {
-    console.log(
-      `[mailer:dev]`,
-      JSON.stringify({
+    logger.info(
+      {
         to: input.to,
         subject: input.subject,
         text: input.text ?? undefined,
         htmlPreview: input.html.slice(0, 400),
-      }),
+      },
+      'mailer:dev (RESEND_API_KEY not set)',
     )
     return { ok: true, id: null }
   }
