@@ -571,8 +571,8 @@ function PlatformTable({ rows }: { rows: PlatformTableRow[] }) {
   const t = useT()
   if (rows.length === 0) return <EmptyState label={t('analytics.noConnectedAccounts')} />
   return (
-    <div className="overflow-auto">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[640px] text-sm">
         <thead className="text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
           <tr className="border-b border-neutral-100 dark:border-neutral-800">
             <th className="px-2 py-1.5">Platform</th>

@@ -114,7 +114,7 @@ export function PostRow({
     <div className={cn('border-b border-neutral-100 dark:border-neutral-800', selected && 'bg-indigo-50/40')}>
     <div
       className={cn(
-        'flex items-start gap-3 px-3 py-3',
+        'flex flex-wrap items-start gap-3 px-3 py-3',
         indent && 'pl-12 bg-neutral-50/50',
       )}
     >
@@ -137,7 +137,7 @@ export function PostRow({
           </div>
         )}
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 w-full sm:w-0 sm:flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
           <PostTypeBadge type={post.type} />
           {hasRecurringRule ? (
@@ -175,7 +175,7 @@ export function PostRow({
           <div className="mt-0.5 text-xs text-red-600">{post.failureReason}</div>
         ) : null}
       </div>
-      <div className="flex flex-col items-end gap-1 text-xs text-neutral-500 dark:text-neutral-400">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-neutral-500 dark:text-neutral-400 sm:flex-col sm:items-end sm:gap-1">
         <div className="flex gap-0.5">
           {post.platforms.slice(0, 6).map((p) => (
             <PlatformIcon key={p.socialAccountId} platform={p.platform} size={18} />
@@ -190,10 +190,10 @@ export function PostRow({
               ? fmtDate(post.scheduledAt)
               : fmtDate(post.createdAt)}
         </div>
-        <div>{post.authorName ?? ''}</div>
+        {post.authorName ? <div>{post.authorName}</div> : null}
       </div>
       {isPending && canApprove ? (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-wrap gap-1 sm:flex-col">
           <Button
             size="sm"
             variant="outline"

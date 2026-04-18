@@ -56,8 +56,8 @@ function ApiKeysPage() {
         className="max-w-md"
       />
       <Card>
-        <div className="overflow-hidden rounded-md">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-md">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 <th className="px-3 py-2">{t('admin.col.key')}</th>
