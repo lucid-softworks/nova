@@ -185,7 +185,7 @@ export async function startGeneration(req: GenerateRequest, workspaceId: string 
   const resolved = await resolveModel(workspaceId)
   if (!resolved) {
     throw new Error(
-      'No AI provider configured. Add a key in workspace Settings → AI keys, or set the matching env var on the server.',
+      'No AI provider configured. Add a key in workspace Settings → AI keys.',
     )
   }
   const system = buildSystemPrompt(req)
@@ -219,7 +219,7 @@ export async function suggestHashtagsImpl(
   const resolved = await resolveModel(workspaceId)
   if (!resolved) {
     throw new Error(
-      'No AI provider configured. Add a key in workspace Settings → AI keys, or set the matching env var on the server.',
+      'No AI provider configured. Add a key in workspace Settings → AI keys.',
     )
   }
   const platformNote = platforms.length
