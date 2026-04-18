@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -90,6 +91,11 @@ import { Route as DashboardWorkspaceSlugSettingsApiRouteImport } from './routes/
 import { Route as DashboardWorkspaceSlugSettingsAiRouteImport } from './routes/_dashboard/$workspaceSlug/settings/ai'
 import { Route as DashboardWorkspaceSlugPostsCampaignsCampaignIdRouteImport } from './routes/_dashboard/$workspaceSlug/posts/campaigns/$campaignId'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -526,6 +532,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/healthz': typeof HealthzRoute
   '/onboarding': typeof OnboardingRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/forgot-password': typeof AuthForgotPasswordRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
@@ -605,6 +612,7 @@ export interface FileRoutesByTo {
   '/accept-invitation': typeof AcceptInvitationRoute
   '/healthz': typeof HealthzRoute
   '/onboarding': typeof OnboardingRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/forgot-password': typeof AuthForgotPasswordRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
@@ -687,6 +695,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/healthz': typeof HealthzRoute
   '/onboarding': typeof OnboardingRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_auth/forgot-password': typeof AuthForgotPasswordRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
@@ -769,6 +778,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/healthz'
     | '/onboarding'
+    | '/sitemap.xml'
     | '/forgot-password'
     | '/login'
     | '/register'
@@ -848,6 +858,7 @@ export interface FileRouteTypes {
     | '/accept-invitation'
     | '/healthz'
     | '/onboarding'
+    | '/sitemap.xml'
     | '/forgot-password'
     | '/login'
     | '/register'
@@ -929,6 +940,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/healthz'
     | '/onboarding'
+    | '/sitemap.xml'
     | '/_auth/forgot-password'
     | '/_auth/login'
     | '/_auth/register'
@@ -1012,6 +1024,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   HealthzRoute: typeof HealthzRoute
   OnboardingRoute: typeof OnboardingRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   BioHandleRoute: typeof BioHandleRoute
   CTokenRoute: typeof CTokenRoute
   DigestUnsubscribeRoute: typeof DigestUnsubscribeRoute
@@ -1042,6 +1055,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -1803,6 +1823,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   HealthzRoute: HealthzRoute,
   OnboardingRoute: OnboardingRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   BioHandleRoute: BioHandleRoute,
   CTokenRoute: CTokenRoute,
   DigestUnsubscribeRoute: DigestUnsubscribeRoute,
