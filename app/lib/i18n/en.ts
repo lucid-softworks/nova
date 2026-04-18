@@ -170,6 +170,7 @@ export const en = {
   // ── Analytics ─────────────────────────────────────────
   "analytics.title": "Analytics",
   "analytics.description": "Track performance across all your accounts",
+  "analytics.allPlatforms": "All platforms",
   "analytics.followerGrowth": "Follower growth",
   "analytics.dailyEngagements": "Daily engagements",
   "analytics.engagementBreakdown": "Engagement breakdown",

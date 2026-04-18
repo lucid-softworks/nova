@@ -133,7 +133,15 @@ function AnalyticsPage() {
   })
   const [customTo, setCustomTo] = useState<string>(() => new Date().toISOString().slice(0, 10))
   const [accountId, setAccountId] = useState<string | null>(null)
+  const [platformFilter, setPlatformFilter] = useState<PlatformKey | 'all'>('all')
   const [loading, setLoading] = useState(false)
+
+  // Platforms that have at least one connected account — drives the tab
+  // strip so we never show a platform with nothing to drill into.
+  const availablePlatforms = Array.from(
+    new Set(initial.accounts.map((a) => a.platform as PlatformKey)),
+  )
+
   const [data, setData] = useState({
     summary: initial.summary,
     followers: initial.followers,
@@ -142,6 +150,33 @@ function AnalyticsPage() {
     topPosts: initial.topPosts,
     heatmap: initial.heatmap,
   })
+
+  const accountsForFilter =
+    platformFilter === 'all'
+      ? initial.accounts
+      : initial.accounts.filter((a) => a.platform === platformFilter)
+
+  const displayedPlatformTable =
+    platformFilter === 'all'
+      ? data.platformTable
+      : data.platformTable.filter((r) => r.platform === platformFilter)
+
+  const displayedTopPosts =
+    platformFilter === 'all'
+      ? data.topPosts
+      : data.topPosts.filter((p) => p.platforms.includes(platformFilter))
+
+  const onPickPlatform = (p: PlatformKey | 'all') => {
+    setPlatformFilter(p)
+    if (p === 'all') {
+      setAccountId(null)
+    } else {
+      const stillValid = initial.accounts.find(
+        (a) => a.id === accountId && a.platform === p,
+      )
+      if (!stillValid) setAccountId(null)
+    }
+  }
 
   const reload = async () => {
     setLoading(true)
@@ -202,7 +237,7 @@ function AnalyticsPage() {
             </div>
           ) : null}
           <AccountFilter
-            accounts={initial.accounts}
+            accounts={accountsForFilter}
             value={accountId}
             onChange={setAccountId}
           />
@@ -211,6 +246,25 @@ function AnalyticsPage() {
           {loading ? <Spinner /> : null}
         </div>
       </div>
+
+      {availablePlatforms.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1 border-b border-neutral-200 dark:border-neutral-800 pb-2">
+          <PlatformTab
+            active={platformFilter === 'all'}
+            onClick={() => onPickPlatform('all')}
+            label={t('analytics.allPlatforms')}
+          />
+          {availablePlatforms.map((p) => (
+            <PlatformTab
+              key={p}
+              active={platformFilter === p}
+              onClick={() => onPickPlatform(p)}
+              icon={<PlatformIcon platform={p} size={14} />}
+              label={PLATFORMS[p].label}
+            />
+          ))}
+        </div>
+      ) : null}
 
       <SummaryCards summary={data.summary} />
 
@@ -232,14 +286,14 @@ function AnalyticsPage() {
       <Card>
         <div className="p-4">
           <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('analytics.perPlatform')}</h3>
-          <PlatformTable rows={data.platformTable} />
+          <PlatformTable rows={displayedPlatformTable} />
         </div>
       </Card>
 
       <Card>
         <div className="p-4">
           <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">{t('analytics.topPosts')}</h3>
-          <TopPosts rows={data.topPosts} />
+          <TopPosts rows={displayedTopPosts} />
         </div>
       </Card>
     </div>
@@ -602,5 +656,33 @@ function EmptyState({ label }: { label: string }) {
     <div className="flex h-full items-center justify-center text-xs text-neutral-500 dark:text-neutral-400">
       {label}
     </div>
+  )
+}
+
+function PlatformTab({
+  active,
+  onClick,
+  label,
+  icon,
+}: {
+  active: boolean
+  onClick: () => void
+  label: string
+  icon?: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium',
+        active
+          ? 'bg-indigo-500 text-white'
+          : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800',
+      )}
+    >
+      {icon}
+      {label}
+    </button>
   )
 }
