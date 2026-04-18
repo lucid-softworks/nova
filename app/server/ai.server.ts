@@ -190,6 +190,10 @@ export async function startGeneration(req: GenerateRequest, workspaceId: string 
   }
   const system = buildSystemPrompt(req)
   const userPrompt = buildUserPrompt(req)
+  // Shared error box — populated from onError if the provider emits an
+  // error event instead of throwing from the iterator. Callers consume it
+  // after streaming to append a "[<provider> error: ...]" trailer.
+  const errorBox: { current: unknown } = { current: null }
   const result = streamText({
     model: resolved.model,
     system,
@@ -197,13 +201,14 @@ export async function startGeneration(req: GenerateRequest, workspaceId: string 
     maxTokens: 800,
     temperature: 0.8,
     onError: ({ error }) => {
+      errorBox.current = error
       logger.error(
         { err: error, provider: resolved.providerLabel },
         'AI stream error',
       )
     },
   })
-  return { result, providerLabel: resolved.providerLabel }
+  return { result, providerLabel: resolved.providerLabel, errorBox }
 }
 
 export async function suggestHashtagsImpl(

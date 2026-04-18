@@ -80,22 +80,28 @@ export const Route = createFileRoute('/api/ai/generate')({
 
         // Pipe textStream manually so provider errors (401, 429 quota, etc.)
         // get appended to the stream instead of silently closing it, which is
-        // what toTextStreamResponse() does.
+        // what toTextStreamResponse() does. Catches both throwing iterators
+        // (textStream.throw) and errors delivered only via onError.
         const stream = new ReadableStream<Uint8Array>({
           async start(controller) {
             const encoder = new TextEncoder()
+            const emitError = (err: unknown) => {
+              const msg = err instanceof Error ? err.message : String(err)
+              controller.enqueue(
+                encoder.encode(`\n\n[${result.providerLabel} error: ${msg}]`),
+              )
+            }
             try {
               for await (const chunk of result.result.textStream) {
                 controller.enqueue(encoder.encode(chunk))
               }
-              controller.close()
             } catch (err) {
-              const msg = err instanceof Error ? err.message : 'AI request failed'
-              controller.enqueue(
-                encoder.encode(`\n\n[${result.providerLabel} error: ${msg}]`),
-              )
+              emitError(err)
               controller.close()
+              return
             }
+            if (result.errorBox.current) emitError(result.errorBox.current)
+            controller.close()
           },
         })
         return new Response(stream, {
