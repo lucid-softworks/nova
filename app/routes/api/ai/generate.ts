@@ -35,21 +35,25 @@ export const Route = createFileRoute('/api/ai/generate')({
         try {
           body = await request.json()
         } catch {
+          console.log('[ai-generate] exit: invalid json')
           return Response.json({ error: 'Invalid JSON' }, { status: 400 })
         }
         const parsed = bodySchema.safeParse(body)
         if (!parsed.success) {
+          console.log('[ai-generate] exit: zod failed', JSON.stringify(parsed.error.flatten()))
           return Response.json({ error: parsed.error.flatten() }, { status: 400 })
         }
 
         const access = await requireWorkspaceAccess(parsed.data.workspaceSlug)
         if (!access.ok) {
+          console.log('[ai-generate] exit: no workspace access', access.reason)
           return Response.json({ error: access.reason }, { status: 403 })
         }
 
         try {
           await assertFeatureEnabled('aiAssist')
         } catch (e) {
+          console.log('[ai-generate] exit: feature disabled', e instanceof Error ? e.message : e)
           return Response.json(
             { error: e instanceof Error ? e.message : 'AI assist is disabled' },
             { status: 403 },
@@ -58,6 +62,7 @@ export const Route = createFileRoute('/api/ai/generate')({
 
         const limits = await limitsFor(access.workspace.id)
         if (!limits.aiAssistEnabled) {
+          console.log('[ai-generate] exit: plan limit')
           return Response.json({ error: 'AI assist is not available on your current plan' }, { status: 403 })
         }
 
@@ -77,6 +82,7 @@ export const Route = createFileRoute('/api/ai/generate')({
           result = await startGeneration(req, access.workspace.id)
         } catch (e) {
           const message = e instanceof Error ? e.message : 'AI request failed'
+          console.log('[ai-generate] exit: startGeneration threw', message)
           return Response.json({ error: message }, { status: 500 })
         }
 
