@@ -3,7 +3,12 @@ import { z } from 'zod'
 import { PLATFORM_KEYS } from '~/lib/platforms'
 import { saveDraftImpl, loadPostForComposerImpl, type LoadedPost } from './composer.server'
 
-export type { LoadedPost, LoadedPostVersion, LoadedPostMedia } from './composer.server'
+export type {
+  LoadedPost,
+  LoadedPostVersion,
+  LoadedPostMedia,
+  LoadedPostPublishedLink,
+} from './composer.server'
 
 const platformKeySchema = z.enum(PLATFORM_KEYS)
 

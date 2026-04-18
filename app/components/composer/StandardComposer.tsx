@@ -9,6 +9,9 @@ import {
   Trash2,
   ChevronDown,
   AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  Copy,
 } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 import { PLATFORMS, type PlatformKey } from '~/lib/platforms'
@@ -33,6 +36,7 @@ import { HashtagPickerButton } from './HashtagPickerButton'
 import { HashtagSuggestButton } from './HashtagSuggestButton'
 import { SavedReplyPicker } from './SavedReplyPicker'
 import { saveDraft } from '~/server/composer'
+import { duplicatePost } from '~/server/posts'
 import { addToQueue, publishNow, schedulePost, submitForApproval } from '~/server/scheduling'
 import type { WorkspaceRole } from '~/server/types'
 import { useT } from '~/lib/i18n'
@@ -46,6 +50,7 @@ export function StandardComposer({
   initialScheduledAt,
   reply,
   quote,
+  readOnly = false,
 }: {
   workspaceSlug: string
   accounts: ConnectedAccount[]
@@ -55,6 +60,7 @@ export function StandardComposer({
   initialScheduledAt: string | null
   reply: { replyTo: string; handle: string; accountId: string | null } | null
   quote: { quoteTo: string; handle: string; accountId: string | null } | null
+  readOnly?: boolean
 }) {
   const t = useT()
   const needsApproval = requireApproval && userRole === 'editor'
@@ -276,8 +282,16 @@ export function StandardComposer({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-      <div className="space-y-4">
+    <div className="space-y-4">
+      {readOnly ? <PublishedHeader post={existing} /> : null}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <fieldset
+          disabled={readOnly}
+          className={cn(
+            'min-w-0 space-y-4 border-0 p-0 m-0',
+            readOnly && 'opacity-75',
+          )}
+        >
         <StartFromSelector
           mode={state.startMode}
           onChange={(mode) => dispatch({ type: 'SET_START_MODE', mode, accounts })}
@@ -342,6 +356,7 @@ export function StandardComposer({
           </>
         ) : null}
 
+        {readOnly ? null : (
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-200 dark:border-neutral-800 pt-4">
           <Button type="button" variant="ghost" onClick={onDiscard}>
             {t('compose.discard')}
@@ -428,6 +443,7 @@ export function StandardComposer({
             ) : null}
           </div>
         </div>
+        )}
         {saveError ? <p className="text-sm text-red-600">{saveError}</p> : null}
         {toast ? (
           <div className="rounded-md border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/40 p-3 text-sm text-yellow-800">
@@ -440,7 +456,7 @@ export function StandardComposer({
             </a>
           </div>
         ) : null}
-      </div>
+        </fieldset>
 
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{t('compose.preview')}</h3>
@@ -481,6 +497,86 @@ export function StandardComposer({
           }
         }}
       />
+      </div>
+      {readOnly && existing ? (
+        <PublishedFooter
+          post={existing}
+          accounts={accounts}
+          workspaceSlug={workspaceSlug}
+        />
+      ) : null}
+    </div>
+  )
+}
+
+function PublishedHeader({ post }: { post: LoadedPost | null }) {
+  const t = useT()
+  if (!post) return null
+  const when = post.publishedAt ? new Date(post.publishedAt).toLocaleString() : null
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-md border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50 dark:bg-indigo-950/40 px-3 py-2 text-sm text-indigo-900 dark:text-indigo-100">
+      <CheckCircle2 className="h-4 w-4 shrink-0" />
+      <span className="flex-1">
+        {when
+          ? t('compose.readOnly.publishedAt', { date: when })
+          : t('compose.readOnly.published')}
+      </span>
+    </div>
+  )
+}
+
+function PublishedFooter({
+  post,
+  accounts,
+  workspaceSlug,
+}: {
+  post: LoadedPost
+  accounts: ConnectedAccount[]
+  workspaceSlug: string
+}) {
+  const t = useT()
+  const navigate = useNavigate()
+  const [duplicating, setDuplicating] = useState(false)
+  const accountById = new Map(accounts.map((a) => [a.id, a]))
+  const onDuplicate = async () => {
+    setDuplicating(true)
+    try {
+      const { postId } = await duplicatePost({ data: { workspaceSlug, postId: post.id } })
+      navigate({
+        to: '/$workspaceSlug/compose',
+        params: { workspaceSlug },
+        search: { postId },
+      })
+    } finally {
+      setDuplicating(false)
+    }
+  }
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3">
+      <div className="flex flex-wrap gap-2">
+        {post.publishedLinks.map((link) => {
+          const account = accountById.get(link.socialAccountId)
+          const label = account
+            ? PLATFORMS[account.platform]?.label ?? account.platform
+            : 'Platform'
+          return (
+            <a
+              key={link.socialAccountId}
+              href={link.publishedUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+            >
+              <ExternalLink className="h-3 w-3" />
+              {t('compose.readOnly.viewOn', { platform: label })}
+            </a>
+          )
+        })}
+      </div>
+      <Button onClick={onDuplicate} disabled={duplicating}>
+        {duplicating ? <Spinner /> : <Copy className="h-4 w-4" />}{' '}
+        {t('compose.readOnly.duplicate')}
+      </Button>
     </div>
   )
 }

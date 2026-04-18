@@ -300,10 +300,17 @@ export type LoadedPostVersion = {
   isDefault: boolean
 }
 
+export type LoadedPostPublishedLink = {
+  socialAccountId: string
+  publishedUrl: string
+  platformPostId: string | null
+}
+
 export type LoadedPost = {
   id: string
   status: 'draft' | 'scheduled' | 'publishing' | 'published' | 'failed' | 'pending_approval'
   scheduledAt: string | null
+  publishedAt: string | null
   selectedAccountIds: string[]
   versions: LoadedPostVersion[]
   mediaById: Record<string, LoadedPostMedia>
@@ -315,6 +322,8 @@ export type LoadedPost = {
     nsfw: boolean
     spoiler: boolean
   } | null
+  /** Populated once the post has landed on its platforms. */
+  publishedLinks: LoadedPostPublishedLink[]
 }
 
 export async function loadPostForComposerImpl(
@@ -326,9 +335,6 @@ export async function loadPostForComposerImpl(
     where: and(eq(schema.posts.id, postId), eq(schema.posts.workspaceId, workspace.id)),
   })
   if (!post) throw new Error('Post not found')
-  if (post.status === 'published') {
-    throw new Error('Published posts cannot be edited')
-  }
 
   const versionRows = await db
     .select()
@@ -336,9 +342,21 @@ export async function loadPostForComposerImpl(
     .where(eq(schema.postVersions.postId, postId))
 
   const targets = await db
-    .select({ socialAccountId: schema.postPlatforms.socialAccountId })
+    .select({
+      socialAccountId: schema.postPlatforms.socialAccountId,
+      platformPostId: schema.postPlatforms.platformPostId,
+      publishedUrl: schema.postPlatforms.publishedUrl,
+    })
     .from(schema.postPlatforms)
     .where(eq(schema.postPlatforms.postId, postId))
+
+  const publishedLinks: LoadedPostPublishedLink[] = targets
+    .filter((t): t is typeof t & { publishedUrl: string } => !!t.publishedUrl)
+    .map((t) => ({
+      socialAccountId: t.socialAccountId,
+      publishedUrl: t.publishedUrl,
+      platformPostId: t.platformPostId,
+    }))
 
   const mediaRows = await db
     .select({
@@ -437,10 +455,12 @@ export async function loadPostForComposerImpl(
     id: post.id,
     status: post.status,
     scheduledAt: post.scheduledAt?.toISOString() ?? null,
+    publishedAt: post.publishedAt?.toISOString() ?? null,
     selectedAccountIds: targets.map((t) => t.socialAccountId),
     versions,
     mediaById,
     mode,
     reddit,
+    publishedLinks,
   }
 }
