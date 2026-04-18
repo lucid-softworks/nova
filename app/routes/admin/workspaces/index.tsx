@@ -10,7 +10,7 @@ import {
 } from '~/server/admin'
 import { useT } from '~/lib/i18n'
 
-export const Route = createFileRoute('/admin/workspaces')({
+export const Route = createFileRoute('/admin/workspaces/')({
   loader: async () => ({ workspaces: await listAdminWorkspaces() }),
   component: WorkspacesPage,
 })
