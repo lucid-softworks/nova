@@ -30,6 +30,7 @@ export const Route = createFileRoute('/api/ai/generate')({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        console.log('[ai-generate] request received')
         let body: unknown
         try {
           body = await request.json()
@@ -79,6 +80,7 @@ export const Route = createFileRoute('/api/ai/generate')({
           return Response.json({ error: message }, { status: 500 })
         }
 
+        console.log('[ai-generate] streaming start, provider=' + result.providerLabel)
         logger.info({ provider: result.providerLabel }, 'ai generate: streaming start')
 
         const stream = new ReadableStream<Uint8Array>({
@@ -112,6 +114,9 @@ export const Route = createFileRoute('/api/ai/generate')({
               emitError(err, 'fullStream.throw')
             }
             if (result.errorBox.current) emitError(result.errorBox.current, 'onError')
+            console.log(
+              `[ai-generate] done provider=${result.providerLabel} partCount=${partCount} textCount=${textCount} hadError=${!!result.errorBox.current}`,
+            )
             logger.info(
               { provider: result.providerLabel, partCount, textCount, hadError: !!result.errorBox.current },
               'ai generate: streaming done',
