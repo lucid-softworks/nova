@@ -954,7 +954,9 @@ export const keywordMatches = pgTable(
     content: text('content').notNull(),
     postUrl: text('post_url'),
     publishedAt: timestamp('published_at', { withTimezone: true }),
-    seenAt: now(),
+    // Keep explicit column name 'seen_at' — the shared now() helper would
+    // rename this to 'created_at' and break migrations.
+    seenAt: timestamp('seen_at', { withTimezone: true }).defaultNow().notNull(),
     readAt: timestamp('read_at', { withTimezone: true }),
   },
   (t) => [
