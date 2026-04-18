@@ -249,7 +249,10 @@ const spec = {
 export const Route = createFileRoute('/api/v1/openapi/json')({
   server: {
     handlers: {
-      GET: async () => Response.json(spec),
+      GET: async () =>
+        new Response(JSON.stringify(spec), {
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        }),
     },
   },
 })

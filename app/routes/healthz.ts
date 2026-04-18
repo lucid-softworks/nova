@@ -36,7 +36,13 @@ export const Route = createFileRoute('/healthz')({
           }
         }
 
-        return Response.json({ ok, checks }, { status: ok ? 200 : 503 })
+        // Avoid Response.json() static shortcut — it arrives 0-byte on
+        // the wire when routed through TanStack Start's server handler
+        // pipeline. Plain Response with explicit content-type works.
+        return new Response(JSON.stringify({ ok, checks }), {
+          status: ok ? 200 : 503,
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        })
       },
     },
   },
